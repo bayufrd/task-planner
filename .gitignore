@@ -1,0 +1,97 @@
+# Dependencies
+/node_modules
+/.pnp
+.pnp.js
+/yarn.lock
+/package-lock.json
+
+# Testing
+/coverage
+
+# Next.js
+/.next/
+/out/
+
+# Production
+/build
+
+# Environment Variables (Privacy)
+.env
+.env.local
+.env.*.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.production
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+lerna-debug.log*
+*.log
+
+# IDE & Editor
+.vscode/
+.idea/
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+*.swp
+*.swo
+*~
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+
+# OS
+Thumbs.db
+.AppleDouble
+.LSOverride
+._*
+
+# Certificate & Keys (Privacy)
+*.pem
+*.key
+*.cert
+*.crt
+*.p8
+*.p12
+*.pfx
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+*.sql
+
+# Prisma
+/prisma/migrations
+
+# Temporary files
+*.tmp
+*.temp
+dist/
+build/
+.cache/
+.parcel-cache/
+
+# OS temp
+.vscode-test
+.nyc_output
+
+# Development tools
+.env.*.local
+.pre-commit-config.yaml
+.husky/
+
+# Local database backups
+backup/
+*.dump
+*.backup

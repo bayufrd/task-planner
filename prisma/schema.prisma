@@ -1,0 +1,123 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// User model
+model User {
+  id                    String      @id @default(cuid())
+  email                 String      @unique
+  name                  String?
+  password              String?
+  googleId              String?     @unique
+  googleAccessToken     String?
+  googleRefreshToken    String?
+  theme                 String      @default("light") // light or dark
+  googleCalendarSync    Boolean     @default(false)
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+
+  // Relations
+  tasks                 Task[]
+  reminders             Reminder[]
+  calendars             Calendar[]
+  
+  @@index([email])
+}
+
+// Task model
+model Task {
+  id                    String      @id @default(cuid())
+  userId                String
+  user                  User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  title                 String
+  description           String?     @db.LongText
+  deadline              DateTime
+  priority              String      @default("MEDIUM") // HIGH, MEDIUM, LOW
+  estimatedDuration     Int?        // in minutes
+  status                String      @default("TODO") // TODO, IN_PROGRESS, DONE
+  
+  // Reminder settings
+  reminderTime          Int         @default(60) // minutes before deadline
+  reminderSent          Boolean     @default(false)
+  
+  // Google Calendar
+  googleCalendarEventId String?
+  googleCalendarId      String?
+  
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+  completedAt           DateTime?
+
+  // Relations
+  tags                  TaskTag[]
+  reminders             Reminder[]
+  
+  @@index([userId])
+  @@index([deadline])
+  @@index([priority])
+  @@index([status])
+}
+
+// Task tags for categorization
+model TaskTag {
+  id                    String      @id @default(cuid())
+  taskId                String
+  task                  Task        @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  
+  tagName               String
+  color                 String?     @default("#3B82F6")
+  
+  @@unique([taskId, tagName])
+  @@index([taskId])
+}
+
+// Reminder model
+model Reminder {
+  id                    String      @id @default(cuid())
+  userId                String
+  user                  User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  taskId                String?
+  task                  Task?       @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  
+  remindAt              DateTime
+  sent                  Boolean     @default(false)
+  sentAt                DateTime?
+  
+  createdAt             DateTime    @default(now())
+  
+  @@index([userId])
+  @@index([taskId])
+  @@index([remindAt])
+  @@index([sent])
+}
+
+// Calendar model for multi-calendar support
+model Calendar {
+  id                    String      @id @default(cuid())
+  userId                String
+  user                  User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  calendarId            String?     // Google Calendar ID
+  name                  String
+  description           String?
+  type                  String      @default("personal") // personal, work, study, etc
+  color                 String?     @default("#3B82F6")
+  isDefault             Boolean     @default(false)
+  isSynced              Boolean     @default(false)
+  
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+  
+  @@unique([userId, calendarId])
+  @@index([userId])
+}
