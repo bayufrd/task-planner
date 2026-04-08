@@ -101,6 +101,18 @@ export const authOptions: NextAuthOptions = {
       }
       return session
     },
+    async redirect({ url, baseUrl }) {
+      // Ensure we only redirect to allowed URLs
+      if (url.startsWith('/')) {
+        // Relative URL - prepend baseUrl
+        return `${baseUrl}${url}`
+      } else if (new URL(url).origin === baseUrl) {
+        // Same origin URL - allow
+        return url
+      }
+      // Default fallback to baseUrl
+      return baseUrl
+    },
   },
   pages: {
     signIn: '/auth/signin',
