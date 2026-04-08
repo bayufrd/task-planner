@@ -147,11 +147,6 @@ export interface AnalyticsData {
 }
 
 /**
- * Language Type
- */
-export type Language = 'en' | 'id'
-
-/**
  * Theme Type
  */
 export type Theme = 'light' | 'dark'
