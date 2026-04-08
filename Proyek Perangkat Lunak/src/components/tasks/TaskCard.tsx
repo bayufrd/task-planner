@@ -4,7 +4,7 @@ import { Task } from '@/lib/utils/store'
 import { TaskWithScore } from '@/lib/utils/priority'
 import { useTaskStore } from '@/lib/utils/store'
 import { format } from 'date-fns'
-import { Clock, CheckCircle2, Pause, Trash2, Play, RotateCcw } from 'lucide-react'
+import { Clock, CheckCircle2, Trash2, RotateCcw } from 'lucide-react'
 import { TaskStatusIcons, PriorityIcons } from '@/lib/constants/icons'
 import { getPriorityBorder, getPriorityGradient, cn } from '@/lib/utils/ui'
 
@@ -157,34 +157,6 @@ export default function TaskCard({ task, scoreInfo }: TaskCardProps) {
           >
             <CheckCircle2 className="w-4 h-4" strokeWidth={2} />
             Done
-          </button>
-        )}
-
-        {task.status === 'IN_PROGRESS' ? (
-          <button
-            onClick={() =>
-              updateTask(task.id, {
-                status: 'TODO',
-              })
-            }
-            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-blue-100/80 dark:bg-blue-900/20 hover:bg-blue-200/80 dark:hover:bg-blue-800/30 transition-all duration-200 font-medium text-sm text-blue-700 dark:text-blue-400"
-            title="Pause"
-          >
-            <Pause className="w-4 h-4" strokeWidth={2} />
-            Pause
-          </button>
-        ) : (
-          <button
-            onClick={() =>
-              updateTask(task.id, {
-                status: 'IN_PROGRESS',
-              })
-            }
-            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-blue-100/80 dark:bg-blue-900/20 hover:bg-blue-200/80 dark:hover:bg-blue-800/30 transition-all duration-200 font-medium text-sm text-blue-700 dark:text-blue-400"
-            title="Start"
-          >
-            <Play className="w-4 h-4" strokeWidth={2} />
-            Start
           </button>
         )}
 

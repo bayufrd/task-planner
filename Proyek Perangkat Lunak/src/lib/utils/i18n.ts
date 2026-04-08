@@ -159,7 +159,7 @@ export const translations = {
   id: {
     // Header
     header: {
-      title: 'Perencana Tugas',
+      title: 'Task Planner',
       command: 'Perintah',
       toggleTheme: 'Ganti tema',
       toggleLanguage: 'Ganti bahasa',
@@ -247,7 +247,7 @@ export const translations = {
     },
     // Landing Page
     landing: {
-      aiPowerTaskPlanning: 'Perencanaan Tugas Bertenaga AI',
+      aiPowerTaskPlanning: 'Task Planner Bertenaga AI',
       planSmarter: 'Rencanakan Lebih Cerdas,',
       workBetter: 'Bekerja Lebih Baik',
       description: 'Asisten perencanaan bertenaga AI yang memahami bahasa kasual, tersinkronisasi dengan Google Calendar, dan mengirim pengingat haptic ke perangkat wearable Anda.',
@@ -305,7 +305,7 @@ export const translations = {
       syncCalendarTitle: 'Sinkronisasi Dengan Kalender Anda yang Sudah Ada',
       syncCalendarDesc: 'Tugas masuk langsung ke Google Calendar. Tanpa beralih aplikasi, tanpa entri duplikat. Semuanya tetap tersinkronisasi, tetapi kami menambahkan kecerdasan AI yang seharusnya dimiliki Google Calendar.',
       syncCalendarImpact: 'Satu Sumber Kebenaran',
-      footer: '© 2026 TaskPlanner. Perencanaan Tugas Bertenaga AI.',
+      footer: '© 2026 TaskPlanner. Task Planner Bertenaga AI.',
     },
   },
 }

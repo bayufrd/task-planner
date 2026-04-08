@@ -9,7 +9,8 @@ import Header from '@/components/layout/Header'
 import { useTheme } from '@/components/providers/ThemeProvider'
 import { useCommandPalette } from '@/components/providers/CommandPaletteProvider'
 import { useLanguage } from '@/components/providers/LanguageProvider'
-import { Search, CheckSquare2, Calendar, Settings } from 'lucide-react'
+import { Search, CheckSquare2, Calendar, LogOut } from 'lucide-react'
+import { signOut } from 'next-auth/react'
 
 export default function ProtectedLayout({
   children,
@@ -59,7 +60,7 @@ export default function ProtectedLayout({
         onMenuToggle={() => setIsMenuOpen(!isMenuOpen)}
         isMenuOpen={isMenuOpen}
       />
-      <div className="flex-1 overflow-hidden relative z-0">
+      <div className="flex-1 overflow-y-auto relative z-0">
         {children}
       </div>
 
@@ -105,45 +106,17 @@ export default function ProtectedLayout({
                 <span>{t('header.calendar')}</span>
               </Link>
               
-              <Link
-                href="/settings"
-                onClick={() => setIsMenuOpen(false)}
-                className="block px-4 py-3 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-950/30 transition-colors text-gray-700 dark:text-gray-300 font-medium flex items-center gap-3"
-              >
-                <Settings className="w-5 h-5 flex-shrink-0" strokeWidth={2} />
-                <span>{t('header.settings')}</span>
-              </Link>
-              
               <div className="border-t border-gray-200/50 dark:border-gray-800/50 my-4 pt-4">
-                <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide px-4 mb-3">{t('header.language')}</p>
-                <div className="flex gap-2 px-4">
-                  <button
-                    onClick={() => {
-                      setLanguage('en')
-                      setIsMenuOpen(false)
-                    }}
-                    className={`flex-1 px-3 py-2 rounded-lg text-xs font-semibold transition-all ${
-                      language === 'en'
-                        ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
-                        : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
-                    }`}
-                  >
-                    🇬🇧 {t('header.english')}
-                  </button>
-                  <button
-                    onClick={() => {
-                      setLanguage('id')
-                      setIsMenuOpen(false)
-                    }}
-                    className={`flex-1 px-3 py-2 rounded-lg text-xs font-semibold transition-all ${
-                      language === 'id'
-                        ? 'bg-red-600 text-white shadow-lg shadow-red-500/20'
-                        : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
-                    }`}
-                  >
-                    🇮🇩 {t('header.indonesia')}
-                  </button>
-                </div>
+                <button
+                  onClick={() => {
+                    setIsMenuOpen(false)
+                    signOut({ redirect: true, callbackUrl: '/' })
+                  }}
+                  className="w-full text-left px-4 py-3 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors text-red-600 dark:text-red-400 font-medium flex items-center gap-3"
+                >
+                  <LogOut className="w-5 h-5 flex-shrink-0" strokeWidth={2} />
+                  <span>Logout</span>
+                </button>
               </div>
             </nav>
           </div>

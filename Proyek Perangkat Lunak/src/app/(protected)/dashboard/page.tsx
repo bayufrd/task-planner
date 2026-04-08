@@ -20,6 +20,7 @@ export default function Dashboard() {
   const [isLoading, setIsLoading] = useState(true)
 
   // Load tasks from database on mount
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     const loadTasks = async () => {
       if (!session?.user?.id) {
@@ -88,7 +89,7 @@ export default function Dashboard() {
         </div>
 
         {/* Tasks Display - Middle Section */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             {tasks.length === 0 ? (
               <div className="flex flex-col items-center justify-center min-h-[400px] text-center">

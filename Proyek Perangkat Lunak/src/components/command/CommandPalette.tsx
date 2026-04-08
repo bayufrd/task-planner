@@ -40,6 +40,7 @@ export default function CommandPalette({ isOpen, onClose, onOpen }: CommandPalet
   }, [isOpen])
 
   // Handle keyboard shortcuts
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
