@@ -2,11 +2,11 @@
 
 import { signIn } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import { Globe, ArrowRight, Sparkles, Moon, Sun } from 'lucide-react'
 import { useTheme } from '@/components/providers/ThemeProvider'
 
-export default function SignIn() {
+function SignInContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [isLoading, setIsLoading] = useState(false)
@@ -160,5 +160,26 @@ export default function SignIn() {
         </div>
       </div>
     </div>
+  )
+}
+
+// Loading fallback for Suspense
+function SignInLoading() {
+  return (
+    <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-gray-950 via-slate-900 to-indigo-950">
+      <div className="text-center">
+        <div className="w-12 h-12 border-4 border-blue-900 border-t-blue-400 rounded-full animate-spin mx-auto mb-4"></div>
+        <p className="text-gray-400">Loading...</p>
+      </div>
+    </div>
+  )
+}
+
+// Wrap with Suspense
+export default function SignIn() {
+  return (
+    <Suspense fallback={<SignInLoading />}>
+      <SignInContent />
+    </Suspense>
   )
 }
