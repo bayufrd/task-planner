@@ -105,17 +105,17 @@ export default function CommandPalette({ isOpen, onClose, onOpen }: CommandPalet
       setSuggestions(commands.filter(cmd => cmd.startsWith(trimmed)))
     } else if (trimmed.startsWith('add ') || trimmed === 'add') {
       setSuggestions([
-        'add meeting tomorrow 3pm high',
-        'add study session 2 hours deadline friday',
+        'add meeting besok jam 18:30 high',
+        'add study session 2 hours deadline friday 14.00',
         'add project review deadline next week medium',
         'add call with team tomorrow 10am',
       ])
     } else if (trimmed) {
       // Show example suggestions for natural language
       setSuggestions([
+        'add meeting besok 18:30',
         'add study session 2 hours deadline friday',
         'add project review deadline next week low',
-        'add meeting tomorrow 3pm high',
       ])
     } else {
       setSuggestions([])
@@ -142,10 +142,36 @@ export default function CommandPalette({ isOpen, onClose, onOpen }: CommandPalet
     const priorityMatch = text.match(/\b(high|medium|low)\b/i)
     const durationMatch = text.match(/(\d+)\s*(?:min|m|hour|h|hr|hours?)/i)
     
-    // Remove priority and duration from title
+    // Parse time - supports: 18:30, 18.30, 6pm, 6:30pm, 18.30, jam 18:30
+    const timeMatch = text.match(/(?:jam\s+)?(\d{1,2})[\.:\.‧]?(\d{2})?\s*(?:am|pm)?|\b(\d{1,2})\s*(?:am|pm)\b/i)
+    let hours = 0
+    let minutes = 0
+    
+    if (timeMatch) {
+      if (timeMatch[1]) {
+        // Format: 18:30 or 18.30 or just 18
+        hours = parseInt(timeMatch[1])
+        minutes = timeMatch[2] ? parseInt(timeMatch[2]) : 0
+        
+        // Check if PM was specified in the original text
+        const pmMatch = text.match(/(18|19|20|21|22|23)[\.:\.‧]?(\d{2})?\s*pm/i)
+        if (pmMatch || (text.toLowerCase().includes('pm') && hours < 12)) {
+          // Already in 24-hour format or needs AM/PM handling
+        }
+      } else if (timeMatch[3]) {
+        // Format: 6am, 6pm
+        hours = parseInt(timeMatch[3])
+        if (text.toLowerCase().includes('pm') && hours < 12) {
+          hours += 12
+        }
+      }
+    }
+    
+    // Remove priority, duration, and time from title
     let title = text
       .replace(/\b(high|medium|low)\b/i, '')
       .replace(/(\d+)\s*(?:min|m|hour|h|hr|hours?)/i, '')
+      .replace(/(?:jam\s+)?(\d{1,2})[\.:\.‧]?(\d{2})?\s*(?:am|pm)?|\b(\d{1,2})\s*(?:am|pm)\b/i, '')
       .trim()
 
     // Validate title
@@ -159,28 +185,36 @@ export default function CommandPalette({ isOpen, onClose, onOpen }: CommandPalet
       return
     }
 
-    // Calculate deadline
+    // Calculate deadline with time
     let deadlineDate = new Date()
     const lower = text.toLowerCase()
     
-    if (lower.includes('tomorrow')) {
+    if (lower.includes('besok') || lower.includes('tomorrow')) {
       deadlineDate.setDate(deadlineDate.getDate() + 1)
-    } else if (lower.includes('today')) {
+    } else if (lower.includes('hari ini') || lower.includes('today')) {
       deadlineDate.setHours(23, 59, 59, 999)
-    } else if (lower.includes('next week') || lower.includes('nextweek')) {
+    } else if (lower.includes('next week') || lower.includes('nextweek') || lower.includes('minggu depan')) {
       deadlineDate.setDate(deadlineDate.getDate() + 7)
-    } else if (lower.includes('friday')) {
+    } else if (lower.includes('friday') || lower.includes('jumat')) {
       const day = deadlineDate.getDay()
       const daysUntilFriday = (5 - day + 7) % 7 || 7
       deadlineDate.setDate(deadlineDate.getDate() + daysUntilFriday)
-    } else if (lower.includes('monday')) {
+    } else if (lower.includes('monday') || lower.includes('senin')) {
       const day = deadlineDate.getDay()
       const daysUntilMonday = (1 - day + 7) % 7 || 7
       deadlineDate.setDate(deadlineDate.getDate() + daysUntilMonday)
-    } else if (lower.includes('next month')) {
+    } else if (lower.includes('next month') || lower.includes('bulan depan')) {
       deadlineDate.setMonth(deadlineDate.getMonth() + 1)
     } else {
       deadlineDate.setDate(deadlineDate.getDate() + 1)
+    }
+    
+    // Set the parsed time
+    if (hours > 0 || minutes > 0) {
+      deadlineDate.setHours(hours, minutes, 0, 0)
+    } else {
+      // Default time if no time specified
+      deadlineDate.setHours(9, 0, 0, 0) // 9 AM default
     }
 
     const newTask = {
@@ -199,7 +233,11 @@ export default function CommandPalette({ isOpen, onClose, onOpen }: CommandPalet
     setSuggestions([])
     onClose()
 
-    showNotification(`✅ Task added: ${newTask.title}`)
+    // Format time for notification
+    const timeStr = hours > 0 || minutes > 0 
+      ? ` at ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`
+      : ''
+    showNotification(`✅ Task added: ${newTask.title}${timeStr}`)
   }
 
   const processCommand = (text: string) => {
@@ -256,14 +294,14 @@ export default function CommandPalette({ isOpen, onClose, onOpen }: CommandPalet
     <>
       {/* Overlay - Click outside to close */}
       <div
-        className="fixed inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-md z-50 transition-opacity duration-200 cursor-pointer"
+        className="fixed inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-md z-[9998] transition-opacity duration-200 cursor-pointer"
         onClick={onClose}
         role="presentation"
       />
 
       {/* Command Palette Modal Container */}
       <div 
-        className="fixed inset-0 z-60 flex items-start justify-center pt-16 px-4 sm:pt-20 pointer-events-none"
+        className="fixed inset-0 z-[9999] flex items-start justify-center pt-16 px-4 sm:pt-20 pointer-events-none"
         onClick={(e) => {
           if (e.target === e.currentTarget) {
             onClose()

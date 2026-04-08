@@ -66,7 +66,7 @@ export default function TaskCard({ task, scoreInfo }: TaskCardProps) {
             <div className="flex items-center gap-1.5 px-2.5 py-1 bg-gray-100/80 dark:bg-gray-800/50 rounded-lg text-gray-700 dark:text-gray-300">
               <Clock className="w-3.5 h-3.5" strokeWidth={2} />
               <time className="text-xs font-medium">
-                {format(new Date(task.deadline), 'MMM d')}
+                {format(new Date(task.deadline), 'MMM d • HH:mm')}
               </time>
             </div>
 
