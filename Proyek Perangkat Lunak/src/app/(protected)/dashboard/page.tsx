@@ -1,18 +1,69 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useTaskStore } from '@/lib/store'
+import { useSession } from 'next-auth/react'
+import { useTaskStore } from '@/lib/utils/store'
 import { useLanguage } from '@/components/providers/LanguageProvider'
 import { useCommandPalette } from '@/components/providers/CommandPaletteProvider'
+import { useNotification } from '@/lib/hooks/useNotification'
 import CalendarTimeline from '@/components/calendar/CalendarTimeline'
 import TaskPriorityList from '@/components/tasks/TaskPriorityList'
 import CommandPalette from '@/components/command/CommandPalette'
 import { Plus, Command, CheckSquare2 } from 'lucide-react'
 
 export default function Dashboard() {
-  const { tasks } = useTaskStore()
+  const { data: session } = useSession()
+  const { tasks, setTasks } = useTaskStore()
   const { t } = useLanguage()
   const { isOpen, open, close } = useCommandPalette()
+  const notify = useNotification()
+  const [isLoading, setIsLoading] = useState(true)
+
+  // Load tasks from database on mount
+  useEffect(() => {
+    const loadTasks = async () => {
+      if (!session?.user?.id) {
+        setIsLoading(false)
+        return
+      }
+
+      try {
+        setIsLoading(true)
+        const response = await fetch('/api/tasks?limit=100&page=1')
+        
+        if (!response.ok) {
+          console.error('Failed to fetch tasks:', response.statusText)
+          return
+        }
+
+        const data = await response.json()
+        
+        // Transform database tasks to store format
+        if (data.data && Array.isArray(data.data)) {
+          const formattedTasks = data.data.map((task: any) => ({
+            id: task.id,
+            title: task.title,
+            description: task.description || '',
+            deadline: task.deadline,
+            priority: task.priority as 'HIGH' | 'MEDIUM' | 'LOW',
+            status: task.status as 'TODO' | 'IN_PROGRESS' | 'DONE',
+            estimatedDuration: task.estimatedDuration,
+            tags: [],
+            reminderTime: task.reminderTime,
+          }))
+          
+          setTasks(formattedTasks)
+          console.log(`📥 Loaded ${formattedTasks.length} tasks from database`)
+        }
+      } catch (error) {
+        console.error('Error loading tasks:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    loadTasks()
+  }, [session?.user?.id])
 
   // Global keyboard listener for Ctrl+K
   useEffect(() => {

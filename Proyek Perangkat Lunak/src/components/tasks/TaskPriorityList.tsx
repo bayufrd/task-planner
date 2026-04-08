@@ -1,9 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import { useTaskStore } from '@/lib/store'
+import { useTaskStore } from '@/lib/utils/store'
 import { useLanguage } from '@/components/providers/LanguageProvider'
-import { prioritizeTasks } from '@/lib/priorityScheduling'
+import { prioritizeTasks } from '@/lib/utils/priority'
 import TaskCard from './TaskCard'
 import { Calendar, Zap, ListTodo } from 'lucide-react'
 

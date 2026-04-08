@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useTaskStore } from '@/lib/store'
+import { useTaskStore } from '@/lib/utils/store'
 import { useLanguage } from '@/components/providers/LanguageProvider'
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths } from 'date-fns'
 import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react'

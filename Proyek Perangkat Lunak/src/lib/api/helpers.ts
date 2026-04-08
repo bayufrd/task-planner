@@ -1,6 +1,6 @@
 /**
- * API Response Helper
- * Standardized API responses
+ * API Helper Functions
+ * Standardized API response handling
  */
 
 export interface ApiResponse<T> {

@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { useTaskStore } from '@/lib/store'
+import { useTaskStore } from '@/lib/utils/store'
 import { useLanguage } from '@/components/providers/LanguageProvider'
+import { useNotification } from '@/lib/hooks/useNotification'
 import { Search, X, Lightbulb, Command, History, ArrowUp, ArrowDown } from 'lucide-react'
 
 interface CommandPaletteProps {
@@ -13,10 +14,12 @@ interface CommandPaletteProps {
 
 export default function CommandPalette({ isOpen, onClose, onOpen }: CommandPaletteProps) {
   const { t } = useLanguage()
+  const notify = useNotification()
   const [input, setInput] = useState('')
   const [suggestions, setSuggestions] = useState<string[]>([])
   const [history, setHistory] = useState<string[]>([])
   const [historyIndex, setHistoryIndex] = useState<number>(-1)
+  const [isLoading, setIsLoading] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const { addTask } = useTaskStore()
 
@@ -137,7 +140,7 @@ export default function CommandPalette({ isOpen, onClose, onOpen }: CommandPalet
     processCommand(suggestion)
   }
 
-  const parseAndCreateTask = (text: string) => {
+  const parseAndCreateTask = async (text: string) => {
     // More robust parsing for task creation
     const priorityMatch = text.match(/\b(high|medium|low)\b/i)
     const durationMatch = text.match(/(\d+)\s*(?:min|m|hour|h|hr|hours?)/i)
@@ -176,12 +179,12 @@ export default function CommandPalette({ isOpen, onClose, onOpen }: CommandPalet
 
     // Validate title
     if (!title || title.length < 2) {
-      showNotification('❌ Task title too short (minimum 2 characters)')
+      notify.warning('Task title too short (minimum 2 characters)')
       return
     }
 
     if (title.length > 200) {
-      showNotification('❌ Task title too long (maximum 200 characters)')
+      notify.warning('Task title too long (maximum 200 characters)')
       return
     }
 
@@ -228,19 +231,49 @@ export default function CommandPalette({ isOpen, onClose, onOpen }: CommandPalet
       tags: [],
     }
 
-    addTask(newTask)
-    setInput('')
-    setSuggestions([])
-    onClose()
+    setIsLoading(true)
+    try {
+      // Call API to create task and sync to Google Calendar
+      const response = await fetch('/api/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newTask),
+      })
 
-    // Format time for notification
-    const timeStr = hours > 0 || minutes > 0 
-      ? ` at ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`
-      : ''
-    showNotification(`✅ Task added: ${newTask.title}${timeStr}`)
+      const data = await response.json()
+
+      if (!response.ok) {
+        console.error('Failed to create task:', data)
+        notify.error(`Failed to add task: ${data.error || 'Unknown error'}`)
+        return
+      }
+
+      // Also add to local store for UI
+      addTask(newTask)
+      
+      setInput('')
+      setSuggestions([])
+      onClose()
+
+      // Format time for notification
+      const timeStr = hours > 0 || minutes > 0 
+        ? ` at ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`
+        : ''
+      
+      const syncStatus = data.data?.googleCalendarSync?.synced 
+        ? ' (synced to Google Calendar)'
+        : ''
+      
+      notify.success(`Task added: ${newTask.title}${timeStr}${syncStatus}`)
+    } catch (error) {
+      console.error('Error creating task:', error)
+      notify.error(error instanceof Error ? error.message : 'Unknown error')
+    } finally {
+      setIsLoading(false)
+    }
   }
 
-  const processCommand = (text: string) => {
+  const processCommand = async (text: string) => {
     const trimmed = text.trim()
 
     if (!trimmed) return
@@ -257,7 +290,7 @@ export default function CommandPalette({ isOpen, onClose, onOpen }: CommandPalet
         case '/task':
           const taskText = trimmed.replace(/^\/(?:add|task)\s*/i, '').trim()
           if (taskText) {
-            parseAndCreateTask(taskText)
+            await parseAndCreateTask(taskText)
           }
           break
         case '/list':
@@ -270,22 +303,17 @@ export default function CommandPalette({ isOpen, onClose, onOpen }: CommandPalet
           onClose()
           break
         case '/help':
-          showNotification('Commands: /add, /list, /today')
+          notify.info('Commands: /add, /list, /today')
           setInput('')
           break
         default:
-          showNotification('❌ Unknown command. Try /help')
+          notify.error('Unknown command. Try /help')
       }
       return
     }
 
     // Parse natural language
-    parseAndCreateTask(trimmed)
-  }
-
-  const showNotification = (message: string) => {
-    // You can add a toast notification here
-    console.log('✅', message)
+    await parseAndCreateTask(trimmed)
   }
 
   if (!isOpen) return null

@@ -1,8 +1,8 @@
 'use client'
 
-import { Task } from '@/lib/store'
-import { TaskWithScore } from '@/lib/priorityScheduling'
-import { useTaskStore } from '@/lib/store'
+import { Task } from '@/lib/utils/store'
+import { TaskWithScore } from '@/lib/utils/priority'
+import { useTaskStore } from '@/lib/utils/store'
 import { format } from 'date-fns'
 import { Clock, CheckCircle2, Pause, Trash2, Play, RotateCcw } from 'lucide-react'
 import { TaskStatusIcons, PriorityIcons } from '@/lib/constants/icons'

@@ -3,16 +3,10 @@
  * Helper functions for database operations
  */
 
-import { PrismaClient } from '@prisma/client'
+export { prisma, default } from './index'
 
-// Prevent multiple instances of Prisma in development
-const globalForPrisma = global as unknown as { prisma: PrismaClient }
-
-export const prisma = globalForPrisma.prisma || new PrismaClient()
-
-if (process.env.NODE_ENV !== 'production') {
-  globalForPrisma.prisma = prisma
-}
+const prismaModule = require('./index')
+const prisma = prismaModule.prisma
 
 export async function connectDB() {
   try {
