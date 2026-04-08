@@ -10,7 +10,7 @@ import Header from '@/components/layout/Header'
 import { useTheme } from '@/components/providers/ThemeProvider'
 import { useCommandPalette } from '@/components/providers/CommandPaletteProvider'
 import { useLanguage } from '@/components/providers/LanguageProvider'
-import { Search, CheckSquare2, Calendar, LogOut } from 'lucide-react'
+import { Search, CheckSquare2, LogOut } from 'lucide-react'
 import { signOut } from 'next-auth/react'
 
 export default function ProtectedLayout({
@@ -141,15 +141,6 @@ export default function ProtectedLayout({
               >
                 <CheckSquare2 className="w-5 h-5 flex-shrink-0" strokeWidth={2} />
                 <span>{t('header.dashboard')}</span>
-              </Link>
-              
-              <Link
-                href="/calendar"
-                onClick={() => setIsMenuOpen(false)}
-                className="block px-4 py-3 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-950/30 transition-colors text-gray-700 dark:text-gray-300 font-medium flex items-center gap-3"
-              >
-                <Calendar className="w-5 h-5 flex-shrink-0" strokeWidth={2} />
-                <span>{t('header.calendar')}</span>
               </Link>
               
               <div className="border-t border-gray-200/50 dark:border-gray-800/50 my-4 pt-4">

@@ -29,38 +29,22 @@ import {
 import { useTheme } from '@/components/providers/ThemeProvider'
 import { useLanguage } from '@/components/providers/LanguageProvider'
 
+// Static video paths
+const VIDEOS = {
+  hero: '/vids/ac7d1492-c7ee-42d2-b937-fe801c4e48f6.mp4',
+  features1: '/vids/motion_2.0_Indonesian_young_professional_working_at_desk_laptop_open_smartphone_beside_him_-0.mp4',
+  features2: '/vids/motion_2.0_Indonesian_young_woman_smiling_gently_while_looking_at_her_smartphone_with_sched-0.mp4',
+  timeline: '/vids/veo-3.1-fast-generate-001_scene_1_title_POV_Opening_-_AI_Planner_Terminal_duration_4-5_seconds_camera_firs-0.mp4',
+  cta: '/vids/motion_2.0_Indonesian_young_adult_looking_calm_and_productive_holding_smartphone_while_view-0.mp4'
+}
+
 export default function LandingPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
-  const [isLoading, setIsLoading] = useState(false)
   const { theme: currentTheme, toggleTheme } = useTheme()
   const { language, setLanguage, t } = useLanguage()
   const [mounted, setMounted] = useState(false)
-  const theme = currentTheme // Use actual theme from ThemeProvider instead of hardcoding
-
-  // Fixed hero video
-  const heroVideo = '71c87278-d28e-4933-bbba-25dccdca5117.mp4'
-  
-  // Sequential videos for sections after hero
-  const sequentialVideos = [
-    'motion_2.0_Indonesian_young_professional_working_at_desk_laptop_open_smartphone_beside_him_-0.mp4',
-    'motion_2.0_Indonesian_young_woman_smiling_gently_while_looking_at_her_smartphone_with_sched-0.mp4',
-    'veo-3.1-fast-generate-001_scene_1_title_POV_Opening_-_AI_Planner_Terminal_duration_4-5_seconds_camera_firs-0.mp4',
-    'motion_2.0_Indonesian_young_adult_looking_calm_and_productive_holding_smartphone_while_view-0.mp4'
-  ]
-
-  let videoIndex = 0
-
-  const getNextVideo = () => {
-    const video = sequentialVideos[videoIndex % sequentialVideos.length]
-    videoIndex++
-    return video
-  }
-
-  const getRandomPosition = () => {
-    const positions = ['left', 'right', 'center']
-    return positions[Math.floor(Math.random() * positions.length)]
-  }
+  const theme = currentTheme
 
   useEffect(() => {
     setMounted(true)
@@ -73,8 +57,7 @@ export default function LandingPage() {
   }, [status, router])
 
   const handleStartNow = async () => {
-    setIsLoading(true)
-    await signIn('google', { redirect: true, callbackUrl: '/dashboard' })
+    router.push('/auth/signin?callbackUrl=%2Fdashboard')
   }
 
   const features = [
@@ -148,12 +131,14 @@ export default function LandingPage() {
 
   return (
     <div className={`min-h-screen w-full transition-colors ${theme === 'dark' ? 'bg-gradient-to-br from-gray-950 via-slate-900 to-indigo-950' : 'bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50'}`}>
-      {/* Decorative Background */}
+      {/* Decorative Background - Only render after mount untuk avoid CLS */}
+      {mounted && (
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className={`absolute top-0 left-1/4 w-96 h-96 rounded-full blur-3xl ${theme === 'dark' ? 'bg-blue-900/20' : 'bg-blue-300/20'}`}></div>
         <div className={`absolute bottom-0 right-1/4 w-96 h-96 rounded-full blur-3xl ${theme === 'dark' ? 'bg-indigo-900/20' : 'bg-indigo-300/20'}`}></div>
         <div className={`absolute top-1/2 left-1/2 w-96 h-96 rounded-full blur-3xl transform -translate-x-1/2 -translate-y-1/2 ${theme === 'dark' ? 'bg-cyan-900/10' : 'bg-cyan-300/10'}`}></div>
       </div>
+      )}
 
       {/* Content */}
       <div className="relative z-10">
@@ -210,10 +195,9 @@ export default function LandingPage() {
               {/* Sign In Button */}
               <button
                 onClick={handleStartNow}
-                disabled={isLoading}
-                className="px-6 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:from-blue-500 disabled:to-indigo-500 text-white rounded-lg font-semibold text-sm transition-all duration-200 shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40"
+                className="px-6 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg font-semibold text-sm transition-all duration-200 shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40"
               >
-                {isLoading ? 'Signing in...' : 'Sign In'}
+                Sign In
               </button>
             </div>
           </div>
@@ -254,20 +238,10 @@ export default function LandingPage() {
               <div className="flex flex-col sm:flex-row gap-4 pt-4">
                 <button
                   onClick={handleStartNow}
-                  disabled={isLoading}
-                  className="px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:from-blue-500 disabled:to-indigo-500 text-white rounded-xl font-bold text-lg transition-all duration-200 flex items-center justify-center gap-2 shadow-2xl shadow-blue-500/40 hover:shadow-2xl hover:shadow-blue-500/50 hover:scale-105"
+                  className="px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl font-bold text-lg transition-all duration-200 flex items-center justify-center gap-2 shadow-2xl shadow-blue-500/40 hover:shadow-2xl hover:shadow-blue-500/50 hover:scale-105"
                 >
-                  {isLoading ? (
-                    <>
-                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      {mounted && language === 'id' ? 'Masuk...' : 'Signing in...'}
-                    </>
-                  ) : (
-                    <>
-                      {mounted && language === 'id' ? 'Mulai Sekarang' : 'Start Now'}
-                      <ArrowRight className="w-5 h-5" strokeWidth={2} />
-                    </>
-                  )}
+                  {mounted && language === 'id' ? 'Mulai Sekarang' : 'Start Now'}
+                  <ArrowRight className="w-5 h-5" strokeWidth={2} />
                 </button>
               </div>
 
@@ -288,7 +262,7 @@ export default function LandingPage() {
                 className="w-full h-full object-cover object-left-center rounded-2xl"
                 style={{ objectPosition: '2px center' }}
               >
-                <source src="/vids/ac7d1492-c7ee-42d2-b937-fe801c4e48f6.mp4" type="video/mp4" />
+                <source src={VIDEOS.hero} type="video/mp4" />
               </video>
               <div className="absolute inset-0 bg-gradient-to-t from-gray-950/20 to-transparent pointer-events-none rounded-2xl"></div>
             </div>
@@ -339,7 +313,7 @@ export default function LandingPage() {
                 playsInline
                 className="w-full h-full object-cover"
               >
-                <source src={`/vids/${getNextVideo()}`} type="video/mp4" />
+                <source src={VIDEOS.features1} type="video/mp4" />
               </video>
               <div className="absolute inset-0 bg-gradient-to-t from-gray-950/20 to-transparent pointer-events-none"></div>
             </div>
@@ -370,7 +344,7 @@ export default function LandingPage() {
                 playsInline
                 className="w-full h-full object-cover"
               >
-                <source src={`/vids/${getNextVideo()}`} type="video/mp4" />
+                <source src={VIDEOS.features2} type="video/mp4" />
               </video>
               <div className="absolute inset-0 bg-gradient-to-t from-gray-950/20 to-transparent pointer-events-none"></div>
             </div>
@@ -463,7 +437,7 @@ export default function LandingPage() {
                 playsInline
                 className="w-full h-full object-cover"
               >
-                <source src={`/vids/${getNextVideo()}`} type="video/mp4" />
+                <source src={VIDEOS.timeline} type="video/mp4" />
               </video>
               <div className="absolute inset-0 bg-gradient-to-t from-gray-950/20 to-transparent pointer-events-none"></div>
             </div>
@@ -525,7 +499,7 @@ export default function LandingPage() {
               playsInline
               className="w-full h-full object-cover"
             >
-              <source src="/vids/motion_2.0_Indonesian_young_adult_looking_calm_and_productive_holding_smartphone_while_view-0.mp4" type="video/mp4" />
+              <source src={VIDEOS.cta} type="video/mp4" />
             </video>
             {/* Blur Glass Overlay */}
             <div className="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
@@ -545,20 +519,10 @@ export default function LandingPage() {
               </p>
               <button
                 onClick={handleStartNow}
-                disabled={isLoading}
-                className="px-10 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:from-blue-500 disabled:to-indigo-500 text-white rounded-xl font-bold text-lg transition-all duration-200 inline-flex items-center gap-2 shadow-2xl shadow-blue-500/40 hover:shadow-2xl hover:shadow-blue-500/50 hover:scale-105"
+                className="px-10 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl font-bold text-lg transition-all duration-200 inline-flex items-center gap-2 shadow-2xl shadow-blue-500/40 hover:shadow-2xl hover:shadow-blue-500/50 hover:scale-105"
               >
-                {isLoading ? (
-                  <>
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    {mounted && language === 'id' ? 'Masuk...' : 'Signing in...'}
-                  </>
-                ) : (
-                  <>
-                    {mounted && language === 'id' ? 'Mulai Sekarang' : 'Start Now'}
-                    <ArrowRight className="w-5 h-5" strokeWidth={2} />
-                  </>
-                )}
+                {mounted && language === 'id' ? 'Mulai Sekarang' : 'Start Now'}
+                <ArrowRight className="w-5 h-5" strokeWidth={2} />
               </button>
             </div>
           </div>

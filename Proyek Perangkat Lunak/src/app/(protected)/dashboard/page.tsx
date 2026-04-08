@@ -9,6 +9,7 @@ import { useNotification } from '@/lib/hooks/useNotification'
 import CalendarTimeline from '@/components/calendar/CalendarTimeline'
 import TaskPriorityList from '@/components/tasks/TaskPriorityList'
 import CommandPalette from '@/components/command/CommandPalette'
+import NewTaskModal from '@/components/tasks/NewTaskModal'
 import { Plus, Command, CheckSquare2 } from 'lucide-react'
 
 export default function Dashboard() {
@@ -18,6 +19,7 @@ export default function Dashboard() {
   const { isOpen, open, close } = useCommandPalette()
   const notify = useNotification()
   const [isLoading, setIsLoading] = useState(true)
+  const [isNewTaskModalOpen, setIsNewTaskModalOpen] = useState(false)
 
   // Load tasks from database on mount
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -83,6 +85,20 @@ export default function Dashboard() {
     <div 
       className="flex flex-col h-full bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-50"
     >
+      {/* Header with New Task Button - Sticky */}
+      <div className="flex-shrink-0 sticky top-0 z-20 border-b border-gray-200/50 dark:border-gray-800/50 bg-white/80 dark:bg-gray-950/80 backdrop-blur-sm px-4 sm:px-6 lg:px-8 py-4">
+        <div className="max-w-6xl mx-auto flex items-center justify-between">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Tasks</h1>
+          <button
+            onClick={() => setIsNewTaskModalOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg font-medium text-sm transition-all duration-200 shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 hover:scale-105"
+          >
+            <Plus className="w-4 h-4" strokeWidth={2.5} />
+            New Task
+          </button>
+        </div>
+      </div>
+
         {/* Calendar Timeline - Top Section */}
         <div className="flex-shrink-0 border-b border-gray-200/50 dark:border-gray-800/50 bg-gradient-to-b from-white/80 to-gray-50/80 dark:from-gray-900/80 dark:to-gray-950/80 backdrop-blur-sm">
           <CalendarTimeline />
@@ -127,6 +143,12 @@ export default function Dashboard() {
         isOpen={isOpen}
         onClose={close}
         onOpen={open}
+      />
+
+      {/* New Task Modal */}
+      <NewTaskModal
+        isOpen={isNewTaskModalOpen}
+        onClose={() => setIsNewTaskModalOpen(false)}
       />
     </div>
   )
