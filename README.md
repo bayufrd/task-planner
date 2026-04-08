@@ -6,7 +6,7 @@
 [![Next.js](https://img.shields.io/badge/Next.js-14.2-black)](https://nextjs.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.3-blue)](https://www.typescriptlang.org)
 
-[🌐 Live Demo](https://taskplanner.dastrevas.com) | [📚 Documentation](./docs) | [🚀 Deployment Guide](./docs/DEPLOYMENT.md)
+[🌐 Live Demo](https://taskplanner.dastrevas.com) | [📚 Documentation](./docs) | [🚀 Deployment Guide](./docs/DEPLOYMENT.md) | [📦 GitLab Repo](https://gitlab.com/pemrograman-fullstack-kelompok-4-undira/task-planner.git)
 
 ---
 
@@ -14,7 +14,9 @@
 
 Smart Task Planner is a fullstack web application designed for students, freelancers, and professionals who need intelligent task management with automatic priority scheduling. Unlike traditional to-do apps, Smart Task Planner uses a sophisticated 4-factor algorithm to automatically rank your tasks based on urgency, importance, reminders, and estimated duration.
 
-**Capstone Project**: Fullstack Software Engineering | taskplanner
+**Project Type**: TUGAS BESAR KELOMPOK - Fullstack Software Engineering
+**Location**: `Proyek Perangkat Lunak/Pemrograman Fullstack/task-planner`
+**Repository**: [GitLab - Pemrograman Fullstack Kelompok 4 UNDIRA](https://gitlab.com/pemrograman-fullstack-kelompok-4-undira/task-planner.git)
 
 ---
 
@@ -203,8 +205,7 @@ See [docs/phase0/DATABASE_SETUP.md](./docs/phase0/DATABASE_SETUP.md) for detaile
 ---
 
 ## 🤝 Contributing
-
-This project is maintained as a Capstone Software Engineering project. For academic inquiries, contact the development team.
+This project is maintained as a Capstone Software Engineering and Fullstack Programming project. For academic or programming-related inquiries, contact the development team.
 
 ---
 
@@ -236,4 +237,4 @@ Built as a Fullstack Software Engineering Capstone Project demonstrating modern 
 
 ---
 
-*Last Updated: 2024 | Deployed at https://taskplanner.dastrevas.com*
+*Last Updated: 2026 | Deployed at https://taskplanner.dastrevas.com*

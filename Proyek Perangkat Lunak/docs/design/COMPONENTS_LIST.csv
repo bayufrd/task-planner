@@ -1,0 +1,45 @@
+Component Name,Type,Width,Height,Color,Description,Icon,Variants
+Header,Layout,1440,64,white/80,Top navigation bar with logo and controls,✓,Normal|Mobile
+Logo & Title,Group,200,48,white,Branding with checkmark icon,✓,
+Command Button,Button,120,40,#3B82F6,Open command palette,🔍,Normal|Hover|Disabled
+Language Toggle,Radio Group,100,40,#F3F4F6,EN/ID switch,🌐,EN|ID
+Theme Toggle,Button,40,40,#F3F4F6,Light/Dark mode,🌙☀️,Light|Dark
+Menu Button,Button,40,40,#F3F4F6,Hamburger menu,☰,Closed|Open
+Calendar Today,Card,320,80,Gradient-Primary,Quick view for today,📅,
+Calendar Day Cell,Cell,40,40,#FFFFFF,Individual day in calendar,📌,Default|Selected|Today|Other-Month
+Task Card,Card,1408,90,white,Complete task item with actions,✓,TODO|IN-PROGRESS|DONE
+Task Title,Text,auto,24,#111827,Task heading,H3,
+Task Meta Badges,Badge,auto,28,varies,Priority/Deadline/Duration,🏷️,High|Medium|Low
+Task Score Box,Box,80,60,Gradient-Primary,Priority score display,📊,
+Action Button - Done,Button,32,32,#10B981,Mark task complete,✓,Active|Inactive
+Action Button - Start,Button,32,32,#3B82F6,Start task timer,▶️,Play|Pause
+Action Button - Delete,Button,32,32,#DC2626,Delete task,🗑️,Normal|Hover
+Priority Badge,Badge,80,28,varies,Task priority indicator,🔴,High|Medium|Low
+Status Badge,Badge,auto,24,varies,Task status indicator,📌,Todo|In-Progress|Done
+Tag Badge,Badge,auto,20,#3B82F6,Task tag/category,🏷️,
+Command Palette,Modal,800,600,white,Quick command input,🔍,
+Command Input,Input,760,60,Gradient-Primary,Search/command input,🔍,Normal|Focus
+Suggestion Item,Item,760,50,white,Command suggestion,💡,Natural-Language|Slash-Command|History
+Help Section,Group,800,150,#F9FAFB,Command help text,❓,
+Primary Button,Button,120,40,Gradient-Primary,Default button style,⚡,Normal|Hover|Disabled
+Secondary Button,Button,120,40,#F3F4F6,Secondary button style,⚪,Normal|Hover|Disabled
+Icon Button,Button,40,40,transparent,Icon-only button,🎨,Normal|Hover|Disabled
+Empty State,Card,500,300,white,No tasks/data state,📭,No-Tasks|No-Search-Results
+Calendar Timeline,Container,1440,280,white,Month calendar view,📅,
+Task List Container,Container,1440,556,white,All tasks display,📋,
+View Mode Selector,Group,300,40,#F3F4F6,Today/Upcoming/All toggle,⚡,Today|Upcoming|All
+Statistics Card,Card,300,100,Gradient-varies,Task statistics display,📊,Total|High|Average
+Mobile Header,Layout,375,64,white/80,Mobile navigation,✓,Compact
+Mobile Calendar,Container,375,280,white,Mobile calendar,📅,Responsive
+Mobile Task Card,Card,375,90,white,Mobile task item,✓,Responsive
+Modal Overlay,Overlay,auto,auto,#000000,Background overlay,⬛,Opacity-40
+Focus Ring,Ring,auto,auto,#3B82F6,Keyboard focus indicator,⭕,2px-Outline
+Divider,Line,auto,1,#E5E7EB,Visual separator,➖,
+Dropdown,Component,auto,auto,white,Dropdown menu,▾,Closed|Open
+Tooltip,Component,auto,auto,#1F2937,Tooltip/help text,💬,
+Loading Spinner,Component,24,24,#3B82F6,Loading indicator,⟳,Spinning
+Progress Bar,Component,auto,4,#3B82F6,Progress indicator,▓,0-100%
+Alert Box,Component,auto,60,varies,Alert/notification,⚠️,Info|Success|Warning|Error
+Text Input,Component,auto,40,white,Text input field,✏️,Normal|Focus|Error
+Checkbox,Component,20,20,#3B82F6,Checkbox control,☑️,Checked|Unchecked
+Radio Button,Component,20,20,#3B82F6,Radio button control,◯,Selected|Unselected

@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Task Planner - Component Library Preview</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * { --tw-shadow-color: rgba(59, 130, 246, 0.5); }
+        .gradient-primary { background: linear-gradient(135deg, #3B82F6 0%, #06B6D4 100%); }
+        .gradient-warning { background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%); }
+        .gradient-danger { background: linear-gradient(135deg, #EF4444 0%, #F97316 100%); }
+        .gradient-success { background: linear-gradient(135deg, #10B981 0%, #059669 100%); }
+        .badge-high { background: linear-gradient(135deg, #DC2626 0%, #F97316 100%); }
+        .badge-medium { background: linear-gradient(135deg, #EAB308 0%, #F97316 100%); }
+        .badge-low { background: linear-gradient(135deg, #16A34A 0%, #059669 100%); }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-950">
+    <div class="min-h-screen">
+        <!-- Navigation -->
+        <nav class="sticky top-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-800/50 z-50">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center h-16">
+                    <div class="flex items-center gap-3">
+                        <div class="gradient-primary w-8 h-8 rounded-lg flex items-center justify-center text-white">
+                            <i class="fas fa-check"></i>
+                        </div>
+                        <h1 class="text-xl font-bold">Smart Task Planner</h1>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <button class="p-2 hover:bg-gray-100 rounded-lg">
+                            <i class="fas fa-search text-gray-600"></i>
+                        </button>
+                        <button class="p-2 hover:bg-gray-100 rounded-lg">
+                            <i class="fas fa-moon text-gray-600"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <!-- Header -->
+            <section class="mb-16">
+                <h2 class="text-3xl font-bold mb-2">Component Library</h2>
+                <p class="text-gray-600">Design system components for Smart Task Planner</p>
+            </section>
+
+            <!-- Components Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- 1. Buttons -->
+                <div class="bg-white dark:bg-gray-900 rounded-2xl p-8 shadow-md">
+                    <h3 class="text-xl font-bold mb-6">Buttons</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <p class="text-sm text-gray-600 mb-2">Primary Button</p>
+                            <button class="gradient-primary text-white px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all transform hover:scale-105">
+                                Add Task
+                            </button>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600 mb-2">Secondary Button</p>
+                            <button class="bg-gray-100 text-gray-700 px-4 py-2.5 rounded-lg hover:bg-gray-200 transition-colors">
+                                Cancel
+                            </button>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600 mb-2">Icon Buttons</p>
+                            <div class="flex gap-2">
+                                <button class="p-2 hover:bg-gray-100 rounded-lg"><i class="fas fa-play text-blue-600"></i></button>
+                                <button class="p-2 hover:bg-gray-100 rounded-lg"><i class="fas fa-pause text-blue-600"></i></button>
+                                <button class="p-2 hover:bg-gray-100 rounded-lg"><i class="fas fa-trash text-red-600"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. Badges -->
+                <div class="bg-white dark:bg-gray-900 rounded-2xl p-8 shadow-md">
+                    <h3 class="text-xl font-bold mb-6">Badges</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <p class="text-sm text-gray-600 mb-2">Priority Badges</p>
+                            <div class="flex gap-2 flex-wrap">
+                                <span class="badge-high text-white px-3 py-1.5 rounded-lg text-xs font-semibold">HIGH</span>
+                                <span class="badge-medium text-white px-3 py-1.5 rounded-lg text-xs font-semibold">MEDIUM</span>
+                                <span class="badge-low text-white px-3 py-1.5 rounded-lg text-xs font-semibold">LOW</span>
+                            </div>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600 mb-2">Status Badges</p>
+                            <div class="flex gap-2 flex-wrap">
+                                <span class="bg-blue-100 text-blue-700 px-2 py-1 rounded-md text-xs">Due Today</span>
+                                <span class="bg-yellow-100 text-yellow-700 px-2 py-1 rounded-md text-xs">Overdue</span>
+                                <span class="bg-green-100 text-green-700 px-2 py-1 rounded-md text-xs">Completed</span>
+                            </div>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600 mb-2">Tag Badges</p>
+                            <div class="flex gap-2 flex-wrap">
+                                <span class="bg-blue-100/80 text-blue-700 px-2 py-1 rounded-md text-xs">#work</span>
+                                <span class="bg-blue-100/80 text-blue-700 px-2 py-1 rounded-md text-xs">#important</span>
+                                <span class="bg-blue-100/80 text-blue-700 px-2 py-1 rounded-md text-xs">#urgent</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. Task Card -->
+                <div class="bg-white dark:bg-gray-900 rounded-2xl p-8 shadow-md lg:col-span-2">
+                    <h3 class="text-xl font-bold mb-6">Task Card</h3>
+                    <div class="border-l-4 border-blue-600 bg-white dark:bg-gray-800 rounded-xl p-4 shadow-md hover:shadow-lg transition-shadow">
+                        <div class="flex justify-between items-start gap-4">
+                            <div class="flex-1">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <span class="text-2xl">✅</span>
+                                    <h4 class="text-lg font-semibold">Design new landing page</h4>
+                                </div>
+                                <p class="text-sm text-gray-600 mb-3">Create a modern and responsive landing page design</p>
+                                <div class="flex gap-2 flex-wrap mb-3">
+                                    <span class="badge-high text-white px-3 py-1.5 rounded-lg text-xs font-semibold">HIGH</span>
+                                    <span class="bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-xs flex items-center gap-1">
+                                        <i class="fas fa-calendar-alt"></i> Due Apr 10
+                                    </span>
+                                    <span class="bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-xs flex items-center gap-1">
+                                        <i class="fas fa-hourglass"></i> 2 days
+                                    </span>
+                                    <span class="bg-blue-100/80 text-blue-700 px-2 py-1 rounded-md text-xs">#design</span>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <div class="gradient-primary text-white px-4 py-2 rounded-lg text-center mb-3">
+                                    <div class="text-2xl font-bold">92</div>
+                                    <div class="text-xs">Priority Score</div>
+                                </div>
+                                <div class="flex gap-2">
+                                    <button class="p-2 hover:bg-gray-100 rounded-lg text-green-600" title="Done">
+                                        <i class="fas fa-check-circle"></i>
+                                    </button>
+                                    <button class="p-2 hover:bg-gray-100 rounded-lg text-blue-600" title="Start">
+                                        <i class="fas fa-play"></i>
+                                    </button>
+                                    <button class="p-2 hover:bg-gray-100 rounded-lg text-red-600" title="Delete">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4. Calendar -->
+                <div class="bg-white dark:bg-gray-900 rounded-2xl p-8 shadow-md lg:col-span-2">
+                    <h3 class="text-xl font-bold mb-6">Calendar Timeline</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <!-- Today Card -->
+                        <div class="gradient-primary text-white rounded-2xl p-4">
+                            <div class="flex items-center gap-2 mb-2">
+                                <i class="fas fa-calendar-alt"></i>
+                                <span class="text-sm font-semibold">Today</span>
+                            </div>
+                            <p class="text-2xl font-bold mb-1">April 7</p>
+                            <p class="text-sm opacity-90">3 tasks planned</p>
+                        </div>
+
+                        <!-- Mini Calendar -->
+                        <div class="md:col-span-2 border border-gray-200 rounded-2xl p-4">
+                            <div class="flex justify-between items-center mb-4">
+                                <button class="p-1 hover:bg-gray-100 rounded"><i class="fas fa-chevron-left"></i></button>
+                                <h4 class="font-semibold">April 2026</h4>
+                                <button class="p-1 hover:bg-gray-100 rounded"><i class="fas fa-chevron-right"></i></button>
+                            </div>
+                            <div class="grid grid-cols-7 gap-2 text-xs text-center">
+                                <span class="text-gray-600">Sun</span>
+                                <span class="text-gray-600">Mon</span>
+                                <span class="text-gray-600">Tue</span>
+                                <span class="text-gray-600">Wed</span>
+                                <span class="text-gray-600">Thu</span>
+                                <span class="text-gray-600">Fri</span>
+                                <span class="text-gray-600">Sat</span>
+                                <span class="text-gray-400">31</span>
+                                <span class="p-2 rounded">1</span>
+                                <span class="p-2 rounded">2</span>
+                                <span class="p-2 rounded">3</span>
+                                <span class="p-2 rounded">4</span>
+                                <span class="p-2 rounded">5</span>
+                                <span class="p-2 rounded">6</span>
+                                <span class="p-2 rounded gradient-primary text-white font-bold">7</span>
+                                <span class="p-2 rounded">8</span>
+                                <span class="p-2 rounded">9</span>
+                                <span class="p-2 rounded">10</span>
+                                <span class="p-2 rounded">11</span>
+                                <span class="p-2 rounded">12</span>
+                                <span class="p-2 rounded">13</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 5. Command Palette -->
+                <div class="bg-white dark:bg-gray-900 rounded-2xl p-8 shadow-md lg:col-span-2">
+                    <h3 class="text-xl font-bold mb-6">Command Palette</h3>
+                    <div class="border border-gray-200 rounded-2xl p-4 bg-gray-50">
+                        <div class="bg-white rounded-xl p-3 mb-3 flex items-center gap-3">
+                            <i class="fas fa-search text-gray-400"></i>
+                            <input type="text" placeholder="Add task or type / for commands..." class="flex-1 outline-none bg-white text-sm">
+                            <i class="fas fa-times text-gray-400 cursor-pointer"></i>
+                        </div>
+                        <div class="space-y-2">
+                            <div class="bg-white p-3 rounded-lg hover:bg-gray-50 cursor-pointer flex items-center gap-3">
+                                <i class="fas fa-lightbulb text-yellow-500"></i>
+                                <div>
+                                    <p class="text-sm font-medium">add meeting tomorrow 3pm high</p>
+                                    <p class="text-xs text-gray-500">Natural language</p>
+                                </div>
+                            </div>
+                            <div class="bg-white p-3 rounded-lg hover:bg-gray-50 cursor-pointer flex items-center gap-3">
+                                <i class="fas fa-keyboard text-purple-500"></i>
+                                <div>
+                                    <p class="text-sm font-medium">/add [title]</p>
+                                    <p class="text-xs text-gray-500">Create new task</p>
+                                </div>
+                            </div>
+                            <div class="bg-white p-3 rounded-lg hover:bg-gray-50 cursor-pointer flex items-center gap-3">
+                                <i class="fas fa-history text-gray-500"></i>
+                                <div>
+                                    <p class="text-sm font-medium">add project deadline</p>
+                                    <p class="text-xs text-gray-500">History</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 6. Color Palette -->
+                <div class="bg-white dark:bg-gray-900 rounded-2xl p-8 shadow-md">
+                    <h3 class="text-xl font-bold mb-6">Color Palette</h3>
+                    <div class="space-y-3">
+                        <div class="flex items-center gap-3">
+                            <div class="w-12 h-12 gradient-primary rounded-lg"></div>
+                            <div>
+                                <p class="font-semibold">Primary</p>
+                                <p class="text-xs text-gray-600">#3B82F6 → #06B6D4</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="w-12 h-12 gradient-success rounded-lg"></div>
+                            <div>
+                                <p class="font-semibold">Success</p>
+                                <p class="text-xs text-gray-600">#10B981 → #059669</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="w-12 h-12 gradient-warning rounded-lg"></div>
+                            <div>
+                                <p class="font-semibold">Warning</p>
+                                <p class="text-xs text-gray-600">#F59E0B → #D97706</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="w-12 h-12 gradient-danger rounded-lg"></div>
+                            <div>
+                                <p class="font-semibold">Danger</p>
+                                <p class="text-xs text-gray-600">#EF4444 → #F97316</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 7. Spacing System -->
+                <div class="bg-white dark:bg-gray-900 rounded-2xl p-8 shadow-md">
+                    <h3 class="text-xl font-bold mb-6">Spacing System</h3>
+                    <div class="space-y-3">
+                        <div>
+                            <p class="text-xs text-gray-600 mb-1">xs (4px)</p>
+                            <div class="bg-blue-200 w-1 h-1 rounded-full"></div>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-600 mb-1">sm (8px)</p>
+                            <div class="bg-blue-300 w-2 h-2 rounded-full"></div>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-600 mb-1">md (16px)</p>
+                            <div class="bg-blue-400 w-4 h-4 rounded-full"></div>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-600 mb-1">lg (24px)</p>
+                            <div class="bg-blue-500 w-6 h-6 rounded-full"></div>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-600 mb-1">xl (32px)</p>
+                            <div class="bg-blue-600 w-8 h-8 rounded-full"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 8. Typography -->
+                <div class="bg-white dark:bg-gray-900 rounded-2xl p-8 shadow-md">
+                    <h3 class="text-xl font-bold mb-6">Typography</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <p class="text-xs text-gray-600">H1 (28px)</p>
+                            <p class="text-3xl font-bold">Heading 1</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-600">H3 (20px)</p>
+                            <p class="text-xl font-semibold">Heading 3</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-600">Body (16px)</p>
+                            <p class="text-base">Regular body text</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-600">Small (14px)</p>
+                            <p class="text-sm">Small text</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Guidelines Section -->
+            <section class="mt-16 bg-white dark:bg-gray-900 rounded-2xl p-8 shadow-md">
+                <h2 class="text-2xl font-bold mb-6">Design Guidelines</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div>
+                        <h3 class="font-semibold mb-3 flex items-center gap-2">
+                            <i class="fas fa-palette"></i> Color
+                        </h3>
+                        <ul class="text-sm space-y-2 text-gray-600">
+                            <li>• Primary: Blue (#3B82F6) and Cyan (#06B6D4)</li>
+                            <li>• Status: Red, Yellow, Green for priority</li>
+                            <li>• Dark mode: Gray-950 background, Gray-50 text</li>
+                            <li>• Contrast ratio: 4.5:1 (WCAG AA)</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold mb-3 flex items-center gap-2">
+                            <i class="fas fa-keyboard"></i> Keyboard
+                        </h3>
+                        <ul class="text-sm space-y-2 text-gray-600">
+                            <li>• Ctrl+K: Open command palette</li>
+                            <li>• Tab: Navigate between elements</li>
+                            <li>• Escape: Close modals/dropdowns</li>
+                            <li>• Enter: Activate focused element</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold mb-3 flex items-center gap-2">
+                            <i class="fas fa-mobile-alt"></i> Responsive
+                        </h3>
+                        <ul class="text-sm space-y-2 text-gray-600">
+                            <li>• Mobile: < 640px (single column)</li>
+                            <li>• Tablet: 640-1024px (2 columns)</li>
+                            <li>• Desktop: ≥ 1024px (full layout)</li>
+                            <li>• Touch target: min 44x44px</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold mb-3 flex items-center gap-2">
+                            <i class="fas fa-bolt"></i> Animation
+                        </h3>
+                        <ul class="text-sm space-y-2 text-gray-600">
+                            <li>• Duration: 200-300ms (fast)</li>
+                            <li>• Easing: ease-in-out</li>
+                            <li>• Scale: 105% on hover</li>
+                            <li>• Transitions: shadow, color, transform</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Footer -->
+            <footer class="mt-16 text-center text-gray-600 text-sm">
+                <p>Smart Task Planner - Component Library v1.0.0</p>
+                <p>Built with React, Next.js, and Tailwind CSS</p>
+            </footer>
+        </main>
+    </div>
+</body>
+</html>

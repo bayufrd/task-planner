@@ -1,3 +1,13 @@
+# Project Structure - Full paths with Proyek Perangkat Lunak
+Proyek Perangkat Lunak/node_modules/
+Proyek Perangkat Lunak/.pnp/
+Proyek Perangkat Lunak/.next/
+Proyek Perangkat Lunak/out/
+Proyek Perangkat Lunak/build/
+Proyek Perangkat Lunak/.env
+Proyek Perangkat Lunak/.env.local
+Proyek Perangkat Lunak/.env.production
+
 # Dependencies
 /node_modules
 /.pnp
@@ -64,6 +74,8 @@ Thumbs.db
 *.p8
 *.p12
 *.pfx
+*client_secret*.json
+*GOOGLE_OAUTH*.md
 
 # Database
 *.db
