@@ -15,11 +15,13 @@ import {
   ChevronRight,
   Sparkles
 } from 'lucide-react'
+import { useLanguage } from '@/components/providers/LanguageProvider'
 
 export default function LandingPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
+  const { t } = useLanguage()
 
   useEffect(() => {
     if (status === 'authenticated') {
@@ -35,74 +37,62 @@ export default function LandingPage() {
   const features = [
     {
       icon: Brain,
-      title: 'AI-Powered Planning',
-      description: 'Understand casual language and natural input with advanced AI parsing'
+      title: t('landing.features.aiPowered'),
+      description: t('landing.features.aiPoweredDesc')
     },
     {
       icon: Zap,
-      title: 'Smart Automation',
-      description: '70% reduction in manual task creation with pattern recognition'
+      title: t('landing.features.smartAutomation'),
+      description: t('landing.features.smartAutomationDesc')
     },
     {
       icon: Watch,
-      title: 'Wearable Integration',
-      description: 'Haptic reminders and real-time sync across all your devices'
+      title: t('landing.features.wearableIntegration'),
+      description: t('landing.features.wearableIntegrationDesc')
     },
     {
       icon: BarChart3,
-      title: 'Productivity Insights',
-      description: 'Data-driven analytics to optimize your workflow'
+      title: t('landing.features.productivityInsights'),
+      description: t('landing.features.productivityInsightsDesc')
     }
   ]
 
   const phases = [
     {
       phase: 'Phase 1',
-      title: 'MVP Launch',
-      features: [
-        'Task automation with AI',
-        'AI task assistant (chat)',
-        'Time blocking & focus mode'
-      ]
+      title: t('landing.phaseMVPLaunch'),
+      features: ['Task automation with AI', 'AI task assistant (chat)', 'Time blocking & focus mode']
     },
     {
       phase: 'Phase 1.5',
-      title: 'First Month',
-      features: [
-        'Smart suggestions',
-        'Habit stacking & streaks',
-        'Deadline negotiation'
-      ]
+      title: t('landing.phaseFirstMonth'),
+      features: ['Smart suggestions', 'Habit stacking & streaks', 'Deadline negotiation']
     },
     {
       phase: 'Phase 2',
-      title: 'Growth',
-      features: [
-        'Workload balancing',
-        'Advanced analytics',
-        'Cross-device sync'
-      ]
+      title: t('landing.phaseGrowth'),
+      features: ['Workload balancing', 'Advanced analytics', 'Cross-device sync']
     }
   ]
 
   const topFeatures = [
     {
       number: '1',
-      title: 'Smart Task Automation',
-      description: 'AI learns your patterns and auto-creates recurring tasks with 95% accuracy',
-      impact: '70% reduction in manual creation'
+      title: t('landing.feature1Title'),
+      description: t('landing.feature1Desc'),
+      impact: t('landing.feature1Impact')
     },
     {
       number: '2',
-      title: 'AI Task Assistant',
-      description: 'Chat-like interface for planning help and task optimization',
-      impact: '40% better time allocation'
+      title: t('landing.feature2Title'),
+      description: t('landing.feature2Desc'),
+      impact: t('landing.feature2Impact')
     },
     {
       number: '3',
-      title: 'Time Blocking & Focus',
-      description: 'Deep work sessions with intelligent conflict detection',
-      impact: '40% productivity boost'
+      title: t('landing.feature3Title'),
+      description: t('landing.feature3Desc'),
+      impact: t('landing.feature3Impact')
     }
   ]
 
@@ -133,7 +123,7 @@ export default function LandingPage() {
               disabled={isLoading}
               className="px-6 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:from-blue-500 disabled:to-indigo-500 text-white rounded-lg font-semibold text-sm transition-all duration-200 shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40"
             >
-              {isLoading ? 'Signing in...' : 'Sign In'}
+              {isLoading ? t('landing.signingIn') : 'Sign In'}
             </button>
           </div>
         </nav>
@@ -144,21 +134,21 @@ export default function LandingPage() {
             {/* Badge */}
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-100/50 dark:bg-blue-900/20 border border-blue-200/50 dark:border-blue-800/50 rounded-full">
               <Sparkles className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-              <span className="text-sm font-semibold text-blue-600 dark:text-blue-400">AI-Powered Task Planning</span>
+              <span className="text-sm font-semibold text-blue-600 dark:text-blue-400">{t('landing.aiPowerTaskPlanning')}</span>
             </div>
 
             {/* Main Heading */}
             <div className="space-y-4">
               <h1 className="text-5xl sm:text-6xl md:text-7xl font-black tracking-tight">
                 <span className="block text-gray-900 dark:text-white">
-                  Plan Smarter,
+                  {t('landing.planSmarter')}
                 </span>
                 <span className="block bg-gradient-to-r from-blue-600 via-indigo-600 to-cyan-600 bg-clip-text text-transparent">
-                  Work Better
+                  {t('landing.workBetter')}
                 </span>
               </h1>
               <p className="text-lg sm:text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto leading-relaxed">
-                An AI-powered planning assistant that understands casual language, syncs with Google Calendar, and sends haptic reminders to your wearable devices.
+                {t('landing.description')}
               </p>
             </div>
 
@@ -172,11 +162,11 @@ export default function LandingPage() {
                 {isLoading ? (
                   <>
                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    Signing in...
+                    {t('landing.signingIn')}
                   </>
                 ) : (
                   <>
-                    Start Now
+                    {t('landing.startNow')}
                     <ArrowRight className="w-5 h-5" strokeWidth={2} />
                   </>
                 )}
@@ -186,7 +176,7 @@ export default function LandingPage() {
             {/* Trust Badge */}
             <div className="flex items-center justify-center gap-2 text-sm text-gray-600 dark:text-gray-400">
               <CheckCircle2 className="w-4 h-4 text-green-600 dark:text-green-400" />
-              Google Calendar integration • Multi-language support • Secure OAuth
+              {t('landing.trustBadge')}
             </div>
           </div>
         </div>
@@ -195,10 +185,10 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
           <div className="text-center mb-16">
             <h2 className="text-4xl sm:text-5xl font-bold text-gray-900 dark:text-white mb-4">
-              Why Choose TaskPlanner?
+              {t('landing.whyChoose')}
             </h2>
             <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-              The only planning tool built with AI + Wearables + Casual Language
+              {t('landing.whyChooseDesc')}
             </p>
           </div>
 
@@ -229,10 +219,10 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 border-t border-gray-200/50 dark:border-gray-800/50">
           <div className="text-center mb-16">
             <h2 className="text-4xl sm:text-5xl font-bold text-gray-900 dark:text-white mb-4">
-              Top 3 MVP Features
+              {t('landing.topFeatures')}
             </h2>
             <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-              Highest ROI features launching in Phase 1
+              {t('landing.topFeaturesDesc')}
             </p>
           </div>
 
@@ -266,10 +256,10 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 border-t border-gray-200/50 dark:border-gray-800/50">
           <div className="text-center mb-16">
             <h2 className="text-4xl sm:text-5xl font-bold text-gray-900 dark:text-white mb-4">
-              Development Phases
+              {t('landing.phases')}
             </h2>
             <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-              From MVP to complete productivity OS
+              {t('landing.phasesDesc')}
             </p>
           </div>
 
@@ -307,10 +297,10 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 border-t border-gray-200/50 dark:border-gray-800/50">
           <div className="text-center mb-16">
             <h2 className="text-4xl sm:text-5xl font-bold text-gray-900 dark:text-white mb-4">
-              10 Powerful All-In-One Features
+              {t('landing.allFeatures')}
             </h2>
             <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-              Complete productivity operating system launching in phases
+              {t('landing.allFeaturesDesc')}
             </p>
           </div>
 
@@ -320,11 +310,11 @@ export default function LandingPage() {
               <div className="flex items-start gap-3 mb-4">
                 <div className="text-2xl">🤖</div>
                 <div>
-                  <h4 className="text-lg font-bold text-gray-900 dark:text-white">Smart Task Automation</h4>
-                  <p className="text-xs text-blue-600 dark:text-blue-400 font-semibold mt-1">Phase 1.5 • 70% reduction</p>
+                  <h4 className="text-lg font-bold text-gray-900 dark:text-white">{t('landing.feature1')}</h4>
+                  <p className="text-xs text-blue-600 dark:text-blue-400 font-semibold mt-1">{t('landing.feature1Meta')}</p>
                 </div>
               </div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">AI learns patterns and auto-creates recurring tasks with 95% accuracy</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">{t('landing.feature1Text')}</p>
             </div>
 
             {/* Feature 2 */}
@@ -332,11 +322,11 @@ export default function LandingPage() {
               <div className="flex items-start gap-3 mb-4">
                 <div className="text-2xl">💬</div>
                 <div>
-                  <h4 className="text-lg font-bold text-gray-900 dark:text-white">AI Task Assistant</h4>
-                  <p className="text-xs text-purple-600 dark:text-purple-400 font-semibold mt-1">Phase 1 • 40% better time</p>
+                  <h4 className="text-lg font-bold text-gray-900 dark:text-white">{t('landing.feature2')}</h4>
+                  <p className="text-xs text-purple-600 dark:text-purple-400 font-semibold mt-1">{t('landing.feature2Meta')}</p>
                 </div>
               </div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Chat interface for planning help and intelligent task optimization</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">{t('landing.feature2Text')}</p>
             </div>
 
             {/* Feature 3 */}
@@ -344,11 +334,11 @@ export default function LandingPage() {
               <div className="flex items-start gap-3 mb-4">
                 <div className="text-2xl">💡</div>
                 <div>
-                  <h4 className="text-lg font-bold text-gray-900 dark:text-white">Smart Suggestions</h4>
-                  <p className="text-xs text-pink-600 dark:text-pink-400 font-semibold mt-1">Phase 1.5 • Real-time AI</p>
+                  <h4 className="text-lg font-bold text-gray-900 dark:text-white">{t('landing.feature3')}</h4>
+                  <p className="text-xs text-pink-600 dark:text-pink-400 font-semibold mt-1">{t('landing.feature3Meta')}</p>
                 </div>
               </div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Context-aware recommendations based on workload and availability</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">{t('landing.feature3Text')}</p>
             </div>
 
             {/* Feature 4 */}
@@ -356,11 +346,11 @@ export default function LandingPage() {
               <div className="flex items-start gap-3 mb-4">
                 <div className="text-2xl">⏱️</div>
                 <div>
-                  <h4 className="text-lg font-bold text-gray-900 dark:text-white">Focus Mode</h4>
-                  <p className="text-xs text-orange-600 dark:text-orange-400 font-semibold mt-1">Phase 1 • 40% boost</p>
+                  <h4 className="text-lg font-bold text-gray-900 dark:text-white">{t('landing.feature4')}</h4>
+                  <p className="text-xs text-orange-600 dark:text-orange-400 font-semibold mt-1">{t('landing.feature4Meta')}</p>
                 </div>
               </div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Time blocking and deep work sessions with conflict detection</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">{t('landing.feature4Text')}</p>
             </div>
 
             {/* Feature 5 */}
@@ -368,11 +358,11 @@ export default function LandingPage() {
               <div className="flex items-start gap-3 mb-4">
                 <div className="text-2xl">🔥</div>
                 <div>
-                  <h4 className="text-lg font-bold text-gray-900 dark:text-white">Habit Stacking</h4>
-                  <p className="text-xs text-red-600 dark:text-red-400 font-semibold mt-1">Phase 1.5 • 3x higher</p>
+                  <h4 className="text-lg font-bold text-gray-900 dark:text-white">{t('landing.feature5')}</h4>
+                  <p className="text-xs text-red-600 dark:text-red-400 font-semibold mt-1">{t('landing.feature5Meta')}</p>
                 </div>
               </div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Build lasting habits by stacking them to existing tasks with streaks</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">{t('landing.feature5Text')}</p>
             </div>
 
             {/* Feature 6 */}
@@ -380,11 +370,11 @@ export default function LandingPage() {
               <div className="flex items-start gap-3 mb-4">
                 <div className="text-2xl">⚖️</div>
                 <div>
-                  <h4 className="text-lg font-bold text-gray-900 dark:text-white">Workload Balancing</h4>
-                  <p className="text-xs text-green-600 dark:text-green-400 font-semibold mt-1">Phase 2 • 60% burnout ↓</p>
+                  <h4 className="text-lg font-bold text-gray-900 dark:text-white">{t('landing.feature6')}</h4>
+                  <p className="text-xs text-green-600 dark:text-green-400 font-semibold mt-1">{t('landing.feature6Meta')}</p>
                 </div>
               </div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">AI monitors and prevents burnout with intelligent workload distribution</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">{t('landing.feature6Text')}</p>
             </div>
 
             {/* Feature 7 */}
@@ -392,11 +382,11 @@ export default function LandingPage() {
               <div className="flex items-start gap-3 mb-4">
                 <div className="text-2xl">📅</div>
                 <div>
-                  <h4 className="text-lg font-bold text-gray-900 dark:text-white">Smart Deadlines</h4>
-                  <p className="text-xs text-cyan-600 dark:text-cyan-400 font-semibold mt-1">Phase 1.5 • 40% completion ↑</p>
+                  <h4 className="text-lg font-bold text-gray-900 dark:text-white">{t('landing.feature7')}</h4>
+                  <p className="text-xs text-cyan-600 dark:text-cyan-400 font-semibold mt-1">{t('landing.feature7Meta')}</p>
                 </div>
               </div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">AI challenges unrealistic deadlines before commitment</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">{t('landing.feature7Text')}</p>
             </div>
 
             {/* Feature 8 */}
@@ -404,11 +394,11 @@ export default function LandingPage() {
               <div className="flex items-start gap-3 mb-4">
                 <div className="text-2xl">📱</div>
                 <div>
-                  <h4 className="text-lg font-bold text-gray-900 dark:text-white">Cross-Device Sync</h4>
-                  <p className="text-xs text-indigo-600 dark:text-indigo-400 font-semibold mt-1">Phase 2 • Real-time sync</p>
+                  <h4 className="text-lg font-bold text-gray-900 dark:text-white">{t('landing.feature8')}</h4>
+                  <p className="text-xs text-indigo-600 dark:text-indigo-400 font-semibold mt-1">{t('landing.feature8Meta')}</p>
                 </div>
               </div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Seamless sync across web, mobile, wearable, and smart home</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">{t('landing.feature8Text')}</p>
             </div>
 
             {/* Feature 9 */}
@@ -416,11 +406,11 @@ export default function LandingPage() {
               <div className="flex items-start gap-3 mb-4">
                 <div className="text-2xl">📈</div>
                 <div>
-                  <h4 className="text-lg font-bold text-gray-900 dark:text-white">Analytics & Insights</h4>
-                  <p className="text-xs text-teal-600 dark:text-teal-400 font-semibold mt-1">Phase 2 • 20% boost</p>
+                  <h4 className="text-lg font-bold text-gray-900 dark:text-white">{t('landing.feature9')}</h4>
+                  <p className="text-xs text-teal-600 dark:text-teal-400 font-semibold mt-1">{t('landing.feature9Meta')}</p>
                 </div>
               </div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Beautiful dashboards with productivity patterns and insights</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">{t('landing.feature9Text')}</p>
             </div>
 
             {/* Feature 10 */}
@@ -428,11 +418,11 @@ export default function LandingPage() {
               <div className="flex items-start gap-3 mb-4">
                 <div className="text-2xl">👥</div>
                 <div>
-                  <h4 className="text-lg font-bold text-gray-900 dark:text-white">Team Collaboration</h4>
-                  <p className="text-xs text-violet-600 dark:text-violet-400 font-semibold mt-1">Phase 2 • Enterprise</p>
+                  <h4 className="text-lg font-bold text-gray-900 dark:text-white">{t('landing.feature10')}</h4>
+                  <p className="text-xs text-violet-600 dark:text-violet-400 font-semibold mt-1">{t('landing.feature10Meta')}</p>
                 </div>
               </div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Shared workspaces with AI-powered task distribution for teams</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">{t('landing.feature10Text')}</p>
             </div>
           </div>
         </div>
@@ -441,10 +431,10 @@ export default function LandingPage() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
           <div className="rounded-3xl border border-gray-200/50 dark:border-gray-800/50 bg-gradient-to-br from-blue-50/80 to-indigo-50/80 dark:from-blue-900/20 dark:to-indigo-900/20 backdrop-blur-sm p-12 space-y-6">
             <h2 className="text-4xl sm:text-5xl font-bold text-gray-900 dark:text-white">
-              Ready to Transform Your Productivity?
+              {t('landing.ctaTitle')}
             </h2>
             <p className="text-lg text-gray-600 dark:text-gray-300">
-              Join the beta and experience AI-powered planning with wearable integration
+              {t('landing.ctaDesc')}
             </p>
             <button
               onClick={handleStartNow}
@@ -454,11 +444,11 @@ export default function LandingPage() {
               {isLoading ? (
                 <>
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  Signing in...
+                  {t('landing.signingIn')}
                 </>
               ) : (
                 <>
-                  Start Now
+                  {t('landing.startNow')}
                   <ArrowRight className="w-5 h-5" strokeWidth={2} />
                 </>
               )}
@@ -471,11 +461,11 @@ export default function LandingPage() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                © 2026 TaskPlanner. AI-Powered Task Planning.
+                {t('landing.footer')}
               </p>
               <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
-                <a href="#" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Privacy</a>
-                <a href="#" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Terms</a>
+                <a href="#" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">{t('landing.privacyLink')}</a>
+                <a href="#" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">{t('landing.termsLink')}</a>
               </div>
             </div>
           </div>

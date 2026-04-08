@@ -34,23 +34,27 @@ export default function LandingPage() {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const { theme: currentTheme, toggleTheme } = useTheme()
-  const { language, setLanguage } = useLanguage()
+  const { language, setLanguage, t } = useLanguage()
   const [mounted, setMounted] = useState(false)
-  const theme = 'dark' // Default to dark mode
+  const theme = currentTheme // Use actual theme from ThemeProvider instead of hardcoding
 
-  // Video randomization per section (exclude hero video)
-  const allVideos = [
-    '71c87278-d28e-4933-bbba-25dccdca5117.mp4',
-    'motion_2.0_Indonesian_young_adult_looking_calm_and_productive_holding_smartphone_while_view-0.mp4',
-    'motion_2.0_Indonesian_young_adult_looking_calm_and_productive_holding_smartphone_with_a_cle-0.mp4',
+  // Fixed hero video
+  const heroVideo = '71c87278-d28e-4933-bbba-25dccdca5117.mp4'
+  
+  // Sequential videos for sections after hero
+  const sequentialVideos = [
     'motion_2.0_Indonesian_young_professional_working_at_desk_laptop_open_smartphone_beside_him_-0.mp4',
     'motion_2.0_Indonesian_young_woman_smiling_gently_while_looking_at_her_smartphone_with_sched-0.mp4',
-    'motion_2.0-fast_POV_shot_of_a_young_person_holding_a_smartphone_clearly_visible_face_and_upper_b-0.mp4',
-    'veo-3.1-fast-generate-001_scene_1_title_POV_Opening_-_AI_Planner_Terminal_duration_4-5_seconds_camera_firs-0.mp4'
+    'veo-3.1-fast-generate-001_scene_1_title_POV_Opening_-_AI_Planner_Terminal_duration_4-5_seconds_camera_firs-0.mp4',
+    'motion_2.0_Indonesian_young_adult_looking_calm_and_productive_holding_smartphone_while_view-0.mp4'
   ]
 
-  const getRandomVideo = () => {
-    return allVideos[Math.floor(Math.random() * allVideos.length)]
+  let videoIndex = 0
+
+  const getNextVideo = () => {
+    const video = sequentialVideos[videoIndex % sequentialVideos.length]
+    videoIndex++
+    return video
   }
 
   const getRandomPosition = () => {
@@ -76,54 +80,45 @@ export default function LandingPage() {
   const features = [
     {
       icon: Brain,
-      title: 'Casual Language, Any Language',
-      description: 'Just speak your task naturally. Our AI parses abbreviations, mixed languages, and casual speech instantly. No perfect syntax required—we understand how humans actually talk.'
+      title: t('landing.casualLanguageTitle'),
+      description: t('landing.casualLanguageDesc')
     },
     {
       icon: Zap,
-      title: 'Haptic Reminders That Work',
-      description: 'Vibration patterns are 5x more effective than notifications at driving action. Your wearable escalates alerts as your task approaches. You will never miss what matters.'
+      title: t('landing.hapticRemindersTitle'),
+      description: t('landing.hapticRemindersDesc')
     },
     {
       icon: Watch,
-      title: 'Works With Your Calendar',
-      description: 'Your tasks sync directly with Google Calendar. No switching apps, no duplicate entries. We enhance your calendar, not replace it.'
+      title: t('landing.worksWithCalendarTitle'),
+      description: t('landing.worksWithCalendarDesc')
     }
   ]
 
   const phases = [
     {
-      phase: 'Now',
+      phase: t('landing.phaseNow'),
       icon: Sparkles,
-      title: 'AI Task Foundation',
-      features: [
-        'AI-powered natural language parsing',
-        'Google Calendar native sync',
-        'Smart task organization'
-      ]
+      title: t('landing.aiTaskFoundationTitle'),
+      features: typeof t('landing.aiTaskFoundationFeatures') === 'string' 
+        ? ['AI-powered natural language parsing', 'Google Calendar native sync', 'Smart task organization']
+        : t('landing.aiTaskFoundationFeatures') as string[]
     },
     {
-      phase: 'Next Month',
+      phase: t('landing.phaseNextMonth'),
       icon: Watch,
-      title: 'Wearable & Haptics',
-      features: [
-        'Wearable device integration',
-        'Haptic reminder patterns',
-        'Smart escalating alerts',
-        'Device sync & management'
-      ]
+      title: t('landing.wearableHapticsTitle'),
+      features: typeof t('landing.wearableHapticsFeatures') === 'string'
+        ? ['Wearable device integration', 'Haptic reminder patterns', 'Smart escalating alerts', 'Device sync & management']
+        : t('landing.wearableHapticsFeatures') as string[]
     },
     {
-      phase: 'Coming This Summer',
+      phase: t('landing.phaseComingSummer'),
       icon: Brain,
-      title: 'AI Intelligence Layer',
-      features: [
-        'AI knowledge breakdown',
-        'Auto-recurring tasks',
-        'Intelligent scheduling',
-        'Team collaboration',
-        'Analytics dashboard'
-      ]
+      title: t('landing.aiIntelligenceTitle'),
+      features: typeof t('landing.aiIntelligenceFeatures') === 'string'
+        ? ['AI knowledge breakdown', 'Auto-recurring tasks', 'Intelligent scheduling', 'Team collaboration', 'Analytics dashboard']
+        : t('landing.aiIntelligenceFeatures') as string[]
     }
   ]
 
@@ -131,23 +126,23 @@ export default function LandingPage() {
     {
       number: '1',
       icon: Brain,
-      title: 'Understand Casual Language, Instantly',
-      description: 'No need to type perfectly. Just speak naturally—"tomorrow 3pm meeting with john, kinda important"—and our AI understands it all. Works in any language, any dialect, any level of formality.',
-      impact: '80% Less Friction'
+      title: t('landing.understandCasualTitle'),
+      description: t('landing.understandCasualDesc'),
+      impact: t('landing.understandCasualImpact')
     },
     {
       number: '2',
       icon: Zap,
-      title: 'Smart Reminders That Actually Work',
-      description: 'Push notifications are easy to ignore. We send haptic patterns to your wearable—vibration escalates as your task approaches. Pattern-based reminders that train your brain to remember.',
-      impact: '5x Better Compliance'
+      title: t('landing.smartRemindersTitle'),
+      description: t('landing.smartRemindersDesc'),
+      impact: t('landing.smartRemindersImpact')
     },
     {
       number: '3',
       icon: Watch,
-      title: 'Sync With Your Existing Calendar',
-      description: 'Tasks go straight to Google Calendar. No app switching, no duplicate entries. Everything stays in sync, but we add the AI intelligence Google Calendar should have.',
-      impact: 'Single Source of Truth'
+      title: t('landing.syncCalendarTitle'),
+      description: t('landing.syncCalendarDesc'),
+      impact: t('landing.syncCalendarImpact')
     }
   ]
 
@@ -304,10 +299,10 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
           <div className="text-center mb-16">
             <h2 className={`text-4xl sm:text-5xl font-bold mb-4 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-              The Three Things Google Calendar Can't Do
+              {t('landing.threeThingsTitle')}
             </h2>
             <p className={`text-lg max-w-2xl mx-auto ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
-              We enhance Google Calendar with the AI intelligence, wearable integration, and casual language support your calendar deserves
+              {t('landing.threeThingsDesc')}
             </p>
           </div>
 
@@ -344,7 +339,7 @@ export default function LandingPage() {
                 playsInline
                 className="w-full h-full object-cover"
               >
-                <source src={`/vids/${getRandomVideo()}`} type="video/mp4" />
+                <source src={`/vids/${getNextVideo()}`} type="video/mp4" />
               </video>
               <div className="absolute inset-0 bg-gradient-to-t from-gray-950/20 to-transparent pointer-events-none"></div>
             </div>
@@ -375,7 +370,7 @@ export default function LandingPage() {
                 playsInline
                 className="w-full h-full object-cover"
               >
-                <source src={`/vids/${getRandomVideo()}`} type="video/mp4" />
+                <source src={`/vids/${getNextVideo()}`} type="video/mp4" />
               </video>
               <div className="absolute inset-0 bg-gradient-to-t from-gray-950/20 to-transparent pointer-events-none"></div>
             </div>
@@ -468,7 +463,7 @@ export default function LandingPage() {
                 playsInline
                 className="w-full h-full object-cover"
               >
-                <source src={`/vids/${getRandomVideo()}`} type="video/mp4" />
+                <source src={`/vids/${getNextVideo()}`} type="video/mp4" />
               </video>
               <div className="absolute inset-0 bg-gradient-to-t from-gray-950/20 to-transparent pointer-events-none"></div>
             </div>
