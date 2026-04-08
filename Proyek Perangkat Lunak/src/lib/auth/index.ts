@@ -12,6 +12,9 @@ declare module 'next-auth' {
   interface Session extends DefaultSession {
     user: {
       id: string
+      emailVerified?: Date | null
+      locale?: string
+      hd?: string
       accessToken?: string
     } & DefaultSession['user']
   }
@@ -92,6 +95,9 @@ export const authOptions: NextAuthOptions = {
       if (session.user) {
         session.user.id = token.sub!
         ;(session.user as any).accessToken = token.accessToken
+        ;(session.user as any).emailVerified = token.email_verified
+        ;(session.user as any).locale = token.locale
+        ;(session.user as any).hd = token.hd
       }
       return session
     },

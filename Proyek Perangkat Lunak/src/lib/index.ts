@@ -13,8 +13,7 @@ export * from './auth/google-calendar'
 
 // API
 export * from './api/responses'
-export * from './api/validation'
-// Removed duplicate errorResponse from api/helpers - use api/responses instead
+// Removed export from api/validation (duplicate validateTaskInput - use utils/task instead)
 
 // Utils
 export * from './utils/date'
