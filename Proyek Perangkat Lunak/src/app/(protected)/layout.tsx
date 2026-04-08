@@ -75,7 +75,7 @@ export default function ProtectedLayout({
           />
           
           {/* Menu Panel */}
-          <div className="fixed right-4 sm:right-6 lg:right-8 top-16 max-w-sm bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/50 dark:border-gray-800/50 z-40 overflow-y-auto shadow-xl shadow-black/10 dark:shadow-black/40">
+          <div className="fixed right-0 sm:right-0 lg:right-0 top-16 w-full sm:w-96 max-w-sm bg-white dark:bg-gray-900 rounded-b-2xl sm:rounded-2xl border-b sm:border border-gray-200/50 dark:border-gray-800/50 z-40 overflow-y-auto shadow-xl shadow-black/10 dark:shadow-black/40 sm:rounded-t-2xl">
             <nav className="px-4 py-4 space-y-2">
               <button
                 onClick={() => {

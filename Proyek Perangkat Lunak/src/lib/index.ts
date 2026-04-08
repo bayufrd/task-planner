@@ -14,7 +14,7 @@ export * from './auth/google-calendar'
 // API
 export * from './api/responses'
 export * from './api/validation'
-export * from './api/helpers'
+// Removed duplicate errorResponse from api/helpers - use api/responses instead
 
 // Utils
 export * from './utils/date'
