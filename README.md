@@ -2,11 +2,38 @@
 
 **AI-powered universal task management system with intelligent priority scheduling**
 
+[🌐 Live Demo](https://taskplanner.dastrevas.com) | [📚 Documentation](./Proyek%20Perangkat%20Lunak/Pemrograman%20Fullstack/task-planner/docs) | [🚀 Deployment Guide](./Proyek%20Perangkat%20Lunak/Pemrograman%20Fullstack/task-planner/docs/DEPLOYMENT.md) | [📦 GitLab Repo](https://gitlab.com/pemrograman-fullstack-kelompok-4-undira/task-planner.git)
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Next.js](https://img.shields.io/badge/Next.js-14.2-black)](https://nextjs.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.3-blue)](https://www.typescriptlang.org)
+[![GitLab](https://img.shields.io/badge/GitLab-Repository-orange)](https://gitlab.com/pemrograman-fullstack-kelompok-4-undira/task-planner.git)
 
-[🌐 Live Demo](https://taskplanner.dastrevas.com) | [📚 Documentation](./docs) | [🚀 Deployment Guide](./docs/DEPLOYMENT.md) | [📦 GitLab Repo](https://gitlab.com/pemrograman-fullstack-kelompok-4-undira/task-planner.git)
+---
+
+## 📁 Repository Structure
+
+**Dua cabang repository:**
+
+1. **Pemrograman Fullstack/** - Individual Assignments
+   - Repository untuk individual coursework
+   - Setiap mahasiswa membuat assignments sendiri
+   
+2. **Proyek Perangkat Lunak/** - Group Assignment (Tugas Besar)
+   - Smart Task Planner - Fullstack Project
+   - GitLab: [Pemrograman Fullstack Kelompok 4 UNDIRA](https://gitlab.com/pemrograman-fullstack-kelompok-4-undira/task-planner.git)
+
+```
+📦 Repository Root
+ │
+ ├── 📁 [Pemrograman Fullstack/](https://github.com/bayufrd/task-planner/tree/master/Pemrograman%20Fullstack)
+ │   └── Individual Assignments & Coursework
+ │
+ ├── 📁 [Proyek Perangkat Lunak/](https://github.com/bayufrd/task-planner/tree/master/Proyek%20Perangkat%20Lunak)
+ │   └── Smart Task Planner - Group Project
+ │
+ └── 📄 README.md (this file)
+```
 
 ---
 
@@ -14,13 +41,60 @@
 
 Smart Task Planner is a fullstack web application designed for students, freelancers, and professionals who need intelligent task management with automatic priority scheduling. Unlike traditional to-do apps, Smart Task Planner uses a sophisticated 4-factor algorithm to automatically rank your tasks based on urgency, importance, reminders, and estimated duration.
 
-**Project Type**: TUGAS BESAR KELOMPOK - Fullstack Software Engineering
-**Location**: `Proyek Perangkat Lunak/Pemrograman Fullstack/task-planner`
+**Project Type**: TUGAS BESAR KELOMPOK - Fullstack Software Engineering  
+**Location**: `Proyek Perangkat Lunak/Pemrograman Fullstack/task-planner/`  
 **Repository**: [GitLab - Pemrograman Fullstack Kelompok 4 UNDIRA](https://gitlab.com/pemrograman-fullstack-kelompok-4-undira/task-planner.git)
 
 ---
 
-## 🎯 Key Features
+## 🚀 Quick Start
+
+### For Group Assignment (Smart Task Planner)
+
+Navigate to the task planner project:
+
+```bash
+cd "Proyek Perangkat Lunak/Pemrograman Fullstack/task-planner"
+npm install
+npm run dev
+```
+
+Visit [http://localhost:3000](http://localhost:3000) to access the application.
+
+### For Individual Assignments
+
+Navigate to your individual project folder:
+
+```bash
+cd "Pemrograman Fullstack"
+```
+
+---
+
+## 📚 Documentation
+
+All project documentation is located inside the project folder:
+
+- **README**: `Proyek Perangkat Lunak/Pemrograman Fullstack/task-planner/README.md`
+- **Setup Guide**: `Proyek Perangkat Lunak/Pemrograman Fullstack/task-planner/docs/`
+- **Deployment**: `Proyek Perangkat Lunak/Pemrograman Fullstack/task-planner/docs/DEPLOYMENT.md`
+
+---
+
+## 🔗 Repository Links
+
+- **GitHub**: https://github.com/bayufrd/task-planner
+- **GitLab**: https://gitlab.com/pemrograman-fullstack-kelompok-4-undira/task-planner.git
+
+---
+
+## 📝 License
+
+MIT License - See `Proyek Perangkat Lunak/Pemrograman Fullstack/task-planner/LICENSE` for details
+
+---
+
+*Last Updated: April 2026 | UNDIRA - Pemrograman Fullstack Course*
 
 ### 📋 Intelligent Task Management
 - **Auto-Priority Ranking**: AI-powered algorithm scores tasks using 4 weighted factors (Urgency: 40%, Priority: 35%, Reminders: 15%, Duration: 10%)
