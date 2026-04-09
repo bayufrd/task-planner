@@ -92,7 +92,34 @@ Ini adalah repository individual. Untuk kolaborasi atau diskusi, hubungi instruc
 
 ## 📄 License
 
-Coursework assignments - untuk academic purposes only.
+Coursework assignments – for academic purposes only.
+
+---
+
+## ⚙️ Maven Setup (Windows, PowerShell)
+
+**1. Set `MAVEN_HOME` (permanent, User level):**
+```powershell
+[System.Environment]::SetEnvironmentVariable("MAVEN_HOME", "D:\maven\apache-maven-3.9.6", [System.EnvironmentVariableTarget]::User)
+```
+
+**2. Add Maven `bin` to `PATH` (permanent, User level):**
+```powershell
+$p = [System.Environment]::GetEnvironmentVariable("PATH", [System.EnvironmentVariableTarget]::User)
+[System.Environment]::SetEnvironmentVariable("PATH", "D:\maven\apache-maven-3.9.6\bin;$p", [System.EnvironmentVariableTarget]::User)
+```
+
+**3. Refresh environment variables in current session:**
+```powershell
+$env:MAVEN_HOME = "D:\maven\apache-maven-3.9.6"
+$env:PATH = "D:\maven\apache-maven-3.9.6\bin;$env:PATH"
+$env:JAVA_HOME = "C:\Program Files\Java\jdk-25"
+```
+
+**4. Verify installation:**
+```powershell
+mvn --version
+```
 
 ---
 

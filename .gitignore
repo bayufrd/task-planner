@@ -9,6 +9,18 @@ Proyek Perangkat Lunak/.env.local
 Proyek Perangkat Lunak/.env.production
 Pemrograman Fullstack/task-planner-tubes
 
+# Java Backend - Pemrograman Basis Data/TaskPlanner-Java-Backend
+Pemrograman Basis Data/TaskPlanner-Java-Backend/target/
+Pemrograman Basis Data/TaskPlanner-Java-Backend/.classpath
+Pemrograman Basis Data/TaskPlanner-Java-Backend/.project
+Pemrograman Basis Data/TaskPlanner-Java-Backend/.settings/
+Pemrograman Basis Data/TaskPlanner-Java-Backend/*.jar
+Pemrograman Basis Data/TaskPlanner-Java-Backend/*.class
+Pemrograman Basis Data/TaskPlanner-Java-Backend/.DS_Store
+Pemrograman Basis Data/TaskPlanner-Java-Backend/.idea/
+Pemrograman Basis Data/TaskPlanner-Java-Backend/.vscode/
+Pemrograman Basis Data/TaskPlanner-Java-Backend/*.iml
+
 # Dependencies
 /node_modules
 /.pnp
