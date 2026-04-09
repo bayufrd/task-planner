@@ -50,7 +50,6 @@ TaskPlanner-Java-Backend/
 │   └── test/
 │       └── java/
 ├── pom.xml                                    (Maven dependencies)
-├── API_ROUTES.md                              (API documentation)
 └── README.md                                  (This file)
 ```
 
@@ -108,10 +107,10 @@ java -jar target/taskplanner-api-1.0.0.jar
 curl http://localhost:8080/api/health
 
 # Get all tasks
-curl http://localhost:8080/api/v1/tasks
+curl http://localhost:8080/api/tasks
 
 # Create task
-curl -X POST http://localhost:8080/api/v1/tasks \
+curl -X POST http://localhost:8080/api/tasks \
   -H "Content-Type: application/json" \
   -d '{"title":"Test","deadline":"2026-04-20T23:59:59","priority":"HIGH"}'
 ```
@@ -120,18 +119,16 @@ curl -X POST http://localhost:8080/api/v1/tasks \
 
 ## 📋 API ENDPOINTS
 
-Dokumentasi lengkap: **[API_ROUTES.md](./API_ROUTES.md)**
-
 ### Task Management
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/v1/tasks` | List all tasks (paginated) |
-| POST | `/api/v1/tasks` | Create new task |
-| GET | `/api/v1/tasks/:id` | Get task by ID |
-| PUT | `/api/v1/tasks/:id` | Update task |
-| DELETE | `/api/v1/tasks/:id` | Delete task |
-| GET | `/api/v1/tasks/priority/:level` | Get tasks by priority |
+| GET | `/api/tasks` | List all tasks (paginated) |
+| POST | `/api/tasks` | Create new task |
+| GET | `/api/tasks/:id` | Get task by ID |
+| PUT | `/api/tasks/:id` | Update task |
+| DELETE | `/api/tasks/:id` | Delete task |
+| GET | `/api/tasks/priority/:level` | Get tasks by priority |
 
 ### Health Check
 
@@ -251,12 +248,12 @@ jdbcTemplate.update(delete, id);
 
 **Routes**:
 ```java
-@GetMapping              // GET /v1/tasks
-@PostMapping             // POST /v1/tasks
-@GetMapping("/{id}")     // GET /v1/tasks/:id
-@PutMapping("/{id}")     // PUT /v1/tasks/:id
-@DeleteMapping("/{id}")  // DELETE /v1/tasks/:id
-@GetMapping("/priority/{level}")  // GET /v1/tasks/priority/:level
+@GetMapping              // GET /tasks
+@PostMapping             // POST /tasks
+@GetMapping("/{id}")     // GET /tasks/:id
+@PutMapping("/{id}")     // PUT /tasks/:id
+@DeleteMapping("/{id}")  // DELETE /tasks/:id
+@GetMapping("/priority/{level}")  // GET /tasks/priority/:level
 ```
 
 ### 2. Service Layer (`service/TaskService.java`)
@@ -316,13 +313,13 @@ mvn test
 
 **1. Get all tasks**
 ```bash
-curl -X GET "http://localhost:8080/api/v1/tasks?page=1&limit=10" \
+curl -X GET "http://localhost:8080/api/tasks?page=1&limit=10" \
   -H "Content-Type: application/json"
 ```
 
 **2. Create task**
 ```bash
-curl -X POST "http://localhost:8080/api/v1/tasks" \
+curl -X POST "http://localhost:8080/api/tasks" \
   -H "Content-Type: application/json" \
   -d '{
     "title": "Complete migration",
@@ -336,12 +333,12 @@ curl -X POST "http://localhost:8080/api/v1/tasks" \
 
 **3. Get task by ID**
 ```bash
-curl -X GET "http://localhost:8080/api/v1/tasks/task-id-here"
+curl -X GET "http://localhost:8080/api/tasks/task-id-here"
 ```
 
 **4. Update task**
 ```bash
-curl -X PUT "http://localhost:8080/api/v1/tasks/task-id-here" \
+curl -X PUT "http://localhost:8080/api/tasks/task-id-here" \
   -H "Content-Type: application/json" \
   -d '{
     "status": "IN_PROGRESS",
@@ -351,12 +348,12 @@ curl -X PUT "http://localhost:8080/api/v1/tasks/task-id-here" \
 
 **5. Delete task**
 ```bash
-curl -X DELETE "http://localhost:8080/api/v1/tasks/task-id-here"
+curl -X DELETE "http://localhost:8080/api/tasks/task-id-here"
 ```
 
 **6. Get HIGH priority tasks**
 ```bash
-curl -X GET "http://localhost:8080/api/v1/tasks/priority/HIGH?page=1&limit=10"
+curl -X GET "http://localhost:8080/api/tasks/priority/HIGH?page=1&limit=10"
 ```
 
 ---
@@ -478,7 +475,6 @@ Tugas meminta **JDBC Driver** — driver yang digunakan adalah `mysql-connector-
 
 ## 📖 DOCUMENTATION
 
-- **API Routes**: [API_ROUTES.md](./API_ROUTES.md)
 - **Code Structure**: This README
 - **Database Schema**: See "DATABASE SCHEMA" section above
 
