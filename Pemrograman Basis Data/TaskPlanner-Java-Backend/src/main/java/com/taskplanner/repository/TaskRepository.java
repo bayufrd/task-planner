@@ -192,6 +192,15 @@ public class TaskRepository {
     }
 
     /**
+     * Count completed (DONE) tasks for a user - used as a derived activity metric
+     */
+    public int countCompletedTasks(String userId) {
+        String query = "SELECT COUNT(*) FROM Task WHERE userId = ? AND status = 'DONE'";
+        Integer count = jdbcTemplate.queryForObject(query, Integer.class, userId);
+        return count != null ? count : 0;
+    }
+
+    /**
      * Build parameters for filtered query
      */
     private Object[] buildParams(String userId, String search, String status, String priority, int limit, int offset) {

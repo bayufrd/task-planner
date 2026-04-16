@@ -1,61 +1,194 @@
+## 🚦 PHASES MENUJU CORE MVP (ROADMAP MIGRASI)
+
+**Catatan Penting:**
+- Kolom `priority` pada tabel Task dapat digunakan untuk mewakili tingkat prioritas maupun tingkat kesulitan (difficulty), sehingga tidak perlu menambah kolom baru.
+- Nilai `priorityScore` tidak wajib disimpan di database, cukup dihitung secara dinamis di backend saat mengambil/generate plan.
+- `skipCount` juga tidak perlu disimpan, bisa dihitung secara dinamis, misal dengan menghitung jumlah task dengan status `DONE` atau logika lain sesuai kebutuhan.
+
+---
+
+## 🚦 PHASES MENUJU CORE MVP (ROADMAP MIGRASI)
+
+Berikut tahapan detail untuk memodifikasi aplikasi menuju core MVP (decision engine):
+
+### Phase 1: Penyesuaian Database & Model
+- [x] Pastikan kolom `priority` sudah ada pada tabel Task dan digunakan untuk prioritas/difficulty
+- [x] Tidak perlu menambah kolom baru jika sudah sesuai
+- [x] Update model `Task.java` agar field priority digunakan sesuai kebutuhan core MVP
+- [x] Update repository & service agar logic perhitungan priorityScore dan skipCount dilakukan secara dinamis (tidak perlu field baru)
+
+### Phase 1.5: Auth - Manual Register (Implemented)
+_Status: completed_
+- [x] Add endpoint for manual registration (create User + Account with provider='local')
+- [x] Hash passwords using BCrypt before storing in `User.password`
+- [x] Create `Account` entry with `provider='local'` and `providerAccountId = email`
+- [x] Add `AuthRepository`, `AuthController`, `Account` model and `RegisterRequest` DTO
+
+Purpose:
+- Support manual account registration in addition to existing OAuth provider entries (Google). Manual registration creates both a `User` record and an `Account` record so the system treats local credentials similarly to provider-based accounts.
+
+Endpoint (example):
+
+- POST /api/auth/register
+
+Request JSON:
+
+```json
+{
+  "email": "alice@example.com",
+  "name": "Alice",
+  "password": "s3cretpass"
+}
+```
+
+Curl example:
+
+```bash
+curl -X POST http://localhost:8080/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"email":"alice@example.com","name":"Alice","password":"s3cretpass"}'
+```
+
+Responses:
+- 200 OK — body: "registered" (success)
+- 409 Conflict — email already registered
+
+Notes & behavior:
+- Passwords are hashed with BCrypt before stored in `User.password`.
+- An `Account` row with `provider='local'` is created and links to the `User.id` via `userId`.
+- This flow does NOT issue a session or JWT. Register only creates database records. Implement login/token issuance in a subsequent phase if needed.
+- No new DB columns were added; use `Account.provider` to differentiate local vs provider-based accounts.
+
+### Phase 2: Implementasi Decision Engine (Core Logic)
+- [ ] Buat file baru `service/PlannerService.java` untuk decision engine
+- [ ] Implementasi fungsi `calculatePriority(Task task)`
+  - [ ] Hitung skor prioritas secara dinamis berdasarkan deadline, priority, dan skipCount (tanpa simpan ke DB)
+- [ ] Implementasi fungsi `generateTodayPlan(userId)`
+  - [ ] Ambil 3–5 task teratas berdasarkan skor prioritas
+- [ ] Buat unit test untuk fungsi prioritas (opsional)
+
+### Phase 3: Integrasi API & Adaptasi
+- [ ] Tambahkan endpoint baru di `TaskController.java`:
+  - [ ] `GET /api/planner/today` (generate today plan)
+  - [ ] `POST /api/tasks/{id}/complete` (mark task done)
+  - [ ] `POST /api/tasks/{id}/skip` (skip task, update status)
+- [ ] Integrasikan logic prioritas ke proses create/update task
+- [ ] Update endpoint existing agar `priorityScore` selalu dihitung otomatis saat response
+- [ ] Adaptasi `skipCount` dengan menghitung jumlah task status `DONE` atau sesuai kebutuhan
+- [ ] Pastikan response API sesuai kebutuhan frontend
+
+### Phase 4: Testing & Validasi Core
+- [ ] Uji endpoint baru dengan curl/Postman:
+  - [ ] Test generate today plan (limit 3–5 task, urut prioritas)
+  - [ ] Test complete/skip task dan perubahan skor
+- [ ] Validasi sorting, limit, dan adaptasi berjalan sesuai flow MVP
+- [ ] Lakukan regression test pada endpoint lama (CRUD tetap berjalan)
+
+### Phase 5: Dokumentasi & Finalisasi
+- [ ] Update README.md dengan flow baru (decision engine)
+- [ ] Tambahkan dokumentasi endpoint baru dan contoh response JSON
+- [ ] Tambahkan penjelasan logika prioritas dan flow utama di dokumentasi
+- [ ] Bersihkan kode, hapus logic/fitur yang tidak dipakai jika sudah yakin
+
+---
 # Task Planner API - Java Spring Boot Backend
 
-**Status**: Development  
-**Version**: 1.0.0  
-**Date**: April 9, 2026
+## 🚀 CORE PURPOSE & VISION
+...existing code...
+**Catatan:**
+- Fitur CRUD, pagination, dsb tetap ada, namun bukan prioritas utama.
+- Pengembangan selanjutnya dapat menambah AI, dashboard, dsb, setelah core berjalan normal.
+
+---
+
+## 🛠️ STACK & TEKNOLOGI
+
+Task Planner API dibangun dengan teknologi berikut:
+
+- **Java 17** — Bahasa utama backend
+- **Spring Boot 3.2.0** — Framework REST API
+- **JDBC (mysql-connector-j)** — Driver koneksi ke MySQL
+- **JdbcTemplate** — Abstraksi query SQL manual (tanpa ORM)
+- **HikariCP** — Connection pool (default Spring Boot)
+- **Maven** — Build & dependency management
+- **PM2** — Process manager untuk deployment Linux (opsional)
+
+Stack ini dipilih untuk memenuhi syarat tugas (Java/C# dengan driver JDBC/ODP.NET) dan memudahkan pengembangan aplikasi yang scalable dan maintainable.
+---
+
+
+# Task Planner API - Java Spring Boot Backend
+
+## 🚀 CORE PURPOSE & VISION
+
+> “We don’t help users manage tasks.  
+> We decide what they should do next.”
+
+**Core MVP:**
+- Sistem yang otomatis menentukan prioritas dan rencana tugas harian user, bukan sekadar CRUD task.
+- Fokus pada decision engine: generate today plan, adaptasi perilaku user, dan penentuan prioritas berbasis data.
+
+**Flow utama:**
+1. User input task
+2. System calculate priority
+3. Generate Today Plan
+4. User complete / skip
+5. System adapt (basic)
+
+**Catatan:**
+- Fitur CRUD, pagination, dsb tetap ada, namun bukan prioritas utama.
+- Pengembangan selanjutnya dapat menambah AI, dashboard, dsb, setelah core berjalan normal.
+
+
+**Status**: Core MVP Migration (Decision Engine)  
+**Version**: 2.0.0 (MVP Refocus)  
+**Date**: April 17, 2026
 
 ## 📋 Overview
+## ⚡ SKIP TASK: KOMBINASI MANUAL & AUTO
 
-Task Planner API adalah backend REST API untuk aplikasi manajemen tugas. Dibangun menggunakan **Java Spring Boot** dengan koneksi database menggunakan **JDBC Driver (mysql-connector-j)** — sesuai syarat tugas yang meminta Java/C# dengan driver JDBC/ODP.NET.
+Fitur skip pada task dapat diimplementasikan dengan dua cara sekaligus untuk pengalaman terbaik:
 
-Seluruh operasi database menggunakan **manual SQL query** via `JdbcTemplate` (Spring JDBC), tanpa ORM seperti JPA/Hibernate.
+### 1. Manual Skip (Button)
+- User dapat menekan tombol "Skip" pada UI.
+- Endpoint: `POST /api/tasks/{id}/skip`
+- Status task diubah menjadi "SKIPPED" atau sesuai kebutuhan.
 
-**Stack**:
-- **Language**: Java 17
-- **Framework**: Spring Boot 3.2.0
-- **Database Driver**: `mysql-connector-j` (JDBC Driver untuk MySQL)
-- **JDBC Wrapper**: `JdbcTemplate` (Spring JDBC abstraction)
-- **Connection Pool**: HikariCP (built-in Spring Boot)
-- **Build Tool**: Maven
-- **Process Manager**: PM2 (deployment Linux)
+### 2. Auto Skip (Otomatis)
+- Sistem melakukan pengecekan berkala (misal setiap jam).
+- Jika task belum selesai (status bukan DONE) dan sudah lewat 1 jam dari deadline, maka status otomatis diubah menjadi "SKIPPED".
+- Bisa menggunakan scheduled job/cron di backend.
+
+### 3. Kombinasi (Direkomendasikan)
+- Sediakan kedua mekanisme di atas.
+- Status skip bisa dibedakan (misal: SKIPPED_MANUAL, SKIPPED_AUTO) atau cukup satu status.
+- Di frontend, tampilkan info jika task di-skip otomatis.
+
+**Keunggulan:**
+- User tetap punya kontrol manual, namun sistem juga adaptif jika user lupa/terlambat.
+- Lebih fleksibel dan user-friendly.
+
+**Implementasi:**
+- Endpoint manual skip tetap tersedia.
+- Auto-skip dijalankan di backend secara periodik.
+- Logika skip dapat disesuaikan dengan kebutuhan aplikasi.
+
+---
+**Stack** (tidak berubah):
+- Java 17, Spring Boot 3.2.0, JDBC (mysql-connector-j), JdbcTemplate, HikariCP, Maven, PM2
 
 ---
 
-## 📁 PROJECT STRUCTURE
 
-```
-TaskPlanner-Java-Backend/
-├── src/
-│   ├── main/
-│   │   ├── java/com/taskplanner/
-│   │   │   ├── TaskPlannerApplication.java    (Entry point)
-│   │   │   ├── controller/
-│   │   │   │   └── TaskController.java        (API endpoints)
-│   │   │   ├── service/
-│   │   │   │   └── TaskService.java           (Business logic)
-│   │   │   ├── repository/
-│   │   │   │   └── TaskRepository.java        (Manual SQL queries)
-│   │   │   ├── model/
-│   │   │   │   ├── User.java                  (User model)
-│   │   │   │   └── Task.java                  (Task model)
-│   │   │   ├── dto/
-│   │   │   │   ├── ApiResponse.java           (Response wrapper)
-│   │   │   │   ├── PaginatedResponse.java     (Paginated response)
-│   │   │   │   ├── CreateTaskRequest.java     (Request DTO)
-│   │   │   │   └── UpdateTaskRequest.java     (Request DTO)
-│   │   │   └── config/
-│   │   │       └── DatabaseConfig.java        (DB configuration)
-│   │   └── resources/
-│   │       └── application.yml                (Application config)
-│   └── test/
-│       └── java/
-├── pom.xml                                    (Maven dependencies)
-└── README.md                                  (This file)
-```
+## 📁 PROJECT STRUCTURE (Tetap)
+
+
+Struktur project tetap, namun beberapa file akan diubah/ditambah untuk mendukung core MVP (lihat phase migrasi di bawah).
 
 ---
 
-## 🔧 SETUP GUIDE
+
+## 🔧 SETUP GUIDE (Tidak berubah)
 
 ### Prerequisites
 - **Java 17+**: Download from [oracle.com](https://www.oracle.com/java/technologies/downloads/) atau gunakan OpenJDK
@@ -117,7 +250,18 @@ curl -X POST http://localhost:8080/api/tasks \
 
 ---
 
-## 📋 API ENDPOINTS
+
+## 📋 API ENDPOINTS (Core MVP)
+
+### Core Endpoints (Baru)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/planner/today` | Generate today's plan (decision engine) |
+| POST | `/api/tasks/{id}/complete` | Mark task done |
+| POST | `/api/tasks/{id}/skip` | Skip task |
+
+### Existing Endpoints (Tetap, tapi bukan prioritas)
 
 ### Task Management
 
@@ -138,7 +282,18 @@ curl -X POST http://localhost:8080/api/tasks \
 
 ---
 
-## 🗄️ DATABASE SCHEMA
+
+## 🗄️ DATABASE SCHEMA (Update untuk Core MVP)
+
+Tambahkan kolom berikut pada tabel Task:
+
+```sql
+ALTER TABLE Task ADD COLUMN difficulty VARCHAR(10);
+ALTER TABLE Task ADD COLUMN skipCount INT DEFAULT 0;
+ALTER TABLE Task ADD COLUMN priorityScore INT DEFAULT 0;
+```
+
+Kolom dan tabel lain tetap sama seperti sebelumnya.
 
 ### Users Table
 ```sql
@@ -153,6 +308,33 @@ CREATE TABLE User (
   updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 ```
+
+### Accounts Table (auth providers)
+This table stores authentication provider entries and also supports local credentials. For manual registration set `provider='local'` and `providerAccountId` to the user's email or username. For Google OAuth entries, set `provider='google'` and `providerAccountId` to the provider's id.
+
+```sql
+CREATE TABLE Account (
+  id VARCHAR(50) PRIMARY KEY,
+  userId VARCHAR(50),
+  type VARCHAR(50),
+  provider VARCHAR(100),
+  providerAccountId VARCHAR(255),
+  refresh_token TEXT,
+  access_token TEXT,
+  expires_at INT,
+  token_type VARCHAR(100),
+  scope VARCHAR(255),
+  id_token TEXT,
+  session_state VARCHAR(255),
+  FOREIGN KEY (userId) REFERENCES User(id)
+);
+```
+
+How to distinguish manual register vs Google sign-in:
+- Manual register: create a `User` row and create an `Account` row with `provider = 'local'` and `providerAccountId = email` (or username). Store hashed password in `User.password`.
+- Google sign-in: create `User` row (if new) and `Account` with `provider = 'google'` and `providerAccountId = <google id>` and store tokens in `access_token`, `refresh_token` as needed.
+
+You do NOT need an extra column to distinguish methods — use the `provider` column already present in `Account`.
 
 ### Tasks Table
 ```sql
@@ -238,7 +420,14 @@ jdbcTemplate.update(delete, id);
 
 ---
 
-## 🏗️ ARCHITECTURE LAYERS
+
+## 🏗️ ARCHITECTURE LAYERS (Update)
+
+### Tambahan Baru:
+- `service/PlannerService.java` (decision engine/prioritas)
+- Endpoint baru di `controller/TaskController.java`
+
+### Layer Existing (Tetap, tapi bukan prioritas):
 
 ### 1. Controller Layer (`controller/TaskController.java`)
 - Handles HTTP requests/responses
@@ -301,7 +490,8 @@ findByPriority()              // Query by priority
 
 ---
 
-## 🧪 TESTING
+
+## 🧪 TESTING (Tetap)
 
 ### Unit Testing (Optional - dapat ditambahkan nanti)
 
@@ -358,7 +548,8 @@ curl -X GET "http://localhost:8080/api/tasks/priority/HIGH?page=1&limit=10"
 
 ---
 
-## 🚀 DEPLOYMENT
+
+## 🚀 DEPLOYMENT (Tetap)
 
 ### Development
 ```bash
@@ -428,7 +619,8 @@ pm2 monit
 
 ---
 
-## 📝 LOGGING
+
+## 📝 LOGGING (Tetap)
 
 Logs tersimpan di: `./logs/`
 
@@ -442,7 +634,8 @@ logging:
 
 ---
 
-## 🔗 DEPENDENCIES (pom.xml)
+
+## 🔗 DEPENDENCIES (pom.xml) (Tetap)
 
 | Dependency | Keterangan |
 |------------|------------|
@@ -473,14 +666,18 @@ Tugas meminta **JDBC Driver** — driver yang digunakan adalah `mysql-connector-
 
 ---
 
-## 📖 DOCUMENTATION
+
+## 📖 DOCUMENTATION (Update)
+
+- Lihat [Purposlv2.md](Purposlv2.md) untuk core MVP dan roadmap.
 
 - **Code Structure**: This README
 - **Database Schema**: See "DATABASE SCHEMA" section above
 
 ---
 
-## 🐛 TROUBLESHOOTING
+
+## 🐛 TROUBLESHOOTING (Tetap)
 
 ### 1. Connection to database failed
 ```
@@ -516,13 +713,7 @@ jar tf target/taskplanner-api-1.0.0.jar
 
 ---
 
-## 🎯 NEXT STEPS
 
-1. ✅ Setup Java backend
-2. ⏳ Setup Vue.js frontend (task-planner-fe-vuejs)
-3. ⏳ Integration testing (backend + frontend)
-4. ⏳ Authentication/Authorization (JWT)
-5. ⏳ Deployment to production
 
 ---
 

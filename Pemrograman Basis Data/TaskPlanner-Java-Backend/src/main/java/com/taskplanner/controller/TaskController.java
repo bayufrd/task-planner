@@ -47,7 +47,7 @@ public class TaskController {
      * - page (int, default: 1)
      * - limit (int, default: 20, max: 100)
      * - search (String): Search by title or description
-     * - status (String): Filter by status (values: TODO | IN_PROGRESS | DONE)
+     * - status (String): Filter by status (values: PROGRESS / DONE)
      * - priority (String): Filter by priority (HIGH, MEDIUM, LOW)
      * - sort (String): Sort field (default: deadline)
      * - order (String): Sort order (asc, desc)
@@ -88,7 +88,7 @@ public class TaskController {
      *   "description": "Optional description",
      *   "deadline": "2026-04-15T10:00:00",
      *   "priority": "HIGH|MEDIUM|LOW",
-     *   "status": "TODO | IN_PROGRESS | DONE",
+     *   "status": "PROGRESS / DONE",
      *   "estimatedDuration": 120
      * }
      * 
@@ -159,7 +159,7 @@ public class TaskController {
      *   "description": "Updated description",
      *   "deadline": "2026-04-20T10:00:00",
      *   "priority": "HIGH|MEDIUM|LOW",
-     *   "status": "TODO | IN_PROGRESS | DONE",
+     *   "status": "PROGRESS / DONE",
      *   "estimatedDuration": 150
      * }
      * 
