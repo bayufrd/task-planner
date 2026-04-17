@@ -54,13 +54,24 @@ Responses:
 - 409 Conflict — email already registered
 
 Notes & behavior:
-- Passwords are hashed with BCrypt before stored in `User.password`.
-- An `Account` row with `provider='local'` is created and links to the `User.id` via `userId`.
-- This flow does NOT issue a session or JWT. Register only creates database records. Implement login/token issuance in a subsequent phase if needed.
-- No new DB columns were added; use `Account.provider` to differentiate local vs provider-based accounts.
+Register creates database records only. Login/token issuance is available via the new `/api/auth/login` endpoint which returns a JWT access token and a refresh token.
+  - To enable/configure JWT, set the following environment variables (see `.env.example`):
+    - `SPRING_JWT_SECRET` — HMAC secret used to sign JWTs (change this to a strong value in production)
+    - `SPRING_JWT_EXP_MS` — Access token lifetime in milliseconds (default `3600000` = 1 hour)
 
-### Phase 2: Implementasi Decision Engine (Core Logic)
-- [ ] Buat file baru `service/PlannerService.java` untuk decision engine
+  - POST /api/auth/login
+
+    Request JSON:
+
+    ```json
+    {
+      "email": "alice@example.com",
+      "password": "s3cretpass"
+    }
+    ```
+
+    Successful response (200): JSON containing `accessToken`, `refreshToken`, `tokenType`, and `expiresIn`.
+
 - [ ] Implementasi fungsi `calculatePriority(Task task)`
   - [ ] Hitung skor prioritas secara dinamis berdasarkan deadline, priority, dan skipCount (tanpa simpan ke DB)
 - [ ] Implementasi fungsi `generateTodayPlan(userId)`

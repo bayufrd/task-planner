@@ -3,10 +3,13 @@ spring:
     name: Task Planner API
   
   datasource:
-    url: jdbc:mysql://192.168.1.2:3307/taskplanner
-    username: root
-    password: 0202
-    driver-class-name: com.mysql.cj.jdbc.Driver
+    # Use environment variables so credentials aren't hard-coded in source.
+    # You can set these in your shell, CI, or a .env file. Defaults here match the
+    # previous hard-coded values so local dev keeps working until you override.
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://192.168.1.2:3307/taskplanner}
+    username: ${SPRING_DATASOURCE_USERNAME:root}
+    password: ${SPRING_DATASOURCE_PASSWORD:0202}
+    driver-class-name: ${SPRING_DATASOURCE_DRIVER:com.mysql.cj.jdbc.Driver}
     hikari:
       maximum-pool-size: 10
       minimum-idle: 5
@@ -16,6 +19,11 @@ spring:
   
   jpa:
     show-sql: false
+
+  # JWT configuration (via environment variables)
+  jwt:
+    secret: ${SPRING_JWT_SECRET:taskplanner-secret-change-me}
+    expiration-ms: ${SPRING_JWT_EXP_MS:3600000}
 
 server:
   port: 8080

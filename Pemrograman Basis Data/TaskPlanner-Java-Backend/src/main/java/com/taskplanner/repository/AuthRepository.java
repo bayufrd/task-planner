@@ -59,4 +59,10 @@ public class AuthRepository {
                 account.getIdToken(), account.getSessionState());
         LOGGER.info("Account created: {} for user {}", account.getId(), account.getUserId());
     }
+
+    public void updateAccountTokens(String userId, String refreshToken, String accessToken, Integer expiresAt, String tokenType) {
+        String query = "UPDATE Account SET refresh_token = ?, access_token = ?, expires_at = ?, token_type = ? WHERE userId = ? AND provider = 'local'";
+        jdbcTemplate.update(query, refreshToken, accessToken, expiresAt, tokenType, userId);
+        LOGGER.info("Updated tokens for user {} (provider=local)", userId);
+    }
 }
