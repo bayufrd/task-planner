@@ -1,0 +1,156 @@
+{
+  "info": {
+    "_postman_id": "c8458cf3-c23a-4aa0-a89f-4feae5dd1a16",
+    "name": "PestaKami Fullstack Backend",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:4000" },
+    { "key": "token", "value": "" },
+    { "key": "eventId", "value": "" },
+    { "key": "mediaId", "value": "" },
+    { "key": "eventSlug", "value": "BAYU25" }
+  ],
+  "item": [
+    {
+      "name": "Auth - Register",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Bayu\",\n  \"email\": \"bayu@mail.com\",\n  \"password\": \"rahasia123\"\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/auth/register" }
+      }
+    },
+    {
+      "name": "Auth - Login",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"bayu@mail.com\",\n  \"password\": \"rahasia123\"\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/auth/login" }
+      }
+    },
+    {
+      "name": "Auth - Me",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": { "raw": "{{baseUrl}}/auth/me" }
+      }
+    },
+    {
+      "name": "Events - Create",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Pernikahan Bayu dan Jeje\",\n  \"slug\": \"BAYU25\",\n  \"location\": \"Jakarta\",\n  \"coverUrl\": \"https://example.com/cover.jpg\",\n  \"eventDate\": \"2026-07-12\",\n  \"expiredAt\": \"2026-07-13T00:00:00.000Z\"\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/events" }
+      }
+    },
+    {
+      "name": "Events - List",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": { "raw": "{{baseUrl}}/events" }
+      }
+    },
+    {
+      "name": "Events - Detail",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": { "raw": "{{baseUrl}}/events/{{eventId}}" }
+      }
+    },
+    {
+      "name": "Events - Update",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"location\": \"Bandung\",\n  \"isActive\": true\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/events/{{eventId}}" }
+      }
+    },
+    {
+      "name": "Events - Delete",
+      "request": {
+        "method": "DELETE",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": { "raw": "{{baseUrl}}/events/{{eventId}}" }
+      }
+    },
+    {
+      "name": "Events - Public Detail",
+      "request": {
+        "method": "GET",
+        "url": { "raw": "{{baseUrl}}/events/public/{{eventSlug}}" }
+      }
+    },
+    {
+      "name": "Media - Upload URL",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"eventId\": \"{{eventId}}\",\n  \"fileName\": \"foto-tamu-1.jpg\",\n  \"fileType\": \"image/jpeg\",\n  \"fileSize\": 1048576\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/media/upload-url" }
+      }
+    },
+    {
+      "name": "Media - Confirm Upload",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"eventId\": \"{{eventId}}\",\n  \"type\": \"image\",\n  \"url\": \"https://cdn.example.com/events/{{eventId}}/foto-tamu-1.jpg\",\n  \"size\": 1048576,\n  \"guestName\": \"Tamu A\"\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/media/confirm" }
+      }
+    },
+    {
+      "name": "Media - List By Event",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": { "raw": "{{baseUrl}}/events/{{eventId}}/media" }
+      }
+    },
+    {
+      "name": "Media - Detail",
+      "request": {
+        "method": "GET",
+        "url": { "raw": "{{baseUrl}}/media/{{mediaId}}" }
+      }
+    },
+    {
+      "name": "Media - Delete",
+      "request": {
+        "method": "DELETE",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": { "raw": "{{baseUrl}}/media/{{mediaId}}" }
+      }
+    }
+  ]
+}
