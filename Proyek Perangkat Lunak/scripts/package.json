@@ -1,0 +1,1 @@
+{"name":"smoke-test-scripts","version":"1.0.0","description":"Smoke test scripts for Smart Task Planner backend","main":"smoke-test-backend.js","scripts":{"test":"node smoke-test-backend.js"},"dependencies":{"axios":"^1.6.8","@prisma/client":"^5.22.0"},"devDependencies":{},"private":true}

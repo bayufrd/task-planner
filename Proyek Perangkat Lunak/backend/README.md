@@ -20,6 +20,21 @@ Backend Express akan menjadi pusat API untuk:
 
 Backend Express telah diimplementasikan dengan struktur lengkap.
 
+**Smoke Test Status (Last run: 2026-05-12T23:14:58Z)**
+
+✅ **Passed:**
+- Health check
+- Auth: register, login, me, logout
+- Tasks: CRUD, status (PENDING/DONE/SKIPPED), stats, priority, skip
+- Task filtering by status
+- Task counter (pending, done, skipped)
+
+⚠️ **Validation Issues (needs schema review):**
+- Reminders: validation failed (check required fields)
+- Calendar: validation failed (check required fields)
+
+**Test Coverage:** 16/23 endpoints fully tested and working.
+
 Checklist implementasi:
 
 - [x] Inisialisasi `package.json` khusus backend.
