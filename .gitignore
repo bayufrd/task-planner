@@ -123,3 +123,6 @@ build/
 backup/
 *.dump
 *.backup
+
+# Script dependencies
+Proyek Perangkat Lunak/scripts/node_modules/
