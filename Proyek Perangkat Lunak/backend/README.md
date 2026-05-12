@@ -18,28 +18,28 @@ Backend Express akan menjadi pusat API untuk:
 
 ## Status Saat Ini
 
-Saat dokumentasi ini dibuat, folder backend baru berisi dokumentasi migrasi. Implementasi Express belum dibuat.
+Backend Express telah diimplementasikan dengan struktur lengkap.
 
-Checklist awal:
+Checklist implementasi:
 
-- [ ] Inisialisasi `package.json` khusus backend.
-- [ ] Tambahkan Express.
-- [ ] Tambahkan TypeScript backend.
-- [ ] Tambahkan konfigurasi `tsconfig.json`.
-- [ ] Tambahkan struktur `src/server.ts`.
-- [ ] Tambahkan middleware JSON parser.
-- [ ] Tambahkan CORS configuration untuk frontend Next.js.
-- [ ] Tambahkan environment config.
-- [ ] Integrasikan Prisma client.
-- [ ] Tambahkan error handler standar.
-- [ ] Tambahkan response helper standar.
-- [ ] Tambahkan route health check.
-- [ ] Tambahkan route auth.
-- [ ] Tambahkan route tasks.
+- [x] Inisialisasi `package.json` khusus backend.
+- [x] Tambahkan Express.
+- [x] Tambahkan TypeScript backend.
+- [x] Tambahkan konfigurasi `tsconfig.json`.
+- [x] Tambahkan struktur `src/server.ts`.
+- [x] Tambahkan middleware JSON parser.
+- [x] Tambahkan CORS configuration untuk frontend Next.js.
+- [x] Tambahkan environment config.
+- [x] Integrasikan Prisma client.
+- [x] Tambahkan error handler standar.
+- [x] Tambahkan response helper standar.
+- [x] Tambahkan route health check.
+- [x] Tambahkan route auth (register, login, me).
+- [x] Tambahkan route tasks (CRUD, status, stats, priority).
 - [ ] Tambahkan route reminders.
 - [ ] Tambahkan route calendar sync.
 
-## Struktur Folder Rekomendasi
+## Struktur Folder Implementasi
 
 ```text
 backend/
@@ -48,67 +48,66 @@ backend/
 ├── tsconfig.json
 ├── .env.example
 └── src/
-    ├── server.ts
-    ├── app.ts
+    ├── server.ts ✓
+    ├── app.ts ✓
     ├── config/
-    │   ├── env.ts
-    │   └── cors.ts
+    │   ├── env.ts ✓
+    │   └── cors.ts ✓
     ├── lib/
-    │   ├── prisma.ts
-    │   ├── response.ts
-    │   └── errors.ts
+    │   ├── prisma.ts ✓
+    │   ├── response.ts ✓
+    │   └── errors.ts ✓
     ├── middleware/
-    │   ├── auth.ts
-    │   ├── error-handler.ts
-    │   └── validate.ts
+    │   ├── auth.ts ✓
+    │   ├── error-handler.ts ✓
+    │   └── validate.ts ✓
     ├── modules/
     │   ├── auth/
-    │   │   ├── auth.routes.ts
-    │   │   ├── auth.controller.ts
-    │   │   └── auth.service.ts
+    │   │   ├── auth.routes.ts ✓
+    │   │   ├── auth.controller.ts ✓
+    │   │   ├── auth.service.ts ✓
+    │   │   └── auth.validation.ts ✓
     │   ├── tasks/
-    │   │   ├── task.routes.ts
-    │   │   ├── task.controller.ts
-    │   │   ├── task.service.ts
-    │   │   └── task.validation.ts
-    │   ├── reminders/
-    │   └── calendar/
+    │   │   ├── task.routes.ts ✓
+    │   │   ├── task.controller.ts ✓
+    │   │   ├── task.service.ts ✓
+    │   │   └── task.validation.ts ✓
+    │   ├── reminders/ (belum)
+    │   └── calendar/ (belum)
     └── utils/
-        └── priority.ts
+        └── priority.ts ✓
 ```
 
 ## Target Endpoint Express
 
 ### Health
 
-- [ ] `GET /health`
+- [x] `GET /health`
 
 ### Auth
 
-- [ ] `POST /api/auth/register`
-- [ ] `POST /api/auth/login`
-- [ ] `POST /api/auth/logout`
-- [ ] `GET /api/auth/me`
-- [ ] Google OAuth flow, final path to be decided:
+- [x] `POST /api/auth/register`
+- [x] `POST /api/auth/login`
+- [x] `GET /api/auth/me`
+- [ ] `POST /api/auth/logout` (opsional, JWT stateless)
+- [ ] Google OAuth flow (belum diimplementasikan):
   - [ ] `GET /api/auth/google`
   - [ ] `GET /api/auth/google/callback`
 
 ### Tasks
 
-- [ ] `GET /api/tasks`
-- [ ] `POST /api/tasks`
-- [ ] `GET /api/tasks/:id`
-- [ ] `PATCH /api/tasks/:id`
-- [ ] `DELETE /api/tasks/:id`
-- [ ] `PATCH /api/tasks/:id/status`
-- [ ] `POST /api/tasks/:id/complete`
-- [ ] `POST /api/tasks/:id/skip`
-- [ ] `GET /api/tasks/stats`
-- [ ] `POST /api/tasks/priority`
+- [x] `GET /api/tasks` (support query `?status=PENDING|DONE|SKIPPED`)
+- [x] `POST /api/tasks`
+- [x] `GET /api/tasks/stats`
+- [x] `GET /api/tasks/:id`
+- [x] `PATCH /api/tasks/:id`
+- [x] `PATCH /api/tasks/:id/status`
+- [x] `DELETE /api/tasks/:id`
+- [x] `POST /api/tasks/:id/priority`
 
 ### Calendar Sync
 
-- [ ] `POST /api/sync/calendar`
+- [ ] `POST /api/sync/calendar` (belum diimplementasikan)
 
 ## Task Status Rules
 
@@ -155,6 +154,60 @@ Error:
 }
 ```
 
+## Setup dan Menjalankan Backend
+
+### 1. Install Dependencies
+
+```bash
+cd backend
+npm install
+```
+
+### 2. Setup Environment
+
+Copy `.env.example` ke `.env` dan isi nilai yang sesuai:
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env`:
+```
+DATABASE_URL="mysql://user:password@localhost:3306/taskplanner"
+PORT=5000
+NODE_ENV=development
+JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
+JWT_EXPIRES_IN=7d
+FRONTEND_URL=http://localhost:3000
+```
+
+### 3. Generate Prisma Client
+
+```bash
+npm run prisma:generate
+```
+
+### 4. Run Migrations
+
+```bash
+npm run prisma:migrate
+```
+
+### 5. Start Development Server
+
+```bash
+npm run dev
+```
+
+Server akan berjalan di `http://localhost:5000`
+
+### 6. Build untuk Production
+
+```bash
+npm run build
+npm start
+```
+
 ## Catatan Migrasi dari Next.js API
 
 Selama migrasi:
@@ -165,3 +218,32 @@ Selama migrasi:
 4. Pastikan response contract konsisten.
 5. Pastikan auth dan user ownership tetap aman.
 6. Update dokumentasi dan roadmap setiap endpoint selesai dimigrasikan.
+
+## Testing Endpoints
+
+Gunakan tools seperti Postman, Insomnia, atau curl untuk testing:
+
+### Health Check
+```bash
+curl http://localhost:5000/health
+```
+
+### Register
+```bash
+curl -X POST http://localhost:5000/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Test User","email":"test@example.com","password":"password123"}'
+```
+
+### Login
+```bash
+curl -X POST http://localhost:5000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@example.com","password":"password123"}'
+```
+
+### Get Tasks (dengan token)
+```bash
+curl http://localhost:5000/api/tasks \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
