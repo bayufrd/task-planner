@@ -5,6 +5,7 @@ import { X, Plus } from 'lucide-react'
 import { useTaskStore } from '@/lib/utils/store'
 import { useNotification } from '@/lib/hooks/useNotification'
 import { useTheme } from '@/components/providers/ThemeProvider'
+import { API_ROUTES } from '@/lib/constants/api'
 
 interface NewTaskModalProps {
   isOpen: boolean
@@ -51,8 +52,8 @@ export default function NewTaskModal({ isOpen, onClose }: NewTaskModalProps) {
     try {
       setIsLoading(true)
 
-      // Create task
-      const response = await fetch('/api/tasks', {
+      // Create task via Express backend
+      const response = await fetch(API_ROUTES.TASKS.CREATE, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -61,7 +62,7 @@ export default function NewTaskModal({ isOpen, onClose }: NewTaskModalProps) {
           priority,
           deadline: deadline && deadlineTime ? `${deadline}T${deadlineTime}:00` : (deadline || null),
           estimatedDuration: parseInt(estimatedDuration) || 60,
-          status: 'TODO', // Always create as TODO
+          status: 'PENDING', // Backend uses PENDING
         }),
       })
 

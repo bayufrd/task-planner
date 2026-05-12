@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useTaskStore } from '@/lib/utils/store'
 import { useLanguage } from '@/components/providers/LanguageProvider'
 import { useNotification } from '@/lib/hooks/useNotification'
+import { API_ROUTES } from '@/lib/constants/api'
 import { Search, X, Lightbulb, Command, History, ArrowUp, ArrowDown } from 'lucide-react'
 
 interface CommandPaletteProps {
@@ -234,8 +235,8 @@ export default function CommandPalette({ isOpen, onClose, onOpen }: CommandPalet
 
     setIsLoading(true)
     try {
-      // Call API to create task and sync to Google Calendar
-      const response = await fetch('/api/tasks', {
+      // Call Express backend API to create task
+      const response = await fetch(API_ROUTES.TASKS.CREATE, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newTask),

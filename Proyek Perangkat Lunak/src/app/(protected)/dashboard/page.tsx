@@ -6,6 +6,7 @@ import { useTaskStore } from '@/lib/utils/store'
 import { useLanguage } from '@/components/providers/LanguageProvider'
 import { useCommandPalette } from '@/components/providers/CommandPaletteProvider'
 import { useNotification } from '@/lib/hooks/useNotification'
+import { API_ROUTES } from '@/lib/constants/api'
 import CalendarTimeline from '@/components/calendar/CalendarTimeline'
 import TaskPriorityList from '@/components/tasks/TaskPriorityList'
 import CommandPalette from '@/components/command/CommandPalette'
@@ -32,7 +33,7 @@ export default function Dashboard() {
 
       try {
         setIsLoading(true)
-        const response = await fetch('/api/tasks?limit=100&page=1')
+        const response = await fetch(`${API_ROUTES.TASKS.LIST}?limit=100&page=1`)
         
         if (!response.ok) {
           console.error('Failed to fetch tasks:', response.statusText)
