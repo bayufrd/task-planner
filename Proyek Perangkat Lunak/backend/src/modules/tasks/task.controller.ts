@@ -32,7 +32,7 @@ export class TaskController {
   async getTaskById(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       if (!req.userId) throw new Error('User ID not found');
-      const task = await taskService.getTaskById(req.userId, req.params.id);
+      const task = await taskService.getTaskById(req.userId, String(req.params.id));
       sendSuccess(res, task);
     } catch (error) {
       next(error);
@@ -43,7 +43,7 @@ export class TaskController {
     try {
       if (!req.userId) throw new Error('User ID not found');
       const data: UpdateTaskInput = req.body;
-      const task = await taskService.updateTask(req.userId, req.params.id, data);
+      const task = await taskService.updateTask(req.userId, String(req.params.id), data);
       sendSuccess(res, task, 'Task updated successfully');
     } catch (error) {
       next(error);
@@ -54,7 +54,7 @@ export class TaskController {
     try {
       if (!req.userId) throw new Error('User ID not found');
       const data: UpdateTaskStatusInput = req.body;
-      const task = await taskService.updateTaskStatus(req.userId, req.params.id, data);
+      const task = await taskService.updateTaskStatus(req.userId, String(req.params.id), data);
       sendSuccess(res, task, 'Task status updated successfully');
     } catch (error) {
       next(error);
@@ -64,7 +64,7 @@ export class TaskController {
   async deleteTask(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       if (!req.userId) throw new Error('User ID not found');
-      const result = await taskService.deleteTask(req.userId, req.params.id);
+      const result = await taskService.deleteTask(req.userId, String(req.params.id));
       sendSuccess(res, result);
     } catch (error) {
       next(error);
@@ -84,7 +84,7 @@ export class TaskController {
   async calculatePriority(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       if (!req.userId) throw new Error('User ID not found');
-      const result = await taskService.calculateTaskPriority(req.userId, req.params.id);
+      const result = await taskService.calculateTaskPriority(req.userId, String(req.params.id));
       sendSuccess(res, result);
     } catch (error) {
       next(error);

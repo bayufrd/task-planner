@@ -1,5 +1,5 @@
 import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
+import jwt, { SignOptions } from 'jsonwebtoken';
 import { prisma } from '../../lib/prisma';
 import { env } from '../../config/env';
 import { ConflictError, UnauthorizedError } from '../../lib/errors';
@@ -31,9 +31,11 @@ export class AuthService {
       },
     });
 
-    const token = jwt.sign({ userId: user.id }, env.JWT_SECRET, {
-      expiresIn: env.JWT_EXPIRES_IN,
-    });
+    const token = jwt.sign(
+      { userId: user.id },
+      env.JWT_SECRET,
+      { expiresIn: env.JWT_EXPIRES_IN } as SignOptions
+    );
 
     return { user, token };
   }
@@ -53,9 +55,11 @@ export class AuthService {
       throw new UnauthorizedError('Invalid email or password');
     }
 
-    const token = jwt.sign({ userId: user.id }, env.JWT_SECRET, {
-      expiresIn: env.JWT_EXPIRES_IN,
-    });
+    const token = jwt.sign(
+      { userId: user.id },
+      env.JWT_SECRET,
+      { expiresIn: env.JWT_EXPIRES_IN } as SignOptions
+    );
 
     return {
       user: {

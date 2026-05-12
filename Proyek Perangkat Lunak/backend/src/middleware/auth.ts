@@ -3,13 +3,23 @@ import jwt from 'jsonwebtoken';
 import { env } from '../config/env';
 import { UnauthorizedError } from '../lib/errors';
 
+declare global {
+  namespace Express {
+    interface Request {
+      userId?: string;
+      user?: { id: string };
+    }
+  }
+}
+
 export interface AuthRequest extends Request {
   userId?: string;
+  user?: { id: string };
 }
 
 export const authenticate = async (
-  req: AuthRequest,
-  res: Response,
+  req: Request,
+  _res: Response,
   next: NextFunction
 ): Promise<void> => {
   try {
@@ -24,6 +34,7 @@ export const authenticate = async (
     try {
       const decoded = jwt.verify(token, env.JWT_SECRET) as { userId: string };
       req.userId = decoded.userId;
+      req.user = { id: decoded.userId };
       next();
     } catch (error) {
       throw new UnauthorizedError('Invalid or expired token');

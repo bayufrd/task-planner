@@ -46,3 +46,6 @@ export const sendError = (
     },
   } as ApiErrorResponse);
 };
+
+export const successResponse = sendSuccess;
+export const errorResponse = sendError;

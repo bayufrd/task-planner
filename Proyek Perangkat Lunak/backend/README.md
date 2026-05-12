@@ -36,8 +36,8 @@ Checklist implementasi:
 - [x] Tambahkan route health check.
 - [x] Tambahkan route auth (register, login, me).
 - [x] Tambahkan route tasks (CRUD, status, stats, priority).
-- [ ] Tambahkan route reminders.
-- [ ] Tambahkan route calendar sync.
+- [x] Tambahkan route reminders.
+- [x] Tambahkan route calendar sync.
 
 ## Struktur Folder Implementasi
 
@@ -72,8 +72,16 @@ backend/
     │   │   ├── task.controller.ts ✓
     │   │   ├── task.service.ts ✓
     │   │   └── task.validation.ts ✓
-    │   ├── reminders/ (belum)
-    │   └── calendar/ (belum)
+    │   ├── reminders/
+    │   │   ├── reminder.routes.ts ✓
+    │   │   ├── reminder.controller.ts ✓
+    │   │   ├── reminder.service.ts ✓
+    │   │   └── reminder.validation.ts ✓
+    │   └── calendar/
+    │       ├── calendar.routes.ts ✓
+    │       ├── calendar.controller.ts ✓
+    │       ├── calendar.service.ts ✓
+    │       └── calendar.validation.ts ✓
     └── utils/
         └── priority.ts ✓
 ```
@@ -105,9 +113,25 @@ backend/
 - [x] `DELETE /api/tasks/:id`
 - [x] `POST /api/tasks/:id/priority`
 
+### Reminders
+
+- [x] `POST /api/reminders`
+- [x] `GET /api/reminders`
+- [x] `GET /api/reminders/due`
+- [x] `GET /api/reminders/:id`
+- [x] `PATCH /api/reminders/:id`
+- [x] `DELETE /api/reminders/:id`
+
 ### Calendar Sync
 
-- [ ] `POST /api/sync/calendar` (belum diimplementasikan)
+- [x] `POST /api/sync/calendar`
+- [x] `POST /api/calendar`
+- [x] `GET /api/calendar`
+- [x] `GET /api/calendar/default`
+- [x] `POST /api/calendar/sync`
+- [x] `GET /api/calendar/:id`
+- [x] `PATCH /api/calendar/:id`
+- [x] `DELETE /api/calendar/:id`
 
 ## Task Status Rules
 

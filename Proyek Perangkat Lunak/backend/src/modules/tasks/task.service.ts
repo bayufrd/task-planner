@@ -96,7 +96,7 @@ export class TaskService {
       }
     }
 
-    const task = await prisma.task.update({
+    await prisma.task.update({
       where: { id: taskId },
       data: updateData,
       include: {
