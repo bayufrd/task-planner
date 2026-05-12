@@ -131,6 +131,7 @@ Complete documentation is organized by phase and concern:
 |----------|---------|
 | [DEPLOYMENT.md](./docs/DEPLOYMENT.md) | Production deployment guide for taskplanner.dastrevas.com |
 | [docs/phase0/](./docs/phase0/) | Development phase documentation |
+| [STITCH_UI_PROMPT.md](./docs/STITCH_UI_PROMPT.md) | Google Stitch UI generation prompt and visual context |
 | [docs/README.md](./docs/README.md) | Documentation index and navigation |
 
 ---

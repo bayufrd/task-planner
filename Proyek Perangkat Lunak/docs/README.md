@@ -12,6 +12,9 @@
 - [Architecture & Design](./phase0/ARCHITECTURE.md)
 - [Project Checklist](./phase0/DEVELOPMENT_CHECKLIST.md)
 
+### 🎨 For UI Design
+- [Google Stitch UI Prompt](./STITCH_UI_PROMPT.md)
+
 ### 🗂️ Project Structure
 - [File Manifest](./phase0/FILE_MANIFEST.md)
 - [Database Setup](./phase0/DATABASE_SETUP.md)
