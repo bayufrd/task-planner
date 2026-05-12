@@ -191,21 +191,42 @@ npm install
 
 ### 2. Setup Environment
 
-Copy `.env.example` ke `.env` dan isi nilai yang sesuai:
+Copy `.env.example` ke `.env`:
 
 ```bash
 cp .env.example .env
 ```
 
-Edit `.env`:
-```
-DATABASE_URL="mysql://user:password@localhost:3306/taskplanner"
+Untuk local development, gunakan konfigurasi backend berikut:
+
+```bash
+# Database Configuration
+DATABASE_URL="mysql://root:0202@192.168.1.2:3307/taskplanner"
+
+# Server Configuration
 PORT=5000
 NODE_ENV=development
-JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
+
+# JWT Authentication
+JWT_SECRET=19f616d5450a9d2888ed27997b98f5df
 JWT_EXPIRES_IN=7d
+
+# CORS Configuration
 FRONTEND_URL=http://localhost:3000
+
+# Google OAuth (opsional, jika OAuth dipindahkan ke backend Express)
+# GOOGLE_CLIENT_ID=your-google-client-id
+# GOOGLE_CLIENT_SECRET=your-google-client-secret
 ```
+
+Catatan environment:
+
+- `DATABASE_URL` wajib sama dengan koneksi MySQL local development.
+- `PORT=5000` digunakan untuk Express backend.
+- `FRONTEND_URL=http://localhost:3000` digunakan CORS agar frontend Next.js dapat mengakses backend.
+- `JWT_SECRET` digunakan untuk register/login regular backend Express.
+- Jangan commit file `.env`; gunakan `.env.example` sebagai template publik.
+- Untuk production, ganti `FRONTEND_URL`, `DATABASE_URL`, dan `JWT_SECRET` dengan nilai production yang aman.
 
 ### 3. Generate Prisma Client
 
