@@ -6,8 +6,8 @@ Folder ini disiapkan sebagai tempat migrasi backend/API Smart Task Planner dari 
 
 Backend Express akan menjadi pusat API untuk:
 
-- Autentikasi regular email/password jika disetujui.
-- Integrasi Google OAuth jika dipindahkan dari NextAuth.js atau dikombinasikan dengan flow backend.
+- Autentikasi regular email/password.
+- Integrasi Google OAuth melalui Express backend.
 - CRUD task.
 - Status task `PENDING`, `DONE`, dan `SKIPPED`.
 - Statistik task: jumlah `pending`, `done`, dan `skipped`.
@@ -34,7 +34,7 @@ Checklist implementasi:
 - [x] Tambahkan error handler standar.
 - [x] Tambahkan response helper standar.
 - [x] Tambahkan route health check.
-- [x] Tambahkan route auth (register, login, me).
+- [x] Tambahkan route auth (register, login, me, logout, Google OAuth).
 - [x] Tambahkan route tasks (CRUD, status, stats, priority).
 - [x] Tambahkan route reminders.
 - [x] Tambahkan route calendar sync.
@@ -66,6 +66,7 @@ backend/
     │   │   ├── auth.routes.ts ✓
     │   │   ├── auth.controller.ts ✓
     │   │   ├── auth.service.ts ✓
+    │   │   ├── google-oauth.service.ts ✓
     │   │   └── auth.validation.ts ✓
     │   ├── tasks/
     │   │   ├── task.routes.ts ✓
@@ -97,10 +98,10 @@ backend/
 - [x] `POST /api/auth/register`
 - [x] `POST /api/auth/login`
 - [x] `GET /api/auth/me`
-- [ ] `POST /api/auth/logout` (opsional, JWT stateless)
-- [ ] Google OAuth flow (belum diimplementasikan):
-  - [ ] `GET /api/auth/google`
-  - [ ] `GET /api/auth/google/callback`
+- [x] `POST /api/auth/logout` (JWT stateless, client menghapus token)
+- [x] Google OAuth flow:
+  - [x] `GET /api/auth/google`
+  - [x] `GET /api/auth/google/callback`
 
 ### Tasks
 
@@ -214,9 +215,10 @@ JWT_EXPIRES_IN=7d
 # CORS Configuration
 FRONTEND_URL=http://localhost:3000
 
-# Google OAuth (opsional, jika OAuth dipindahkan ke backend Express)
-# GOOGLE_CLIENT_ID=your-google-client-id
-# GOOGLE_CLIENT_SECRET=your-google-client-secret
+# Google OAuth Configuration
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+GOOGLE_REDIRECT_URI=http://localhost:5000/api/auth/google/callback
 ```
 
 Catatan environment:
@@ -225,6 +227,7 @@ Catatan environment:
 - `PORT=5000` digunakan untuk Express backend.
 - `FRONTEND_URL=http://localhost:3000` digunakan CORS agar frontend Next.js dapat mengakses backend.
 - `JWT_SECRET` digunakan untuk register/login regular backend Express.
+- `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, dan `GOOGLE_REDIRECT_URI` digunakan untuk login via Google OAuth Express.
 - Jangan commit file `.env`; gunakan `.env.example` sebagai template publik.
 - Untuk production, ganti `FRONTEND_URL`, `DATABASE_URL`, dan `JWT_SECRET` dengan nilai production yang aman.
 
@@ -289,8 +292,242 @@ curl -X POST http://localhost:5000/api/auth/login \
   -d '{"email":"test@example.com","password":"password123"}'
 ```
 
+### Google OAuth Login
+```bash
+open http://localhost:5000/api/auth/google
+```
+
+Callback sukses akan redirect ke frontend:
+
+```text
+http://localhost:3000/auth/callback?token=JWT_TOKEN
+```
+
+### Logout
+```bash
+curl -X POST http://localhost:5000/api/auth/logout \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+Logout berlaku untuk login manual dan Google OAuth. Karena JWT stateless, client wajib menghapus token dari storage/session setelah response sukses.
+
 ### Get Tasks (dengan token)
 ```bash
+# Get active tasks (default: excludes DONE)
 curl http://localhost:5000/api/tasks \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+
+# Get tasks by status
+curl "http://localhost:5000/api/tasks?status=PENDING" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+
+curl "http://localhost:5000/api/tasks?status=DONE" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+
+curl "http://localhost:5000/api/tasks?status=SKIPPED" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+### Create Task
+```bash
+curl -X POST http://localhost:5000/api/tasks \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Complete project documentation",
+    "description": "Write comprehensive API documentation",
+    "deadline": "2026-05-15T10:00:00Z",
+    "priority": "HIGH",
+    "estimatedDuration": 120,
+    "tags": ["documentation", "urgent"]
+  }'
+```
+
+### Get Task by ID
+```bash
+curl http://localhost:5000/api/tasks/TASK_ID \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+### Update Task
+```bash
+curl -X PATCH http://localhost:5000/api/tasks/TASK_ID \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Updated task title",
+    "priority": "MEDIUM",
+    "estimatedDuration": 90
+  }'
+```
+
+### Update Task Status
+```bash
+# Mark task as DONE
+curl -X PATCH http://localhost:5000/api/tasks/TASK_ID/status \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"status": "DONE"}'
+
+# Mark task as SKIPPED
+curl -X PATCH http://localhost:5000/api/tasks/TASK_ID/status \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"status": "SKIPPED"}'
+```
+
+### Skip Overdue Task
+```bash
+curl -X POST http://localhost:5000/api/tasks/TASK_ID/skip \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+### Delete Task
+```bash
+curl -X DELETE http://localhost:5000/api/tasks/TASK_ID \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+### Get Task Statistics
+```bash
+curl http://localhost:5000/api/tasks/stats \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+Response:
+```json
+{
+  "success": true,
+  "data": {
+    "pending": 5,
+    "done": 12,
+    "skipped": 2
+  }
+}
+```
+
+### Calculate Task Priority
+```bash
+curl -X POST http://localhost:5000/api/tasks/TASK_ID/priority \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+Response:
+```json
+{
+  "success": true,
+  "data": {
+    "taskId": "TASK_ID",
+    "score": 85.5
+  }
+}
+```
+
+### Reminders
+
+#### Create Reminder
+```bash
+curl -X POST http://localhost:5000/api/reminders \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "taskId": "TASK_ID",
+    "reminderTime": "2026-05-14T09:00:00Z",
+    "message": "Don'\''t forget to complete the task"
+  }'
+```
+
+#### Get All Reminders
+```bash
+curl http://localhost:5000/api/reminders \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+#### Get Due Reminders
+```bash
+curl http://localhost:5000/api/reminders/due \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+#### Get Reminder by ID
+```bash
+curl http://localhost:5000/api/reminders/REMINDER_ID \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+#### Update Reminder
+```bash
+curl -X PATCH http://localhost:5000/api/reminders/REMINDER_ID \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "reminderTime": "2026-05-14T10:00:00Z",
+    "message": "Updated reminder message"
+  }'
+```
+
+#### Delete Reminder
+```bash
+curl -X DELETE http://localhost:5000/api/reminders/REMINDER_ID \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+### Calendar Sync
+
+#### Create Calendar Entry
+```bash
+curl -X POST http://localhost:5000/api/calendars \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "taskId": "TASK_ID",
+    "googleCalendarId": "primary",
+    "googleEventId": "event123"
+  }'
+```
+
+#### Get All Calendar Entries
+```bash
+curl http://localhost:5000/api/calendars \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+#### Get Default Calendar
+```bash
+curl http://localhost:5000/api/calendars/default \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+#### Sync Calendar
+```bash
+curl -X POST http://localhost:5000/api/calendars/sync \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+#### Get Calendar Entry by ID
+```bash
+curl http://localhost:5000/api/calendars/CALENDAR_ID \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+#### Update Calendar Entry
+```bash
+curl -X PATCH http://localhost:5000/api/calendars/CALENDAR_ID \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "googleEventId": "updated_event_id"
+  }'
+```
+
+#### Delete Calendar Entry
+```bash
+curl -X DELETE http://localhost:5000/api/calendars/CALENDAR_ID \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+#### Refresh Calendar Sync
+```bash
+curl -X POST http://localhost:5000/api/calendars/CALENDAR_ID/refresh \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```

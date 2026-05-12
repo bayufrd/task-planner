@@ -1,10 +1,13 @@
 import { Response, NextFunction } from 'express';
 import { AuthRequest } from '../../middleware/auth';
 import { AuthService } from './auth.service';
+import { GoogleOAuthService } from './google-oauth.service';
 import { sendSuccess } from '../../lib/response';
 import { RegisterInput, LoginInput } from './auth.validation';
+import { env } from '../../config/env';
 
 const authService = new AuthService();
+const googleOAuthService = new GoogleOAuthService();
 
 export class AuthController {
   async register(req: AuthRequest, res: Response, next: NextFunction) {
@@ -34,6 +37,43 @@ export class AuthController {
       }
       const user = await authService.getMe(req.userId);
       sendSuccess(res, user);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async googleAuth(_req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const authUrl = googleOAuthService.getAuthUrl();
+      res.redirect(authUrl);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async googleCallback(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const { code } = req.query;
+
+      if (!code || typeof code !== 'string') {
+        throw new Error('Authorization code not found');
+      }
+
+      const result = await googleOAuthService.handleCallback(code);
+
+      // Redirect to frontend with token
+      const redirectUrl = `${env.FRONTEND_URL}/auth/callback?token=${result.token}`;
+      res.redirect(redirectUrl);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async logout(_req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      // JWT is stateless, so logout is handled client-side by removing token
+      // This endpoint exists for consistency and future session management
+      sendSuccess(res, null, 'Logout successful');
     } catch (error) {
       next(error);
     }
