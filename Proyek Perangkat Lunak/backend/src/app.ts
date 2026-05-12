@@ -4,8 +4,10 @@ import { corsOptions } from './config/cors';
 import { errorHandler } from './middleware/error-handler';
 import authRoutes from './modules/auth/auth.routes';
 import taskRoutes from './modules/tasks/task.routes';
+import taskSkipRoutes from './modules/tasks/task.skip.routes';
 import reminderRoutes from './modules/reminders/reminder.routes';
 import calendarRoutes from './modules/calendar/calendar.routes';
+import calendarRefreshRoutes from './modules/calendar/calendar.refresh.routes';
 
 export const createApp = (): Application => {
   const app = express();
@@ -23,8 +25,10 @@ export const createApp = (): Application => {
   // Routes
   app.use('/api/auth', authRoutes);
   app.use('/api/tasks', taskRoutes);
+  app.use('/api/tasks', taskSkipRoutes);
   app.use('/api/reminders', reminderRoutes);
   app.use('/api/calendars', calendarRoutes);
+  app.use('/api/calendars', calendarRefreshRoutes);
 
   // 404 handler
   app.use((_req, res) => {

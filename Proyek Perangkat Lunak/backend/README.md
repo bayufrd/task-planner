@@ -112,6 +112,7 @@ backend/
 - [x] `PATCH /api/tasks/:id/status`
 - [x] `DELETE /api/tasks/:id`
 - [x] `POST /api/tasks/:id/priority`
+- [x] `POST /api/tasks/:id/skip` (overdue/ignored `PENDING` to `SKIPPED`)
 
 ### Reminders
 
@@ -132,6 +133,7 @@ backend/
 - [x] `GET /api/calendar/:id`
 - [x] `PATCH /api/calendar/:id`
 - [x] `DELETE /api/calendar/:id`
+- [x] `POST /api/calendar/:id/refresh` (manual sync action)
 
 ## Task Status Rules
 
