@@ -1,5 +1,7 @@
 # Project Structure - Full paths with Proyek Perangkat Lunak
 Proyek Perangkat Lunak/node_modules/
+Proyek Perangkat Lunak/backend/node_modules/
+Proyek Perangkat Lunak/backend/package-lock.json
 Proyek Perangkat Lunak/.pnp/
 Proyek Perangkat Lunak/.next/
 Proyek Perangkat Lunak/out/

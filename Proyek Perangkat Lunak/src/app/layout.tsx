@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import { Providers } from '@/app/providers'
-import { AuthSessionProvider } from '@/components/providers/AuthSessionProvider'
 
 export const metadata: Metadata = {
   title: 'Smart Task Planner',
@@ -16,11 +15,9 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className="bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-50">
-        <AuthSessionProvider>
-          <Providers>
-            {children}
-          </Providers>
-        </AuthSessionProvider>
+        <Providers>
+          {children}
+        </Providers>
       </body>
     </html>
   )
