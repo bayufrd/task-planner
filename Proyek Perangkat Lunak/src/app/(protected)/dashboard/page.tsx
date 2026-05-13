@@ -33,7 +33,12 @@ export default function Dashboard() {
 
       try {
         setIsLoading(true)
-        const response = await fetch(`${API_ROUTES.TASKS.LIST}?limit=100&page=1`)
+        const token = localStorage.getItem('token')
+        const response = await fetch(`${API_ROUTES.TASKS.LIST}?limit=100&page=1`, {
+          headers: {
+            ...(token && { 'Authorization': `Bearer ${token}` }),
+          },
+        })
         
         if (!response.ok) {
           console.error('Failed to fetch tasks:', response.statusText)

@@ -235,10 +235,14 @@ export default function CommandPalette({ isOpen, onClose, onOpen }: CommandPalet
 
     setIsLoading(true)
     try {
+      const token = localStorage.getItem('token')
       // Call Express backend API to create task
       const response = await fetch(API_ROUTES.TASKS.CREATE, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          ...(token && { 'Authorization': `Bearer ${token}` }),
+        },
         body: JSON.stringify(newTask),
       })
 
