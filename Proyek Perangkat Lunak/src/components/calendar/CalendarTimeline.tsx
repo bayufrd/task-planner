@@ -18,13 +18,15 @@ export default function CalendarTimeline() {
   const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd })
 
   const getTasksForDay = (day: Date) => {
+    // Normalize day to Date object (handles persisted string from localStorage)
+    const normalizedDay = day instanceof Date ? day : new Date(day)
     return tasks
       .filter((task) => {
         const taskDate = new Date(task.deadline)
         return (
-          taskDate.getFullYear() === day.getFullYear() &&
-          taskDate.getMonth() === day.getMonth() &&
-          taskDate.getDate() === day.getDate() &&
+          taskDate.getFullYear() === normalizedDay.getFullYear() &&
+          taskDate.getMonth() === normalizedDay.getMonth() &&
+          taskDate.getDate() === normalizedDay.getDate() &&
           task.status !== 'DONE'
         )
       })

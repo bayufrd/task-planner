@@ -4,9 +4,11 @@ import { Task } from '@/lib/utils/store'
 import { TaskWithScore } from '@/lib/utils/priority'
 import { useTaskStore } from '@/lib/utils/store'
 import { format } from 'date-fns'
-import { Clock, CheckCircle2, Trash2, RotateCcw } from 'lucide-react'
+import { Clock, CheckCircle2, Trash2, RotateCcw, Loader2 } from 'lucide-react'
 import { TaskStatusIcons, PriorityIcons } from '@/lib/constants/icons'
 import { getPriorityBorder, getPriorityGradient, cn } from '@/lib/utils/ui'
+import { taskApi, getAuthToken } from '@/lib/api/client'
+import { useState } from 'react'
 
 interface TaskCardProps {
   task: Task
@@ -15,12 +17,81 @@ interface TaskCardProps {
 
 export default function TaskCard({ task, scoreInfo }: TaskCardProps) {
   const { updateTask, deleteTask } = useTaskStore()
+  const [isUpdating, setIsUpdating] = useState(false)
 
   const StatusIcon = TaskStatusIcons[task.status as keyof typeof TaskStatusIcons].icon
   const statusIconClass = TaskStatusIcons[task.status as keyof typeof TaskStatusIcons].className
   
   const priorityConfig = PriorityIcons[task.priority as keyof typeof PriorityIcons]
   const PriorityIcon = priorityConfig.icon
+
+  const handleComplete = async () => {
+    setIsUpdating(true)
+    console.log('[TaskCard] Complete clicked for task:', task.id, 'backendId:', task.backendId)
+    
+    const token = getAuthToken()
+    console.log('[TaskCard] Token exists:', !!token)
+    
+    // If has backendId and token, call API first
+    if (task.backendId && token) {
+      console.log('[TaskCard] Calling API to complete task:', task.backendId)
+      try {
+        const result = await taskApi.complete(task.backendId)
+        console.log('[TaskCard] API result:', result)
+        
+        if (result.success) {
+          // Update localStorage state
+          updateTask(task.id, {
+            status: 'DONE',
+            completedAt: new Date().toISOString(),
+          })
+        } else {
+          console.error('[TaskCard] API failed, updating local only:', result.error)
+          // Still update locally even if API fails
+          updateTask(task.id, {
+            status: 'DONE',
+            completedAt: new Date().toISOString(),
+          })
+        }
+      } catch (err) {
+        console.error('[TaskCard] API call error:', err)
+        // Fallback to localStorage
+        updateTask(task.id, {
+          status: 'DONE',
+          completedAt: new Date().toISOString(),
+        })
+      }
+    } else {
+      console.log('[TaskCard] No backendId or token, updating localStorage only')
+      updateTask(task.id, {
+        status: 'DONE',
+        completedAt: new Date().toISOString(),
+      })
+    }
+    
+    setIsUpdating(false)
+  }
+
+  const handleDelete = async () => {
+    setIsUpdating(true)
+    console.log('[TaskCard] Delete clicked for task:', task.id, 'backendId:', task.backendId)
+    
+    const token = getAuthToken()
+    
+    if (task.backendId && token) {
+      console.log('[TaskCard] Calling API to delete task:', task.backendId)
+      try {
+        const result = await taskApi.updateStatus(task.backendId, 'DELETED')
+        console.log('[TaskCard] Delete API result:', result)
+      } catch (err) {
+        console.error('[TaskCard] Delete API error:', err)
+      }
+    }
+    
+    // Delete locally regardless
+    deleteTask(task.id)
+    setIsUpdating(false)
+  }
 
   return (
     <div
@@ -42,6 +113,9 @@ export default function TaskCard({ task, scoreInfo }: TaskCardProps) {
               }`}>
                 {task.title}
               </h3>
+              {task.backendId && (
+                <p className="text-xs text-gray-400 mt-0.5">Synced #{task.backendId}</p>
+              )}
             </div>
           </div>
 
@@ -140,29 +214,31 @@ export default function TaskCard({ task, scoreInfo }: TaskCardProps) {
             }
             className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-gray-100/80 dark:bg-gray-800/80 hover:bg-gray-200/80 dark:hover:bg-gray-700/80 transition-all duration-200 font-medium text-sm text-gray-700 dark:text-gray-300"
             title="Undo"
+            disabled={isUpdating}
           >
             <RotateCcw className="w-4 h-4" strokeWidth={2} />
             Undo
           </button>
         ) : (
           <button
-            onClick={() =>
-              updateTask(task.id, {
-                status: 'DONE',
-                completedAt: new Date().toISOString(),
-              })
-            }
-            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-green-100/80 dark:bg-green-900/20 hover:bg-green-200/80 dark:hover:bg-green-800/30 transition-all duration-200 font-medium text-sm text-green-700 dark:text-green-400"
+            onClick={handleComplete}
+            disabled={isUpdating}
+            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-green-100/80 dark:bg-green-900/20 hover:bg-green-200/80 dark:hover:bg-green-800/30 transition-all duration-200 font-medium text-sm text-green-700 dark:text-green-400 disabled:opacity-50"
             title="Complete"
           >
-            <CheckCircle2 className="w-4 h-4" strokeWidth={2} />
+            {isUpdating ? (
+              <Loader2 className="w-4 h-4 animate-spin" strokeWidth={2} />
+            ) : (
+              <CheckCircle2 className="w-4 h-4" strokeWidth={2} />
+            )}
             Done
           </button>
         )}
 
         <button
-          onClick={() => deleteTask(task.id)}
-          className="px-3 py-2 rounded-lg bg-red-100/80 dark:bg-red-900/20 hover:bg-red-200/80 dark:hover:bg-red-800/30 transition-all duration-200 font-medium text-sm text-red-700 dark:text-red-400"
+          onClick={handleDelete}
+          disabled={isUpdating}
+          className="px-3 py-2 rounded-lg bg-red-100/80 dark:bg-red-900/20 hover:bg-red-200/80 dark:hover:bg-red-800/30 transition-all duration-200 font-medium text-sm text-red-700 dark:text-red-400 disabled:opacity-50"
           title="Delete"
         >
           <Trash2 className="w-4 h-4" strokeWidth={2} />
