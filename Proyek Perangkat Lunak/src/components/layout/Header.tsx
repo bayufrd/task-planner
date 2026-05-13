@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { useLanguage } from '@/components/providers/LanguageProvider'
-import { Search, Menu, X, Moon, Sun, Globe, CheckSquare2, Calendar, Settings } from 'lucide-react'
+import { Search, Menu, X, Moon, Sun, Globe } from 'lucide-react'
 
 interface HeaderProps {
   onToggleTheme: () => void
@@ -20,18 +20,17 @@ export default function Header({ onToggleTheme, currentTheme, onOpenCommand, onM
     <header className="sticky top-0 z-50 bg-white/80 dark:bg-gray-950/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-800/50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          {/* Logo & Title */}
-          <div className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-cyan-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-blue-500/20">
-              <CheckSquare2 className="w-6 h-6 text-white" strokeWidth={2.5} />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-lg font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
-                {t('header.title')}
-              </span>
-              <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">Smart Planner</span>
-            </div>
-          </div>
+          {/* Logo */}
+          <Link href="/dashboard" className="flex items-center" aria-label="Go to dashboard">
+            <Image
+              src="/logo3.webp"
+              alt="Smart Task Planner"
+              width={160}
+              height={48}
+              priority
+              className="h-11 w-auto"
+            />
+          </Link>
 
           {/* Right Controls */}
           <div className="flex items-center gap-1">
