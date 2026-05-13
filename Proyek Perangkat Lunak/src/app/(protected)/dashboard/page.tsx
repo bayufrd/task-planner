@@ -22,57 +22,82 @@ export default function Dashboard() {
   const [isLoading, setIsLoading] = useState(true)
   const [isNewTaskModalOpen, setIsNewTaskModalOpen] = useState(false)
 
-  // Load tasks from database on mount
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => {
-    const loadTasks = async () => {
-      if (!session?.user?.id) {
-        setIsLoading(false)
+  const loadTasks = async () => {
+    // Support both NextAuth (Google OAuth) and Express token login
+    const token = localStorage.getItem('token')
+    const hasNextAuthSession = !!session?.user?.id
+
+    // Skip if neither session nor token available
+    if (!hasNextAuthSession && !token) {
+      console.log('[Dashboard] No auth session or token, skipping task load')
+      setIsLoading(false)
+      return
+    }
+
+    try {
+      setIsLoading(true)
+      console.log('[Dashboard] Loading tasks from backend...', {
+        hasNextAuthSession,
+        hasToken: !!token,
+      })
+
+      const response = await fetch(`${API_ROUTES.TASKS.LIST}?limit=100&page=1`, {
+        headers: {
+          ...(token && { 'Authorization': `Bearer ${token}` }),
+        },
+      })
+
+      if (!response.ok) {
+        console.error('[Dashboard] Failed to fetch tasks:', response.status, response.statusText)
+        const errorText = await response.text()
+        console.error('[Dashboard] Error response:', errorText)
         return
       }
 
-      try {
-        setIsLoading(true)
-        const token = localStorage.getItem('token')
-        const response = await fetch(`${API_ROUTES.TASKS.LIST}?limit=100&page=1`, {
-          headers: {
-            ...(token && { 'Authorization': `Bearer ${token}` }),
-          },
-        })
-        
-        if (!response.ok) {
-          console.error('Failed to fetch tasks:', response.statusText)
-          return
-        }
+      const data = await response.json()
+      console.log('[Dashboard] Tasks response:', data)
 
-        const data = await response.json()
-        
-        // Transform database tasks to store format
-        if (data.data && Array.isArray(data.data)) {
-          const formattedTasks = data.data.map((task: any) => ({
-            id: task.id,
-            title: task.title,
-            description: task.description || '',
-            deadline: task.deadline,
-            priority: task.priority as 'HIGH' | 'MEDIUM' | 'LOW',
-            status: task.status as 'TODO' | 'IN_PROGRESS' | 'DONE',
-            estimatedDuration: task.estimatedDuration,
-            tags: [],
-            reminderTime: task.reminderTime,
-          }))
-          
-          setTasks(formattedTasks)
-          console.log(`📥 Loaded ${formattedTasks.length} tasks from database`)
-        }
-      } catch (error) {
-        console.error('Error loading tasks:', error)
-      } finally {
-        setIsLoading(false)
+      // Transform database tasks to store format
+      if (data.data && Array.isArray(data.data)) {
+        const formattedTasks = data.data.map((task: any) => ({
+          id: task.id,
+          title: task.title,
+          description: task.description || '',
+          deadline: task.deadline,
+          priority: task.priority as 'HIGH' | 'MEDIUM' | 'LOW',
+          status: task.status as 'TODO' | 'IN_PROGRESS' | 'DONE',
+          estimatedDuration: task.estimatedDuration,
+          tags: [],
+          reminderTime: task.reminderTime,
+        }))
+
+        setTasks(formattedTasks)
+        console.log(`[Dashboard] Loaded ${formattedTasks.length} tasks from database`)
+      } else if (data.tasks && Array.isArray(data.tasks)) {
+        // Handle alternative response format
+        setTasks(data.tasks)
+        console.log(`[Dashboard] Loaded ${data.tasks.length} tasks (alt format)`)
       }
+    } catch (error) {
+      console.error('[Dashboard] Error loading tasks:', error)
+    } finally {
+      setIsLoading(false)
     }
+  }
 
+  // Load tasks on mount — works for both NextAuth and Express token login
+  useEffect(() => {
     loadTasks()
   }, [session?.user?.id])
+
+  // Reload tasks when token changes (e.g., after Express login)
+  useEffect(() => {
+    const token = localStorage.getItem('token')
+    if (token) {
+      console.log('[Dashboard] Token detected in localStorage, reloading tasks...')
+      loadTasks()
+    }
+  }, [])
 
   // Global keyboard listener for Ctrl+K
   useEffect(() => {
