@@ -1,10 +1,11 @@
 'use client'
 
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Suspense, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { Globe, ArrowRight, Sparkles, Moon, Sun, Mail, Lock } from 'lucide-react'
 import { useTheme } from '@/components/providers/ThemeProvider'
 import Link from 'next/link'
+import { useSnackbar } from 'notistack'
 
 function SignInContent() {
   const router = useRouter()
@@ -16,9 +17,16 @@ function SignInContent() {
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
   const { theme, toggleTheme } = useTheme()
+  const { enqueueSnackbar } = useSnackbar()
 
   // Get callback URL from query params or default to dashboard
   const callbackUrl = searchParams.get('callbackUrl') || '/dashboard'
+
+  useEffect(() => {
+    if (searchParams.get('registered') === 'true') {
+      enqueueSnackbar('Pendaftaran berhasil. Silakan masuk.', { variant: 'success' })
+    }
+  }, [enqueueSnackbar, searchParams])
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true)
@@ -92,8 +100,9 @@ function SignInContent() {
       // If login successful, save token and redirect
       if (data.data?.token) {
         localStorage.setItem('token', data.data.token)
+        document.cookie = `backendAuthToken=${data.data.token}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`
         // Redirect to dashboard or callbackUrl
-        window.location.href = callbackUrl
+        router.replace(callbackUrl)
       } else {
         throw new Error('Token tidak ditemukan dalam response')
       }
@@ -250,7 +259,7 @@ function SignInContent() {
             {/* Sign Up Link */}
             <div className="text-center pt-2">
               <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
-                Don't have an account?{' '}
+                Don&apos;t have an account?{' '}
                 <Link 
                   href={`/auth/signup${callbackUrl ? `?callbackUrl=${encodeURIComponent(callbackUrl)}` : ''}`}
                   className="text-blue-600 dark:text-blue-400 hover:underline font-medium"

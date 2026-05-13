@@ -8,7 +8,7 @@ export const middleware = withAuth(
   },
   {
     callbacks: {
-      authorized: ({ token }) => !!token,
+      authorized: ({ token, req }) => !!token || !!req.cookies.get('backendAuthToken')?.value,
     },
     pages: {
       signIn: '/auth/signin',
