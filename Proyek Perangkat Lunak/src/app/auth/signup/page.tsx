@@ -2,17 +2,19 @@
 
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Suspense, useState } from 'react'
-import { Globe, ArrowRight, Sparkles, Moon, Sun, Mail, Lock } from 'lucide-react'
+import { Globe, ArrowRight, Sparkles, Moon, Sun, Mail, Lock, User } from 'lucide-react'
 import { useTheme } from '@/components/providers/ThemeProvider'
 import Link from 'next/link'
 
-function SignInContent() {
+function SignUpContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [isLoading, setIsLoading] = useState(false)
   const [formData, setFormData] = useState({
+    name: '',
     email: '',
-    password: ''
+    password: '',
+    confirmPassword: ''
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
   const { theme, toggleTheme } = useTheme()
@@ -22,7 +24,8 @@ function SignInContent() {
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true)
-    // For Google OAuth, we'll use backend Google OAuth
+    // For Google OAuth, we'll use the same signIn function
+    // This will be updated later to use backend Google OAuth
     window.location.href = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/auth/google?redirect_uri=${encodeURIComponent(window.location.origin + '/auth/callback')}`
   }
 
@@ -49,6 +52,10 @@ function SignInContent() {
   const validateForm = () => {
     const newErrors: Record<string, string> = {}
 
+    if (!formData.name.trim()) {
+      newErrors.name = 'Nama wajib diisi'
+    }
+
     if (!formData.email.trim()) {
       newErrors.email = 'Email wajib diisi'
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
@@ -57,6 +64,12 @@ function SignInContent() {
 
     if (!formData.password) {
       newErrors.password = 'Password wajib diisi'
+    } else if (formData.password.length < 6) {
+      newErrors.password = 'Password minimal 6 karakter'
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = 'Password tidak cocok'
     }
 
     setErrors(newErrors)
@@ -72,12 +85,13 @@ function SignInContent() {
 
     setIsLoading(true)
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/auth/login`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          name: formData.name,
           email: formData.email,
           password: formData.password
         }),
@@ -86,20 +100,14 @@ function SignInContent() {
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error?.message || 'Login gagal')
+        throw new Error(data.error?.message || 'Registrasi gagal')
       }
 
-      // If login successful, save token and redirect
-      if (data.data?.token) {
-        localStorage.setItem('token', data.data.token)
-        // Redirect to dashboard or callbackUrl
-        window.location.href = callbackUrl
-      } else {
-        throw new Error('Token tidak ditemukan dalam response')
-      }
+      // If registration successful, redirect to login or auto-login
+      router.push(`/auth/signin?callbackUrl=${encodeURIComponent(callbackUrl)}&registered=true`)
     } catch (error) {
       setErrors({
-        submit: error instanceof Error ? error.message : 'Terjadi kesalahan saat login'
+        submit: error instanceof Error ? error.message : 'Terjadi kesalahan saat registrasi'
       })
     } finally {
       setIsLoading(false)
@@ -157,15 +165,15 @@ function SignInContent() {
               }}>
                 <Sparkles className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                 <span className="text-sm font-semibold text-blue-600 dark:text-blue-400">
-                  Secure Login
+                  Create Account
                 </span>
               </div>
 
               <h1 className={`text-3xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-                Welcome Back
+                Join TaskPlanner
               </h1>
               <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
-                Sign in to your account to continue
+                Create your account to start planning smarter
               </p>
             </div>
 
@@ -176,8 +184,32 @@ function SignInContent() {
               </div>
             )}
 
-            {/* Login Form */}
+            {/* Registration Form */}
             <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Name Field */}
+              <div className="space-y-2">
+                <label className={`text-sm font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
+                  Full Name
+                </label>
+                <div className={`relative rounded-lg border ${errors.name ? 'border-red-500' : theme === 'dark' ? 'border-gray-700' : 'border-gray-300'} transition-colors`}>
+                  <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
+                    <User className={`w-5 h-5 ${errors.name ? 'text-red-500' : theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`} />
+                  </div>
+                  <input
+                    type="text"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    className={`w-full pl-10 pr-4 py-3 bg-transparent rounded-lg focus:outline-none focus:ring-2 ${errors.name ? 'focus:ring-red-500' : 'focus:ring-blue-500'} ${theme === 'dark' ? 'text-white placeholder-gray-500' : 'text-gray-900 placeholder-gray-400'}`}
+                    placeholder="Enter your full name"
+                    disabled={isLoading}
+                  />
+                </div>
+                {errors.name && (
+                  <p className="text-sm text-red-500">{errors.name}</p>
+                )}
+              </div>
+
               {/* Email Field */}
               <div className="space-y-2">
                 <label className={`text-sm font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
@@ -217,12 +249,36 @@ function SignInContent() {
                     value={formData.password}
                     onChange={handleInputChange}
                     className={`w-full pl-10 pr-4 py-3 bg-transparent rounded-lg focus:outline-none focus:ring-2 ${errors.password ? 'focus:ring-red-500' : 'focus:ring-blue-500'} ${theme === 'dark' ? 'text-white placeholder-gray-500' : 'text-gray-900 placeholder-gray-400'}`}
-                    placeholder="Enter your password"
+                    placeholder="Minimum 6 characters"
                     disabled={isLoading}
                   />
                 </div>
                 {errors.password && (
                   <p className="text-sm text-red-500">{errors.password}</p>
+                )}
+              </div>
+
+              {/* Confirm Password Field */}
+              <div className="space-y-2">
+                <label className={`text-sm font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
+                  Confirm Password
+                </label>
+                <div className={`relative rounded-lg border ${errors.confirmPassword ? 'border-red-500' : theme === 'dark' ? 'border-gray-700' : 'border-gray-300'} transition-colors`}>
+                  <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
+                    <Lock className={`w-5 h-5 ${errors.confirmPassword ? 'text-red-500' : theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`} />
+                  </div>
+                  <input
+                    type="password"
+                    name="confirmPassword"
+                    value={formData.confirmPassword}
+                    onChange={handleInputChange}
+                    className={`w-full pl-10 pr-4 py-3 bg-transparent rounded-lg focus:outline-none focus:ring-2 ${errors.confirmPassword ? 'focus:ring-red-500' : 'focus:ring-blue-500'} ${theme === 'dark' ? 'text-white placeholder-gray-500' : 'text-gray-900 placeholder-gray-400'}`}
+                    placeholder="Confirm your password"
+                    disabled={isLoading}
+                  />
+                </div>
+                {errors.confirmPassword && (
+                  <p className="text-sm text-red-500">{errors.confirmPassword}</p>
                 )}
               </div>
 
@@ -235,39 +291,26 @@ function SignInContent() {
                 {isLoading ? (
                   <>
                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    <span>Signing in...</span>
+                    <span>Creating Account...</span>
                   </>
                 ) : (
                   <>
                     <Sparkles className="w-5 h-5" strokeWidth={2} />
-                    <span>Sign In</span>
+                    <span>Create Account</span>
                     <ArrowRight className="w-4 h-4 ml-1" strokeWidth={2} />
                   </>
                 )}
               </button>
             </form>
 
-            {/* Sign Up Link */}
-            <div className="text-center pt-2">
-              <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
-                Don't have an account?{' '}
-                <Link 
-                  href={`/auth/signup${callbackUrl ? `?callbackUrl=${encodeURIComponent(callbackUrl)}` : ''}`}
-                  className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
-                >
-                  Sign up here
-                </Link>
-              </p>
-            </div>
-
             {/* Divider */}
-            <div className="relative pt-4">
+            <div className="relative">
               <div className="absolute inset-0 flex items-center">
                 <div className={`w-full border-t ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}`}></div>
               </div>
               <div className="relative flex justify-center text-sm">
                 <span className={`px-2 ${theme === 'dark' ? 'bg-gray-800/80 text-gray-400' : 'bg-white/80 text-gray-600'}`}>
-                  Or continue with Google
+                  Or continue with
                 </span>
               </div>
             </div>
@@ -276,21 +319,26 @@ function SignInContent() {
             <button
               onClick={handleGoogleSignIn}
               disabled={isLoading}
-              className="w-full relative h-12 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:from-blue-500 disabled:to-indigo-500 disabled:cursor-not-allowed text-white font-semibold transition-all duration-200 flex items-center justify-center gap-3 shadow-lg shadow-blue-500/20 hover:shadow-lg hover:shadow-blue-500/30"
+              className="w-full relative h-12 rounded-lg border border-gray-300 dark:border-gray-700 hover:border-gray-400 dark:hover:border-gray-600 disabled:border-gray-300 dark:disabled:border-gray-700 disabled:cursor-not-allowed font-semibold transition-all duration-200 flex items-center justify-center gap-3 shadow-sm hover:shadow"
             >
-              {isLoading ? (
-                <>
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  <span>Signing in...</span>
-                </>
-              ) : (
-                <>
-                  <Globe className="w-5 h-5" strokeWidth={2} />
-                  <span>Continue with Google</span>
-                  <ArrowRight className="w-4 h-4 ml-1" strokeWidth={2} />
-                </>
-              )}
+              <Globe className="w-5 h-5" strokeWidth={2} />
+              <span className={theme === 'dark' ? 'text-white' : 'text-gray-700'}>
+                Sign up with Google
+              </span>
             </button>
+
+            {/* Login Link */}
+            <div className="text-center pt-4">
+              <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
+                Already have an account?{' '}
+                <Link 
+                  href={`/auth/signin${callbackUrl ? `?callbackUrl=${encodeURIComponent(callbackUrl)}` : ''}`}
+                  className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
+                >
+                  Sign in here
+                </Link>
+              </p>
+            </div>
 
             {/* Features Info */}
             <div className="space-y-3 pt-6 border-t" style={{
@@ -322,7 +370,7 @@ function SignInContent() {
             {/* Footer Text */}
             <div className={`text-center text-xs space-y-2 pt-2 ${theme === 'dark' ? 'text-gray-500' : 'text-gray-500'}`}>
               <p>
-                By signing in, you agree to our<br />
+                By creating an account, you agree to our<br />
                 <span className="text-blue-600 dark:text-blue-400 hover:underline cursor-pointer">Terms of Service</span> and <span className="text-blue-600 dark:text-blue-400 hover:underline cursor-pointer">Privacy Policy</span>
               </p>
               <p className={theme === 'dark' ? 'text-gray-600' : 'text-gray-400'}>
@@ -337,7 +385,7 @@ function SignInContent() {
 }
 
 // Loading fallback for Suspense
-function SignInLoading() {
+function SignUpLoading() {
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-gray-950 via-slate-900 to-indigo-950">
       <div className="text-center">
@@ -349,10 +397,10 @@ function SignInLoading() {
 }
 
 // Wrap with Suspense
-export default function SignIn() {
+export default function SignUp() {
   return (
-    <Suspense fallback={<SignInLoading />}>
-      <SignInContent />
+    <Suspense fallback={<SignUpLoading />}>
+      <SignUpContent />
     </Suspense>
   )
 }
