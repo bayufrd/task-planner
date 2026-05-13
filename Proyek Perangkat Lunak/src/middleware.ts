@@ -10,12 +10,28 @@ export async function middleware(req: NextRequest) {
 
   const isAuthenticated = Boolean(backendToken || nextAuthToken)
 
+  if (process.env.NODE_ENV !== 'production') {
+    console.debug('[middleware:auth]', {
+      path: req.nextUrl.pathname,
+      hasBackendToken: Boolean(backendToken),
+      hasNextAuthToken: Boolean(nextAuthToken),
+      isAuthenticated,
+    })
+  }
+
   if (isAuthenticated) {
     return NextResponse.next()
   }
 
   const signInUrl = new URL('/auth/signin', req.url)
   signInUrl.searchParams.set('callbackUrl', req.nextUrl.pathname + req.nextUrl.search)
+
+  if (process.env.NODE_ENV !== 'production') {
+    console.debug('[middleware:auth] redirect', {
+      from: req.nextUrl.pathname,
+      to: signInUrl.toString(),
+    })
+  }
 
   return NextResponse.redirect(signInUrl)
 }

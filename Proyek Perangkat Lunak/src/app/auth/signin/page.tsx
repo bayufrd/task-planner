@@ -75,6 +75,13 @@ function SignInContent() {
     setIsLoading(true)
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
+
+      console.debug('[auth:login] request', {
+        apiUrl,
+        callbackUrl,
+        email: formData.email,
+      })
+
       const response = await fetch(`${apiUrl}/api/auth/login`, {
         method: 'POST',
         headers: {
@@ -86,18 +93,31 @@ function SignInContent() {
         }),
       })
 
-      const data = await response.json()
+      const data = await response.json().catch(() => null)
+
+      console.debug('[auth:login] response', {
+        status: response.status,
+        ok: response.ok,
+        body: data,
+        hasToken: Boolean(data?.data?.token),
+      })
 
       if (!response.ok) {
-        throw new Error(data.error?.message || 'Login gagal')
+        throw new Error(data?.error?.message || 'Login gagal')
       }
 
       // Save JWT token to cookie so middleware can read it
-      if (data.data?.token) {
+      if (data?.data?.token) {
         setAuthCookie(data.data.token, 7) // 7 days expiry
+        console.debug('[auth:login] cookie set', {
+          hasCookie: document.cookie.includes('backendAuthToken='),
+          cookieNames: document.cookie.split(';').map((cookie) => cookie.trim().split('=')[0]),
+        })
       } else {
         console.warn('[auth:login] success response did not include token')
       }
+
+      console.debug('[auth:login] redirect', { callbackUrl })
 
       // Redirect to dashboard
       router.push(callbackUrl)

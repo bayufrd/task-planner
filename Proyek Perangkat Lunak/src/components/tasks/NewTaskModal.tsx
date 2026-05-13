@@ -6,6 +6,7 @@ import { useTaskStore } from '@/lib/utils/store'
 import { useNotification } from '@/lib/hooks/useNotification'
 import { useTheme } from '@/components/providers/ThemeProvider'
 import { API_ROUTES } from '@/lib/constants/api'
+import { getAuthCookie } from '@/lib/auth/cookies'
 
 interface NewTaskModalProps {
   isOpen: boolean
@@ -14,30 +15,43 @@ interface NewTaskModalProps {
 
 type Priority = 'HIGH' | 'MEDIUM' | 'LOW'
 
+const getCurrentDateTime = () => {
+  const now = new Date()
+  const offset = now.getTimezoneOffset()
+  const localNow = new Date(now.getTime() - offset * 60 * 1000)
+
+  return {
+    date: localNow.toISOString().slice(0, 10),
+    time: localNow.toISOString().slice(11, 16),
+  }
+}
+
 export default function NewTaskModal({ isOpen, onClose }: NewTaskModalProps) {
   const { theme } = useTheme()
   const notify = useNotification()
   const { addTask } = useTaskStore()
   const [isLoading, setIsLoading] = useState(false)
 
+  const defaultDateTime = getCurrentDateTime()
+
   // Form state
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [priority, setPriority] = useState<Priority>('MEDIUM')
-  const [deadline, setDeadline] = useState('')
-  const [deadlineTime, setDeadlineTime] = useState('')
+  const [deadline, setDeadline] = useState(defaultDateTime.date)
+  const [deadlineTime, setDeadlineTime] = useState(defaultDateTime.time)
   const [estimatedDuration, setEstimatedDuration] = useState('60')
 
-  // Reset form when closing
+  // Reset form when opening/closing
   useEffect(() => {
-    if (!isOpen) {
-      setTitle('')
-      setDescription('')
-      setPriority('MEDIUM')
-      setDeadline('')
-      setDeadlineTime('')
-      setEstimatedDuration('60')
-    }
+    const currentDateTime = getCurrentDateTime()
+
+    setTitle('')
+    setDescription('')
+    setPriority('MEDIUM')
+    setDeadline(currentDateTime.date)
+    setDeadlineTime(currentDateTime.time)
+    setEstimatedDuration('60')
   }, [isOpen])
 
   // Handle submit
@@ -52,30 +66,47 @@ export default function NewTaskModal({ isOpen, onClose }: NewTaskModalProps) {
     try {
       setIsLoading(true)
 
-      // Get token from localStorage
-      const token = localStorage.getItem('token')
-      
+      const token = getAuthCookie()
+      const payload = {
+        title: title.trim(),
+        description: description.trim() || undefined,
+        priority,
+        deadline: new Date(`${deadline}T${deadlineTime}:00`).toISOString(),
+        estimatedDuration: parseInt(estimatedDuration, 10) || 60,
+      }
+
+      console.debug('[task:create] request', payload)
+
       const response = await fetch(API_ROUTES.TASKS.CREATE, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
           ...(token && { 'Authorization': `Bearer ${token}` }),
         },
-        body: JSON.stringify({
-          title: title.trim(),
-          description: description.trim(),
-          priority,
-          deadline: deadline && deadlineTime ? `${deadline}T${deadlineTime}:00` : (deadline || null),
-          estimatedDuration: parseInt(estimatedDuration) || 60,
-          status: 'PENDING', // Backend uses PENDING
-        }),
+        body: JSON.stringify(payload),
+      })
+
+      const result = await response.json().catch(() => null)
+
+      console.debug('[task:create] response', {
+        status: response.status,
+        ok: response.ok,
+        body: result,
       })
 
       if (!response.ok) {
-        throw new Error('Failed to create task')
+        const message =
+          result?.error?.message ||
+          result?.message ||
+          'Failed to create task'
+        throw new Error(message)
       }
 
-      const data = await response.json()
+      const data = result?.data
+
+      if (!data) {
+        throw new Error('Create task response did not include task data')
+      }
 
       // Add to local store (without id and createdAt as they're auto-generated)
       addTask({
@@ -85,15 +116,15 @@ export default function NewTaskModal({ isOpen, onClose }: NewTaskModalProps) {
         deadline: data.deadline,
         estimatedDuration: data.estimatedDuration,
         status: data.status,
-        tags: [],
+        tags: data.tags || [],
         reminderTime: data.reminderTime || 0,
       })
 
       notify.success(`Task "${title}" created successfully`)
       onClose()
     } catch (error) {
-      console.error('Error creating task:', error)
-      notify.error('Failed to create task. Please try again.')
+      console.error('[task:create] failed', error)
+      notify.error(error instanceof Error ? error.message : 'Failed to create task. Please try again.')
     } finally {
       setIsLoading(false)
     }
@@ -229,11 +260,11 @@ export default function NewTaskModal({ isOpen, onClose }: NewTaskModalProps) {
                     ? 'bg-gray-800 border-gray-700 text-white'
                     : 'bg-white border-gray-300 text-gray-900'
                 }`}
-                disabled={isLoading || !deadline}
+                disabled={isLoading}
               />
             </div>
             <p className={`text-xs mt-1 ${theme === 'dark' ? 'text-gray-500' : 'text-gray-500'}`}>
-              Time is optional
+              Defaults to current date and time
             </p>
           </div>
           <div className="grid grid-cols-2 gap-4">
