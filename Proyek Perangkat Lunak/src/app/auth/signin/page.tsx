@@ -74,7 +74,8 @@ function SignInContent() {
 
     setIsLoading(true)
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/auth/login`, {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
+      const response = await fetch(`${apiUrl}/api/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -94,11 +95,14 @@ function SignInContent() {
       // Save JWT token to cookie so middleware can read it
       if (data.data?.token) {
         setAuthCookie(data.data.token, 7) // 7 days expiry
+      } else {
+        console.warn('[auth:login] success response did not include token')
       }
 
       // Redirect to dashboard
       router.push(callbackUrl)
     } catch (error) {
+      console.error('[auth:login] failed', error)
       setErrors({
         submit: error instanceof Error ? error.message : 'Terjadi kesalahan saat login'
       })
@@ -281,7 +285,7 @@ function SignInContent() {
             {/* Sign Up Link */}
             <div className="text-center pt-4">
               <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
-                Don't have an account?{' '}
+                {'Don\'t have an account? '}
                 <Link 
                   href={`/auth/signup${callbackUrl ? `?callbackUrl=${encodeURIComponent(callbackUrl)}` : ''}`}
                   className="text-blue-600 dark:text-blue-400 hover:underline font-medium"

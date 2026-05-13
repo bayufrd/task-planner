@@ -12,6 +12,7 @@ import { useCommandPalette } from '@/components/providers/CommandPaletteProvider
 import { useLanguage } from '@/components/providers/LanguageProvider'
 import { Search, CheckSquare2, LogOut } from 'lucide-react'
 import { signOut } from 'next-auth/react'
+import { getAuthCookie, removeAuthCookie } from '@/lib/auth/cookies'
 
 export default function ProtectedLayout({
   children,
@@ -23,21 +24,24 @@ export default function ProtectedLayout({
   const { language, setLanguage, t } = useLanguage()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
+  const [backendToken, setBackendToken] = useState<string | null>(null)
   const { status, data: session } = useSession()
   const router = useRouter()
 
   useEffect(() => {
+    const token = getAuthCookie()
     setMounted(true)
-  }, [])
+    setBackendToken(token)
+  }, [status])
 
   // If not authenticated, redirect to signin
   useEffect(() => {
-    if (status === 'unauthenticated') {
+    if (mounted && status === 'unauthenticated' && !backendToken) {
       router.push('/auth/signin')
     }
-  }, [status, router])
+  }, [backendToken, mounted, status, router])
 
-  if (status === 'loading') {
+  if (status === 'loading' && !backendToken) {
     return (
       <div className="h-screen flex items-center justify-center bg-white dark:bg-gray-950">
         <div className="text-center">
@@ -48,7 +52,7 @@ export default function ProtectedLayout({
     )
   }
 
-  if (status === 'unauthenticated') {
+  if (status === 'unauthenticated' && !backendToken) {
     return null
   }
 
@@ -147,6 +151,7 @@ export default function ProtectedLayout({
                 <button
                   onClick={() => {
                     setIsMenuOpen(false)
+                    removeAuthCookie()
                     signOut({ redirect: true, callbackUrl: '/' })
                   }}
                   className="w-full text-left px-4 py-3 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors text-red-600 dark:text-red-400 font-medium flex items-center gap-3"

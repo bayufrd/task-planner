@@ -24,6 +24,7 @@ export const config = {
   matcher: [
     // Protected routes only
     '/dashboard/:path*',
+    '/dashboard',
     '/calendar/:path*',
     '/settings/:path*',
     '/api/tasks/:path*',

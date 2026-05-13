@@ -26,6 +26,10 @@ export class AuthController {
       const result = await authService.login(data);
       sendSuccess(res, result, 'Login successful');
     } catch (error) {
+      console.error('[auth:login] failed', {
+        email: req.body?.email,
+        error: error instanceof Error ? error.message : error,
+      });
       next(error);
     }
   }
