@@ -10,9 +10,15 @@ import Header from '@/components/layout/Header'
 import { useTheme } from '@/components/providers/ThemeProvider'
 import { useCommandPalette } from '@/components/providers/CommandPaletteProvider'
 import { useLanguage } from '@/components/providers/LanguageProvider'
-import { Search, CheckSquare2, LogOut } from 'lucide-react'
+import { Search, CheckSquare2, LogOut, UserCircle } from 'lucide-react'
 import { signOut } from 'next-auth/react'
 import { getAuthCookie, removeAuthCookie } from '@/lib/auth/cookies'
+
+type BackendUser = {
+  id?: string | number
+  name?: string | null
+  email?: string | null
+}
 
 export default function ProtectedLayout({
   children,
@@ -25,16 +31,28 @@ export default function ProtectedLayout({
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
   const [backendToken, setBackendToken] = useState<string | null>(null)
+  const [backendUser, setBackendUser] = useState<BackendUser | null>(null)
   const { status, data: session } = useSession()
   const router = useRouter()
+
+  const activeUser = session?.user ?? backendUser
 
   useEffect(() => {
     // Check both cookie and localStorage for token
     const cookieToken = getAuthCookie()
     const localStorageToken = typeof window !== 'undefined' ? localStorage.getItem('token') : null
     const token = cookieToken || localStorageToken
+    const savedUser = typeof window !== 'undefined' ? localStorage.getItem('backendUser') : null
     setMounted(true)
     setBackendToken(token)
+
+    if (savedUser) {
+      try {
+        setBackendUser(JSON.parse(savedUser) as BackendUser)
+      } catch {
+        setBackendUser(null)
+      }
+    }
     console.debug('[ProtectedLayout] Auth token check:', {
       hasCookieToken: !!cookieToken,
       hasLocalStorageToken: !!localStorageToken,
@@ -98,45 +116,32 @@ export default function ProtectedLayout({
           <div className="fixed right-0 sm:right-0 lg:right-0 top-16 w-full sm:w-96 max-w-sm bg-white dark:bg-gray-900 rounded-b-2xl sm:rounded-2xl border-b sm:border border-gray-200/50 dark:border-gray-800/50 z-40 overflow-y-auto shadow-xl shadow-black/10 dark:shadow-black/40 sm:rounded-t-2xl">
             <nav className="px-4 py-4 space-y-2">
               {/* User Profile Card */}
-              {mounted && session?.user && (
+              {mounted && activeUser && (
                 <div className="px-4 py-4 rounded-lg bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950/30 dark:to-cyan-950/30 border border-blue-200/50 dark:border-blue-800/50 mb-4">
                   <div className="flex items-center gap-3">
-                    {session.user.image && (
+                    {'image' in activeUser && activeUser.image ? (
                       <Image
-                        src={session.user.image}
-                        alt={session.user.name || 'User'}
+                        src={activeUser.image}
+                        alt={activeUser.name || 'User'}
                         width={48}
                         height={48}
                         className="w-12 h-12 rounded-full object-cover border-2 border-white dark:border-gray-800"
                       />
+                    ) : (
+                      <UserCircle className="w-12 h-12 text-blue-600 dark:text-blue-400" strokeWidth={1.5} />
                     )}
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-bold text-gray-900 dark:text-white truncate">
-                        {session.user.name}
+                        {activeUser.name || 'User'}
                       </p>
                       <p className="text-xs text-gray-600 dark:text-gray-400 truncate">
-                        {session.user.email}
+                        {activeUser.email || '-'}
                       </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-500 truncate font-mono mt-1">
-                        ID: {session.user.id}
-                      </p>
-                      <div className="flex items-center gap-2 mt-2">
-                        {(session.user as any).emailVerified && (
-                          <span className="text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-2 py-0.5 rounded-full font-medium">
-                            ✓ Verified
-                          </span>
-                        )}
-                        {(session.user as any).locale && (
-                          <span className="text-xs bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-2 py-0.5 rounded-full font-medium">
-                            {(session.user as any).locale}
-                          </span>
-                        )}
-                        {(session.user as any).hd && (
-                          <span className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 px-2 py-0.5 rounded-full font-medium">
-                            {(session.user as any).hd}
-                          </span>
-                        )}
-                      </div>
+                      {activeUser.id && (
+                        <p className="text-xs text-gray-500 dark:text-gray-500 truncate font-mono mt-1">
+                          ID: {activeUser.id}
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -167,6 +172,8 @@ export default function ProtectedLayout({
                   onClick={() => {
                     setIsMenuOpen(false)
                     removeAuthCookie()
+                    localStorage.removeItem('token')
+                    localStorage.removeItem('backendUser')
                     signOut({ redirect: true, callbackUrl: '/' })
                   }}
                   className="w-full text-left px-4 py-3 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors text-red-600 dark:text-red-400 font-medium flex items-center gap-3"
