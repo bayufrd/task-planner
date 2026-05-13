@@ -1,11 +1,12 @@
 'use client'
 
+import { signIn } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Suspense, useEffect, useState } from 'react'
+import { Suspense, useState } from 'react'
 import { Globe, ArrowRight, Sparkles, Moon, Sun, Mail, Lock } from 'lucide-react'
 import { useTheme } from '@/components/providers/ThemeProvider'
 import Link from 'next/link'
-import { useSnackbar } from 'notistack'
+import { setAuthCookie } from '@/lib/auth/cookies'
 
 function SignInContent() {
   const router = useRouter()
@@ -17,21 +18,14 @@ function SignInContent() {
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
   const { theme, toggleTheme } = useTheme()
-  const { enqueueSnackbar } = useSnackbar()
 
   // Get callback URL from query params or default to dashboard
   const callbackUrl = searchParams.get('callbackUrl') || '/dashboard'
-
-  useEffect(() => {
-    if (searchParams.get('registered') === 'true') {
-      enqueueSnackbar('Pendaftaran berhasil. Silakan masuk.', { variant: 'success' })
-    }
-  }, [enqueueSnackbar, searchParams])
+  const registered = searchParams.get('registered')
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true)
-    // For Google OAuth, we'll use backend Google OAuth
-    window.location.href = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/auth/google?redirect_uri=${encodeURIComponent(window.location.origin + '/auth/callback')}`
+    await signIn('google', { redirect: true, callbackUrl })
   }
 
   const handleBackHome = () => {
@@ -97,15 +91,13 @@ function SignInContent() {
         throw new Error(data.error?.message || 'Login gagal')
       }
 
-      // If login successful, save token and redirect
+      // Save JWT token to cookie so middleware can read it
       if (data.data?.token) {
-        localStorage.setItem('token', data.data.token)
-        document.cookie = `backendAuthToken=${data.data.token}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`
-        // Redirect to dashboard or callbackUrl
-        router.replace(callbackUrl)
-      } else {
-        throw new Error('Token tidak ditemukan dalam response')
+        setAuthCookie(data.data.token, 7) // 7 days expiry
       }
+
+      // Redirect to dashboard
+      router.push(callbackUrl)
     } catch (error) {
       setErrors({
         submit: error instanceof Error ? error.message : 'Terjadi kesalahan saat login'
@@ -174,9 +166,16 @@ function SignInContent() {
                 Welcome Back
               </h1>
               <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
-                Sign in to your account to continue
+                Sign in to continue managing your tasks
               </p>
             </div>
+
+            {/* Success Message */}
+            {registered && (
+              <div className={`p-3 rounded-lg ${theme === 'dark' ? 'bg-green-900/20 border border-green-800/50 text-green-300' : 'bg-green-50 border border-green-200 text-green-700'}`}>
+                <p className="text-sm">Account created successfully! Please sign in.</p>
+              </div>
+            )}
 
             {/* Error Message */}
             {errors.submit && (
@@ -248,7 +247,6 @@ function SignInContent() {
                   </>
                 ) : (
                   <>
-                    <Sparkles className="w-5 h-5" strokeWidth={2} />
                     <span>Sign In</span>
                     <ArrowRight className="w-4 h-4 ml-1" strokeWidth={2} />
                   </>
@@ -256,27 +254,14 @@ function SignInContent() {
               </button>
             </form>
 
-            {/* Sign Up Link */}
-            <div className="text-center pt-2">
-              <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
-                Don&apos;t have an account?{' '}
-                <Link 
-                  href={`/auth/signup${callbackUrl ? `?callbackUrl=${encodeURIComponent(callbackUrl)}` : ''}`}
-                  className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
-                >
-                  Sign up here
-                </Link>
-              </p>
-            </div>
-
             {/* Divider */}
-            <div className="relative pt-4">
+            <div className="relative">
               <div className="absolute inset-0 flex items-center">
                 <div className={`w-full border-t ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}`}></div>
               </div>
               <div className="relative flex justify-center text-sm">
                 <span className={`px-2 ${theme === 'dark' ? 'bg-gray-800/80 text-gray-400' : 'bg-white/80 text-gray-600'}`}>
-                  Or continue with Google
+                  Or continue with
                 </span>
               </div>
             </div>
@@ -285,21 +270,26 @@ function SignInContent() {
             <button
               onClick={handleGoogleSignIn}
               disabled={isLoading}
-              className="w-full relative h-12 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:from-blue-500 disabled:to-indigo-500 disabled:cursor-not-allowed text-white font-semibold transition-all duration-200 flex items-center justify-center gap-3 shadow-lg shadow-blue-500/20 hover:shadow-lg hover:shadow-blue-500/30"
+              className="w-full relative h-12 rounded-lg border border-gray-300 dark:border-gray-700 hover:border-gray-400 dark:hover:border-gray-600 disabled:border-gray-300 dark:disabled:border-gray-700 disabled:cursor-not-allowed font-semibold transition-all duration-200 flex items-center justify-center gap-3 shadow-sm hover:shadow"
             >
-              {isLoading ? (
-                <>
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  <span>Signing in...</span>
-                </>
-              ) : (
-                <>
-                  <Globe className="w-5 h-5" strokeWidth={2} />
-                  <span>Continue with Google</span>
-                  <ArrowRight className="w-4 h-4 ml-1" strokeWidth={2} />
-                </>
-              )}
+              <Globe className="w-5 h-5" strokeWidth={2} />
+              <span className={theme === 'dark' ? 'text-white' : 'text-gray-700'}>
+                Continue with Google
+              </span>
             </button>
+
+            {/* Sign Up Link */}
+            <div className="text-center pt-4">
+              <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
+                Don't have an account?{' '}
+                <Link 
+                  href={`/auth/signup${callbackUrl ? `?callbackUrl=${encodeURIComponent(callbackUrl)}` : ''}`}
+                  className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
+                >
+                  Sign up here
+                </Link>
+              </p>
+            </div>
 
             {/* Features Info */}
             <div className="space-y-3 pt-6 border-t" style={{
