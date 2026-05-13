@@ -58,18 +58,34 @@ export default function Dashboard() {
       console.log('[Dashboard] Tasks response:', data)
 
       // Transform database tasks to store format
+      // Normalize status from backend (PENDING/DONE/SKIPPED) to frontend (TODO/IN_PROGRESS/DONE)
       if (data.data && Array.isArray(data.data)) {
-        const formattedTasks = data.data.map((task: any) => ({
-          id: task.id,
-          title: task.title,
-          description: task.description || '',
-          deadline: task.deadline,
-          priority: task.priority as 'HIGH' | 'MEDIUM' | 'LOW',
-          status: task.status as 'TODO' | 'IN_PROGRESS' | 'DONE',
-          estimatedDuration: task.estimatedDuration,
-          tags: [],
-          reminderTime: task.reminderTime,
-        }))
+        const formattedTasks = data.data.map((task: any) => {
+          // Map backend status to frontend expected values
+          let normalizedStatus: 'TODO' | 'IN_PROGRESS' | 'DONE' = 'TODO'
+          if (task.status === 'DONE') {
+            normalizedStatus = 'DONE'
+          } else if (task.status === 'IN_PROGRESS') {
+            normalizedStatus = 'IN_PROGRESS'
+          } else {
+            // PENDING, SKIPPED, etc. default to TODO
+            normalizedStatus = 'TODO'
+          }
+
+          console.log(`[Dashboard] Task: "${task.title}" | deadline: ${task.deadline} | status: ${task.status} → ${normalizedStatus}`)
+
+          return {
+            id: task.id,
+            title: task.title,
+            description: task.description || '',
+            deadline: task.deadline,
+            priority: task.priority as 'HIGH' | 'MEDIUM' | 'LOW',
+            status: normalizedStatus,
+            estimatedDuration: task.estimatedDuration,
+            tags: [],
+            reminderTime: task.reminderTime,
+          }
+        })
 
         setTasks(formattedTasks)
         console.log(`[Dashboard] Loaded ${formattedTasks.length} tasks from database`)
