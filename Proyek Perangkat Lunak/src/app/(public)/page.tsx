@@ -1,5 +1,7 @@
 'use client'
 
+import Image from 'next/image'
+import Link from 'next/link'
 import { signIn } from 'next-auth/react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
@@ -10,7 +12,6 @@ import {
   Brain, 
   Watch, 
   BarChart3, 
-  Users, 
   CheckCircle2,
   ChevronRight,
   Sparkles
@@ -110,14 +111,16 @@ export default function LandingPage() {
         {/* Navbar */}
         <nav className="border-b border-white/20 dark:border-gray-800/50 backdrop-blur-sm bg-white/50 dark:bg-gray-950/50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center">
-                <Sparkles className="w-5 h-5 text-white" strokeWidth={2} />
-              </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                TaskPlanner
-              </span>
-            </div>
+            <Link href="/" className="flex items-center" aria-label="Go to home">
+              <Image
+                src="/logo3.webp"
+                alt="Smart Task Planner"
+                width={160}
+                height={48}
+                priority
+                className="h-11 w-auto"
+              />
+            </Link>
             <button
               onClick={handleStartNow}
               disabled={isLoading}

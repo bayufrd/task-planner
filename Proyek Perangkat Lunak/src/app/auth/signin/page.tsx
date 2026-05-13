@@ -6,6 +6,7 @@ import { Suspense, useState } from 'react'
 import { Globe, ArrowRight, Sparkles, Moon, Sun, Mail, Lock } from 'lucide-react'
 import { useTheme } from '@/components/providers/ThemeProvider'
 import Link from 'next/link'
+import Image from 'next/image'
 import { setAuthCookie } from '@/lib/auth/cookies'
 
 function SignInContent() {
@@ -149,17 +150,9 @@ function SignInContent() {
       {/* Header */}
       <nav className={`border-b transition-colors ${theme === 'dark' ? 'border-gray-800/50 backdrop-blur-sm bg-gray-950/50' : 'border-white/20 dark:border-gray-800/50 backdrop-blur-sm bg-white/50 dark:bg-gray-950/50'}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-          <button
-            onClick={handleBackHome}
-            className="flex items-center gap-2 hover:opacity-80 transition-opacity"
-          >
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center">
-              <Sparkles className="w-5 h-5 text-white" strokeWidth={2} />
-            </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-              TaskPlanner
-            </span>
-          </button>
+          <Link href="/" className="flex items-center">
+            <Image src="/logo3.webp" alt="TaskPlanner Logo" width={120} height={40} className="h-10 w-auto" priority />
+          </Link>
 
           {/* Theme Toggle */}
           <button
