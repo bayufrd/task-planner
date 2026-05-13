@@ -1,20 +1,24 @@
-import { withAuth } from 'next-auth/middleware'
-import { NextRequest } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
+import { getToken } from 'next-auth/jwt'
 
-export const middleware = withAuth(
-  function middleware(req: NextRequest) {
-    // Middleware logic here if needed
-    return null
-  },
-  {
-    callbacks: {
-      authorized: ({ token, req }) => !!token || !!req.cookies.get('backendAuthToken')?.value,
-    },
-    pages: {
-      signIn: '/auth/signin',
-    },
+export async function middleware(req: NextRequest) {
+  const backendToken = req.cookies.get('backendAuthToken')?.value
+  const nextAuthToken = await getToken({
+    req,
+    secret: process.env.NEXTAUTH_SECRET,
+  })
+
+  const isAuthenticated = Boolean(backendToken || nextAuthToken)
+
+  if (isAuthenticated) {
+    return NextResponse.next()
   }
-)
+
+  const signInUrl = new URL('/auth/signin', req.url)
+  signInUrl.searchParams.set('callbackUrl', req.nextUrl.pathname + req.nextUrl.search)
+
+  return NextResponse.redirect(signInUrl)
+}
 
 export const config = {
   matcher: [
