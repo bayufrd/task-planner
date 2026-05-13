@@ -106,13 +106,26 @@ function SignInContent() {
         throw new Error(data?.error?.message || 'Login gagal')
       }
 
-      // Save JWT token to cookie so middleware can read it
+      // Save JWT token to cookie AND localStorage — both needed by different parts of app
       if (data?.data?.token) {
+        // Save to cookie for middleware
         setAuthCookie(data.data.token, 7) // 7 days expiry
-        console.debug('[auth:login] cookie set', {
+        // Save to localStorage for dashboard/task API calls
+        localStorage.setItem('token', data.data.token)
+        
+        console.debug('[auth:login] token saved', {
           hasCookie: document.cookie.includes('backendAuthToken='),
-          cookieNames: document.cookie.split(';').map((cookie) => cookie.trim().split('=')[0]),
+          hasLocalStorage: localStorage.getItem('token') === data.data.token,
         })
+        
+        // Save user data for form-login fallback profile
+        if (data?.data?.user) {
+          localStorage.setItem('backendUser', JSON.stringify(data.data.user))
+          console.debug('[auth:login] user saved to localStorage', {
+            userId: data.data.user.id,
+            name: data.data.user.name,
+          })
+        }
       } else {
         console.warn('[auth:login] success response did not include token')
       }

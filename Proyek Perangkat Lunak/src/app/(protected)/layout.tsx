@@ -29,15 +29,30 @@ export default function ProtectedLayout({
   const router = useRouter()
 
   useEffect(() => {
-    const token = getAuthCookie()
+    // Check both cookie and localStorage for token
+    const cookieToken = getAuthCookie()
+    const localStorageToken = typeof window !== 'undefined' ? localStorage.getItem('token') : null
+    const token = cookieToken || localStorageToken
     setMounted(true)
     setBackendToken(token)
+    console.debug('[ProtectedLayout] Auth token check:', {
+      hasCookieToken: !!cookieToken,
+      hasLocalStorageToken: !!localStorageToken,
+      finalToken: !!token,
+    })
   }, [status])
 
   // If not authenticated, redirect to signin
   useEffect(() => {
     if (mounted && status === 'unauthenticated' && !backendToken) {
+      console.debug('[ProtectedLayout] No auth detected, redirecting to signin')
       router.push('/auth/signin')
+    } else {
+      console.debug('[ProtectedLayout] Auth detected, allowing access:', {
+        status,
+        hasBackendToken: !!backendToken,
+        hasNextAuthSession: status === 'authenticated',
+      })
     }
   }, [backendToken, mounted, status, router])
 
