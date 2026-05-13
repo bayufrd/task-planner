@@ -27,7 +27,8 @@
     "prisma:migrate:prod": "prisma migrate deploy",
     "prisma:studio": "prisma studio",
     "db:push": "prisma db push",
-    "db:seed": "node scripts/seed.js"
+    "db:seed": "node scripts/seed.js",
+    "smoke:nextjs": "node scripts/smoke-test-nextjs.js"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
