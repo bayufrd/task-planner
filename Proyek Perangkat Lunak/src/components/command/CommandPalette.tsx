@@ -152,16 +152,40 @@ export default function CommandPalette({ isOpen, onClose, onOpen }: CommandPalet
     let hours = 0
     let minutes = 0
     
+    // Detect time-of-day keywords (Indonesian)
+    const lower = text.toLowerCase()
+    const hasPagi = /\bpagi\b/i.test(lower)
+    const hasSiang = /\bsiang\b/i.test(lower)
+    const hasSore = /\bsore\b/i.test(lower)
+    const hasMalam = /\bmalam\b/i.test(lower)
+    const hasDiniHari = /\bdini\s*hari\b/i.test(lower)
+    
     if (timeMatch) {
       if (timeMatch[1]) {
         // Format: 18:30 or 18.30 or just 18
         hours = parseInt(timeMatch[1])
         minutes = timeMatch[2] ? parseInt(timeMatch[2]) : 0
         
-        // Check if PM was specified in the original text
-        const pmMatch = text.match(/(18|19|20|21|22|23)[\.:\.‧]?(\d{2})?\s*pm/i)
-        if (pmMatch || (text.toLowerCase().includes('pm') && hours < 12)) {
-          // Already in 24-hour format or needs AM/PM handling
+        // Adjust for time-of-day if no explicit AM/PM
+        if (!text.toLowerCase().includes('am') && !text.toLowerCase().includes('pm')) {
+          if (hasPagi && hours > 11) {
+            // "pagi jam 4" = 04:00
+            hours = hours % 12
+          } else if (hasSore && hours >= 1 && hours <= 11) {
+            // "sore jam 4" = 16:00
+            hours = hours + 12
+          } else if (hasMalam && hours >= 1 && hours <= 11) {
+            // "malam jam 4" = 16:00 for common usage (evening)
+            hours = hours + 12
+          } else if (hasDiniHari && hours >= 1 && hours <= 12) {
+            // "dini hari jam 4" = 04:00
+            hours = hours % 12
+          }
+        }
+        
+        // Handle AM/PM
+        if (text.toLowerCase().includes('pm') && hours < 12) {
+          hours += 12
         }
       } else if (timeMatch[3]) {
         // Format: 6am, 6pm
@@ -169,6 +193,24 @@ export default function CommandPalette({ isOpen, onClose, onOpen }: CommandPalet
         if (text.toLowerCase().includes('pm') && hours < 12) {
           hours += 12
         }
+      }
+    } else {
+      // No explicit time, use time-of-day keywords to set default time
+      if (hasPagi) {
+        hours = 8
+        minutes = 0
+      } else if (hasSiang) {
+        hours = 12
+        minutes = 0
+      } else if (hasSore) {
+        hours = 16
+        minutes = 0
+      } else if (hasMalam) {
+        hours = 19
+        minutes = 0
+      } else if (hasDiniHari) {
+        hours = 2
+        minutes = 0
       }
     }
     
@@ -192,7 +234,6 @@ export default function CommandPalette({ isOpen, onClose, onOpen }: CommandPalet
 
     // Calculate deadline with time
     let deadlineDate = new Date()
-    const lower = text.toLowerCase()
     
     if (lower.includes('besok') || lower.includes('tomorrow')) {
       deadlineDate.setDate(deadlineDate.getDate() + 1)
@@ -214,12 +255,26 @@ export default function CommandPalette({ isOpen, onClose, onOpen }: CommandPalet
       deadlineDate.setDate(deadlineDate.getDate() + 1)
     }
     
-    // Set the parsed time
-    if (hours > 0 || minutes > 0) {
-      deadlineDate.setHours(hours, minutes, 0, 0)
-    } else {
-      // Default time if no time specified
-      deadlineDate.setHours(9, 0, 0, 0) // 9 AM default
+    // Set the parsed time (only override if we actually parsed time keywords)
+    if (hours > 0 || minutes > 0 || hasPagi || hasSiang || hasSore || hasMalam || hasDiniHari) {
+      if (hours > 0 || minutes > 0) {
+        deadlineDate.setHours(hours, minutes, 0, 0)
+      } else {
+        // Use default from time-of-day keywords
+        if (hasPagi) {
+          deadlineDate.setHours(8, 0, 0, 0)
+        } else if (hasSiang) {
+          deadlineDate.setHours(12, 0, 0, 0)
+        } else if (hasSore) {
+          deadlineDate.setHours(16, 0, 0, 0)
+        } else if (hasMalam) {
+          deadlineDate.setHours(19, 0, 0, 0)
+        } else if (hasDiniHari) {
+          deadlineDate.setHours(2, 0, 0, 0)
+        } else {
+          deadlineDate.setHours(9, 0, 0, 0)
+        }
+      }
     }
 
     const newTask = {
