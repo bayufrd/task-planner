@@ -67,7 +67,7 @@ export default function NewTaskModal({ isOpen, onClose, onCreated }: NewTaskModa
     try {
       setIsLoading(true)
 
-      const token = getAuthCookie()
+      const token = getAuthCookie() || localStorage.getItem('token') || localStorage.getItem('auth-token')
       const payload = {
         title: title.trim(),
         description: description.trim() || undefined,

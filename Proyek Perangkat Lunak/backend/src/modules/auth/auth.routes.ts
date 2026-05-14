@@ -16,5 +16,6 @@ router.post('/logout', authController.logout);
 // Google OAuth
 router.get('/google', authController.googleAuth);
 router.get('/google/callback', authController.googleCallback);
+router.post('/sync', authController.syncNextAuth);
 
 export default router;

@@ -12,6 +12,7 @@ import { useLanguage } from '@/components/providers/LanguageProvider'
 import { Search, CheckSquare2, LogOut, UserCircle, LayoutDashboard, User, Moon, Sun, Globe } from 'lucide-react'
 import { signOut } from 'next-auth/react'
 import { getAuthCookie, removeAuthCookie } from '@/lib/auth/cookies'
+import { syncNextAuthToExpress } from '@/lib/auth/sync'
 
 type BackendUser = {
   id?: string | number
@@ -52,27 +53,43 @@ export default function ProtectedLayout({
   }, [isProfileOpen])
 
   useEffect(() => {
-    // Check both cookie and localStorage for token
-    const cookieToken = getAuthCookie()
-    const localStorageToken = typeof window !== 'undefined' ? localStorage.getItem('token') : null
-    const token = cookieToken || localStorageToken
-    const savedUser = typeof window !== 'undefined' ? localStorage.getItem('backendUser') : null
-    setMounted(true)
-    setBackendToken(token)
+    const checkAndSyncAuth = async () => {
+      // Check both cookie and localStorage for token
+      const cookieToken = getAuthCookie()
+      const localStorageToken = typeof window !== 'undefined' ? localStorage.getItem('token') : null
+      let token = cookieToken || localStorageToken
+      const savedUser = typeof window !== 'undefined' ? localStorage.getItem('backendUser') : null
+      setMounted(true)
 
-    if (savedUser) {
-      try {
-        setBackendUser(JSON.parse(savedUser) as BackendUser)
-      } catch {
-        setBackendUser(null)
+      // If user logged in via NextAuth Google but no Express token, sync it first
+      if (!token && status === 'authenticated' && session?.user) {
+        const synced = await syncNextAuthToExpress(session.user as BackendUser & { accessToken?: string })
+        if (synced) {
+          token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
+          window.dispatchEvent(new CustomEvent('tasks:changed'))
+        }
       }
+
+      setBackendToken(token)
+
+      const latestSavedUser = typeof window !== 'undefined' ? localStorage.getItem('backendUser') : savedUser
+      if (latestSavedUser) {
+        try {
+          setBackendUser(JSON.parse(latestSavedUser) as BackendUser)
+        } catch {
+          setBackendUser(null)
+        }
+      }
+      console.debug('[ProtectedLayout] Auth token check:', {
+        hasCookieToken: !!cookieToken,
+        hasLocalStorageToken: !!localStorageToken,
+        finalToken: !!token,
+        nextAuthStatus: status,
+      })
     }
-    console.debug('[ProtectedLayout] Auth token check:', {
-      hasCookieToken: !!cookieToken,
-      hasLocalStorageToken: !!localStorageToken,
-      finalToken: !!token,
-    })
-  }, [status])
+
+    checkAndSyncAuth()
+  }, [status, session?.user])
 
   // If not authenticated, redirect to signin
   useEffect(() => {

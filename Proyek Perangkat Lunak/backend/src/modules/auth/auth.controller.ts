@@ -73,6 +73,85 @@ export class AuthController {
     }
   }
 
+  /**
+   * Sync NextAuth (Google OAuth) session to Express JWT
+   * Called by frontend when NextAuth session exists but no Express token
+   */
+  async syncNextAuth(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const { googleAccessToken, email, name } = req.body as {
+        googleAccessToken?: string
+        email?: string
+        name?: string
+      }
+
+      if (!googleAccessToken) {
+        res.status(400).json({
+          success: false,
+          error: { code: 'BAD_REQUEST', message: 'googleAccessToken is required' },
+        })
+        return
+      }
+
+      // Validate Google access token by calling Google's tokeninfo endpoint
+      const tokenInfoResponse = await fetch(
+        `https://oauth2.googleapis.com/tokeninfo?access_token=${googleAccessToken}`
+      )
+
+      if (!tokenInfoResponse.ok) {
+        res.status(401).json({
+          success: false,
+          error: { code: 'UNAUTHORIZED', message: 'Invalid or expired Google access token' },
+        })
+        return
+      }
+
+      const tokenInfo = await tokenInfoResponse.json() as { email?: string; name?: string }
+      const googleEmail = tokenInfo.email || email
+      const googleName = tokenInfo.name || name || 'Google User'
+
+      if (!googleEmail) {
+        res.status(400).json({
+          success: false,
+          error: { code: 'BAD_REQUEST', message: 'Could not determine email from Google token' },
+        })
+        return
+      }
+
+      // Find or create user in Express database
+      const user = await authService.findOrCreateFromGoogle(googleEmail, googleName)
+      if (!user) {
+        res.status(500).json({
+          success: false,
+          error: { code: 'INTERNAL_ERROR', message: 'Failed to create or find user' },
+        })
+        return
+      }
+
+      // Generate Express JWT
+      const token = authService.generateToken(user.id)
+
+      console.debug('[auth:sync] NextAuth Google session synced to Express JWT', {
+        email: googleEmail,
+        userId: user.id,
+      })
+
+      sendSuccess(res, {
+        token,
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+        },
+      }, 'Session sync successful')
+    } catch (error) {
+      console.error('[auth:sync] failed', {
+        error: error instanceof Error ? error.message : error,
+      })
+      next(error)
+    }
+  }
+
   async logout(_req: AuthRequest, res: Response, next: NextFunction) {
     try {
       // JWT is stateless, so logout is handled client-side by removing token

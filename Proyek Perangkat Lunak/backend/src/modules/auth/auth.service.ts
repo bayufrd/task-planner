@@ -89,4 +89,32 @@ export class AuthService {
 
     return user;
   }
+
+  generateToken(userId: string): string {
+    return jwt.sign(
+      { userId },
+      env.JWT_SECRET,
+      { expiresIn: env.JWT_EXPIRES_IN } as SignOptions
+    );
+  }
+
+  async findOrCreateFromGoogle(email: string, name: string) {
+    const existingUser = await prisma.user.findUnique({ where: { email } });
+
+    if (existingUser) {
+      console.debug('[auth:findOrCreateFromGoogle] Found existing user', { email })
+      return existingUser
+    }
+
+    // Create user without password (Google OAuth only)
+    const newUser = await prisma.user.create({
+      data: {
+        name,
+        email,
+        password: null, // No password, Google OAuth only
+      },
+    });
+    console.debug('[auth:findOrCreateFromGoogle] Created new user from Google OAuth', { email })
+    return newUser
+  }
 }

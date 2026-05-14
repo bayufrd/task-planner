@@ -301,7 +301,7 @@ export default function TaskCard({ task, scoreInfo }: TaskCardProps) {
               Delete Task?
             </h3>
             <p className={`text-sm text-center mb-6 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
-              Are you sure you want to delete "{task.title}"? This action cannot be undone.
+              Are you sure you want to delete &quot;{task.title}&quot;? This action cannot be undone.
             </p>
             <div className="flex gap-3">
               <button
