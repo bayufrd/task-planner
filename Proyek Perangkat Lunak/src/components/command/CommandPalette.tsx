@@ -414,11 +414,9 @@ export default function CommandPalette({ isOpen, onClose, onOpen }: CommandPalet
           break
         case '/list':
         case '/tasks':
-          console.log('📋 Tasks:', useTaskStore.getState().tasks)
           onClose()
           break
         case '/today':
-          console.log('📅 Today:', useTaskStore.getState().getTodayTasks())
           onClose()
           break
         case '/help':

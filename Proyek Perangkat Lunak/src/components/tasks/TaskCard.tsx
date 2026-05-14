@@ -42,17 +42,13 @@ export default function TaskCard({ task, scoreInfo }: TaskCardProps) {
     }
 
     setIsUpdating(true)
-    console.log('[TaskCard] Complete clicked for task:', task.id, 'backendId:', task.backendId)
     
     const token = getAuthToken()
-    console.log('[TaskCard] Token exists:', !!token)
     
     // If has backendId and token, call API first
     if (task.backendId && token) {
-      console.log('[TaskCard] Calling API to complete task:', task.backendId)
       try {
         const result = await taskApi.complete(task.backendId)
-        console.log('[TaskCard] API result:', result)
         
         if (result.success) {
           // Update localStorage state
@@ -77,7 +73,6 @@ export default function TaskCard({ task, scoreInfo }: TaskCardProps) {
         })
       }
     } else {
-      console.log('[TaskCard] No backendId or token, updating localStorage only')
       updateTask(task.id, {
         status: 'DONE',
         completedAt: new Date().toISOString(),
@@ -91,15 +86,12 @@ export default function TaskCard({ task, scoreInfo }: TaskCardProps) {
 
   const handleDelete = async () => {
     setIsUpdating(true)
-    console.log('[TaskCard] Delete clicked for task:', task.id, 'backendId:', task.backendId)
     
     const token = getAuthToken()
     
     try {
       if (task.backendId && token) {
-        console.log('[TaskCard] Calling API to soft delete task:', task.backendId)
         const result = await taskApi.delete(task.backendId)
-        console.log('[TaskCard] Delete API result:', result)
 
         if (!result.success) {
           throw new Error(result.error || 'Failed to delete task')

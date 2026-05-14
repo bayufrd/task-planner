@@ -125,7 +125,6 @@ export async function createCalendarEvent(
       },
     }
 
-    console.log('📅 Creating event with payload:', JSON.stringify(event, null, 2))
 
     // Use direct HTTP call to Google Calendar API for better error handling
     const response = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {

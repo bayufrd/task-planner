@@ -65,14 +65,13 @@ export default function Dashboard() {
 
     // Skip if neither session nor token available
     if (!hasNextAuthSession && !token) {
-      console.log('[Dashboard] No auth session or token, skipping task load')
       setIsLoading(false)
       return
     }
 
     try {
       setIsLoading(true)
-      console.log('[Dashboard] Loading tasks from backend...', {
+      console.debug('[Dashboard] Loading tasks from backend...', {
         hasNextAuthSession,
         hasToken: !!token,
       })
@@ -91,7 +90,6 @@ export default function Dashboard() {
       }
 
       const data = await response.json()
-      console.log('[Dashboard] Tasks response:', data)
 
       // Transform database tasks to store format
       // Normalize status from backend (PENDING/DONE/SKIPPED) to frontend (TODO/IN_PROGRESS/DONE)
@@ -110,7 +108,6 @@ export default function Dashboard() {
             normalizedStatus = 'TODO'
           }
 
-          console.log(`[Dashboard] Task: "${task.title}" | deadline: ${task.deadline} | status: ${task.status} → ${normalizedStatus}`)
 
           return {
             id: task.id,
@@ -127,11 +124,9 @@ export default function Dashboard() {
         })
 
         setTasks(formattedTasks)
-        console.log(`[Dashboard] Loaded ${formattedTasks.length} tasks from database`)
       } else if (data.tasks && Array.isArray(data.tasks)) {
         // Handle alternative response format
         setTasks(data.tasks)
-        console.log(`[Dashboard] Loaded ${data.tasks.length} tasks (alt format)`)
       }
     } catch (error) {
       console.error('[Dashboard] Error loading tasks:', error)
@@ -150,7 +145,6 @@ export default function Dashboard() {
   useEffect(() => {
     const token = localStorage.getItem('token')
     if (token) {
-      console.log('[Dashboard] Token detected in localStorage, reloading tasks...')
       loadTasks()
       loadStats()
     }
@@ -159,7 +153,6 @@ export default function Dashboard() {
   // Listen for cross-component task change events (create/update/delete/skip)
   useEffect(() => {
     const handleTasksChanged = () => {
-      console.log('[Dashboard] Task change event received, reloading...')
       loadTasks()
       loadStats()
     }
