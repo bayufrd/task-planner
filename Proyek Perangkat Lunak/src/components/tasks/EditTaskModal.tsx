@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { X, Save } from 'lucide-react'
 import { Task } from '@/lib/utils/store'
 import { useTaskStore } from '@/lib/utils/store'
@@ -110,8 +111,11 @@ export default function EditTaskModal({ isOpen, task, onClose, onSaved }: EditTa
 
   if (!isOpen || !task) return null
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[9999] flex items-center justify-center"
+      onClick={(e) => e.stopPropagation()}
+    >
       {/* Backdrop */}
       <div
         className={`absolute inset-0 ${
@@ -119,7 +123,10 @@ export default function EditTaskModal({ isOpen, task, onClose, onSaved }: EditTa
             ? 'bg-black/60 backdrop-blur-sm'
             : 'bg-black/40 backdrop-blur-sm'
         }`}
-        onClick={onClose}
+        onClick={(e) => {
+          e.stopPropagation()
+          onClose()
+        }}
       />
 
       {/* Modal */}
@@ -142,7 +149,11 @@ export default function EditTaskModal({ isOpen, task, onClose, onSaved }: EditTa
             Edit Task
           </h2>
           <button
-            onClick={onClose}
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation()
+              onClose()
+            }}
             className={`p-1 rounded-lg transition-colors ${
               theme === 'dark'
                 ? 'hover:bg-gray-800 text-gray-400'
@@ -303,7 +314,10 @@ export default function EditTaskModal({ isOpen, task, onClose, onSaved }: EditTa
           }}>
             <button
               type="button"
-              onClick={onClose}
+              onClick={(e) => {
+                e.stopPropagation()
+                onClose()
+              }}
               disabled={isLoading}
               className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${
                 theme === 'dark'
@@ -333,6 +347,7 @@ export default function EditTaskModal({ isOpen, task, onClose, onSaved }: EditTa
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
