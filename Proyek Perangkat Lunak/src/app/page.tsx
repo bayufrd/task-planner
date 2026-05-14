@@ -62,72 +62,63 @@ export default function LandingPage() {
 
   const features = [
     {
-      icon: Brain,
-      title: t('landing.casualLanguageTitle'),
-      description: t('landing.casualLanguageDesc')
+
+
+
+      icon: BarChart3,
+      title: mounted && language === 'id' ? 'Peringkat Prioritas AI' : 'AI-Priority Ranking',
+      description: mounted && language === 'id'
+        ? 'AI mengurutkan tugas berdasarkan urgensi, prioritas, pengingat, dan durasi agar Anda tahu apa yang harus dikerjakan berikutnya.'
+        : 'AI ranks tasks based on urgency, priority, reminders, and duration so you always know what to do next.'
     },
     {
-      icon: Zap,
-      title: t('landing.hapticRemindersTitle'),
-      description: t('landing.hapticRemindersDesc')
+
+
+
+      icon: Calendar,
+      title: mounted && language === 'id' ? 'Sinkronisasi Google Calendar' : 'Google Calendar Sync',
+      description: mounted && language === 'id'
+        ? 'Sinkronkan tugas dengan Google Calendar agar jadwal Anda tetap rapi dan mudah dipantau.'
+        : 'Sync tasks with Google Calendar so your schedule stays organized and easy to follow.'
     },
     {
-      icon: Watch,
-      title: t('landing.worksWithCalendarTitle'),
-      description: t('landing.worksWithCalendarDesc')
+
+
+
+      icon: MessageSquare,
+      title: mounted && language === 'id' ? 'Perintah Bahasa Natural' : 'Natural Language Commands',
+      description: mounted && language === 'id'
+        ? 'Ketik tugas seperti berbicara, lalu AI mengubahnya menjadi tugas terstruktur secara instan.'
+        : 'Type tasks just like you talk, then AI turns them into structured tasks instantly.'
     }
   ]
 
   const phases = [
     {
-      phase: t('landing.phaseNow'),
+      phase: mounted && language === 'id' ? 'Sekarang' : 'Now',
       icon: Sparkles,
-      title: t('landing.aiTaskFoundationTitle'),
-      features: (typeof t('landing.aiTaskFoundationFeatures') === 'string' 
-        ? ['AI-powered natural language parsing', 'Google Calendar native sync', 'Smart task organization']
-        : t('landing.aiTaskFoundationFeatures') as unknown) as string[]
+      title: mounted && language === 'id' ? 'Fondasi Tugas AI' : 'AI Task Foundation',
+      features: [
+        mounted && language === 'id' ? 'Parsing bahasa natural bertenaga AI' : 'AI-powered natural language parsing',
+        mounted && language === 'id' ? 'Sinkronisasi native Google Calendar' : 'Google Calendar native sync',
+        mounted && language === 'id' ? 'Organisasi tugas cerdas' : 'Smart task organization'
+      ]
     },
     {
-      phase: t('landing.phaseNextMonth'),
-      icon: Watch,
-      title: t('landing.wearableHapticsTitle'),
-      features: (typeof t('landing.wearableHapticsFeatures') === 'string'
-        ? ['Wearable device integration', 'Haptic reminder patterns', 'Smart escalating alerts', 'Device sync & management']
-        : t('landing.wearableHapticsFeatures') as unknown) as string[]
-    },
-    {
-      phase: t('landing.phaseComingSummer'),
+      phase: mounted && language === 'id' ? 'Segera Hadir' : 'Coming Soon',
       icon: Brain,
-      title: t('landing.aiIntelligenceTitle'),
-      features: (typeof t('landing.aiIntelligenceFeatures') === 'string'
-        ? ['AI knowledge breakdown', 'Auto-recurring tasks', 'Intelligent scheduling', 'Team collaboration', 'Analytics dashboard']
-        : t('landing.aiIntelligenceFeatures') as unknown) as string[]
+      title: mounted && language === 'id' ? 'Kecerdasan AI' : 'AI Intelligence',
+      features: [
+        mounted && language === 'id' ? 'Pemecahan pengetahuan AI' : 'AI knowledge breakdown',
+        mounted && language === 'id' ? 'Tugas berulang otomatis' : 'Auto-recurring tasks',
+        mounted && language === 'id' ? 'Penjadwalan cerdas' : 'Intelligent scheduling',
+        mounted && language === 'id' ? 'Kolaborasi tim' : 'Team collaboration',
+        mounted && language === 'id' ? 'Dashboard analitik' : 'Analytics dashboard'
+      ]
     }
   ]
 
-  const topFeatures = [
-    {
-      number: '1',
-      icon: Brain,
-      title: t('landing.understandCasualTitle'),
-      description: t('landing.understandCasualDesc'),
-      impact: t('landing.understandCasualImpact')
-    },
-    {
-      number: '2',
-      icon: Zap,
-      title: t('landing.smartRemindersTitle'),
-      description: t('landing.smartRemindersDesc'),
-      impact: t('landing.smartRemindersImpact')
-    },
-    {
-      number: '3',
-      icon: Watch,
-      title: t('landing.syncCalendarTitle'),
-      description: t('landing.syncCalendarDesc'),
-      impact: t('landing.syncCalendarImpact')
-    }
-  ]
+  
 
   return (
     <div className={`min-h-screen w-full transition-colors ${theme === 'dark' ? 'bg-gradient-to-br from-gray-950 via-slate-900 to-indigo-950' : 'bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50'}`}>
@@ -207,7 +198,7 @@ export default function LandingPage() {
               <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border ${theme === 'dark' ? 'bg-blue-900/20 border-blue-800/50' : 'bg-blue-100/50 border-blue-200/50'}`}>
                 <Sparkles className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                 <span className="text-sm font-semibold text-blue-600 dark:text-blue-400">
-                  {mounted && language === 'id' ? 'Task Planner Bertenaga AI' : 'AI-Powered Task Planning'}
+                  {mounted && language === 'id' ? 'Asisten AI & Integrasi WhatsApp sudah aktif' : 'AI Assistant & WhatsApp Integration is now live'}
                 </span>
               </div>
 
@@ -215,16 +206,16 @@ export default function LandingPage() {
               <div className="space-y-4">
                 <h1 className="text-5xl sm:text-6xl md:text-7xl font-black tracking-tight">
                   <span className={`block ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-                    {mounted && language === 'id' ? 'Rencanakan Lebih Cerdas,' : 'Plan Smarter,'}
+                    {mounted && language === 'id' ? 'Rencanakan lebih cerdas.' : 'Plan smarter.'}
                   </span>
                   <span className="block bg-gradient-to-r from-blue-600 via-indigo-600 to-cyan-600 bg-clip-text text-transparent">
-                    {mounted && language === 'id' ? 'Bekerja Lebih Baik' : 'Work Better'}
+                    {mounted && language === 'id' ? 'Selesaikan lebih cepat.' : 'Finish faster.'}
                   </span>
                 </h1>
                 <p className={`text-lg sm:text-xl max-w-2xl leading-relaxed ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
                   {mounted && language === 'id' 
-                    ? 'Asisten perencanaan bertenaga AI yang memahami input bahasa kasual, disinkronkan dengan Google Calendar, dan mengirimkan pengingat haptic ke perangkat yang dapat dikenakan.'
-                    : 'An AI-powered planning assistant that understands casual language, syncs with Google Calendar, and sends haptic reminders to your wearable devices.'
+                    ? 'Tugas yang diperingkat AI berdasarkan urgensi, prioritas, pengingat, dan durasi. Dapatkan kembali fokus Anda dan hilangkan kebingungan memilih pekerjaan berikutnya dengan mesin tugas cerdas pribadi.'
+                    : 'AI-ranked tasks based on urgency, priority, reminders, and duration. Regain focus and eliminate decision fatigue with your own intelligent task engine.'
                   }
                 </p>
               </div>
@@ -268,10 +259,10 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
           <div className="text-center mb-16">
             <h2 className={`text-4xl sm:text-5xl font-bold mb-4 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-              {t('landing.threeThingsTitle')}
+              {mounted && language === 'id' ? 'Dibangun untuk kejelasan' : 'Built for clarity'}
             </h2>
             <p className={`text-lg max-w-2xl mx-auto ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
-              {t('landing.threeThingsDesc')}
+              {mounted && language === 'id' ? 'AI kami menangani logistik sehingga Anda dapat fokus pada pekerjaan yang benar-benar penting.' : 'Our AI handles the logistics so you can focus on the work that actually matters.'}
             </p>
           </div>
 
@@ -315,65 +306,69 @@ export default function LandingPage() {
           </div>
         </div>
 
-        {/* Top 3 Features Section */}
+        {/* WhatsApp CTA Section */}
         <div className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 border-t ${theme === 'dark' ? 'border-gray-800/50' : 'border-gray-200/50'}`}>
           <div className="text-center mb-16">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500 text-white font-semibold text-xs uppercase tracking-widest mb-8">
+              {mounted && language === 'id' ? 'Penawaran Terbaik' : 'Best Deal'}
+            </div>
             <h2 className={`text-4xl sm:text-5xl font-bold mb-4 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-              {mounted && language === 'id' ? 'Top 3 MVP Features' : 'Top 3 MVP Features'}
+              {mounted && language === 'id' ? 'Hack Produktivitas Terbaik: Task Planner Anda, sekarang di WhatsApp.' : 'The Ultimate Productivity Hack: Your Task Planner, now on WhatsApp.'}
             </h2>
             <p className={`text-lg max-w-2xl mx-auto ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
               {mounted && language === 'id' 
-                ? 'Fitur ROI tertinggi yang tersedia sekarang'
-                : 'The highest-impact features available right now'
+                ? 'Selesaikan pekerjaan di tempat Anda sudah menghabiskan waktu. Tidak perlu aplikasi baru, hanya asisten AI pribadi Anda di aplikasi chat favorit.'
+                : 'Get things done where you already spend your time. No new apps to download, just your personal AI assistant in your favorite chat app.'
               }
             </p>
+            <button
+              onClick={handleStartNow}
+              className="mt-8 px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl font-bold text-lg transition-all duration-200 shadow-2xl shadow-blue-500/40 hover:shadow-2xl hover:shadow-blue-500/50 hover:scale-105"
+            >
+              {mounted && language === 'id' ? 'Hubungkan WhatsApp Sekarang' : 'Connect WhatsApp Now'}
+            </button>
           </div>
 
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            {/* Video di kiri */}
-            <div className="relative rounded-2xl overflow-hidden border border-gray-800/50 shadow-2xl shadow-blue-500/20 h-96 order-2 lg:order-1">
-              <video
-                autoPlay
-                muted
-                loop
-                playsInline
-                className="w-full h-full object-cover"
-              >
-                <source src={VIDEOS.features2} type="video/mp4" />
-              </video>
-              <div className="absolute inset-0 bg-gradient-to-t from-gray-950/20 to-transparent pointer-events-none"></div>
+          <div className="relative rounded-2xl overflow-hidden border border-gray-800/50 shadow-2xl shadow-blue-500/20 h-96 max-w-4xl mx-auto">
+            <video
+              autoPlay
+              muted
+              loop
+              playsInline
+              className="w-full h-full object-cover"
+            >
+              <source src={VIDEOS.features2} type="video/mp4" />
+            </video>
+            <div className="absolute inset-0 bg-gradient-to-t from-gray-950/20 to-transparent pointer-events-none"></div>
+          </div>
+        </div>
+
+        {/* Stats Section */}
+        <div className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 border-t ${theme === 'dark' ? 'border-gray-800/50' : 'border-gray-200/50'}`}>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-12 text-center">
+            <div className="space-y-2">
+              <div className={`text-5xl font-bold tracking-tighter ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>98%</div>
+              <div className={`text-xs font-semibold uppercase tracking-widest ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
+                {mounted && language === 'id' ? 'Tingkat Penyelesaian Tugas' : 'Task Completion Rate'}
+              </div>
             </div>
-
-            {/* Features di kanan */}
-            <div className="grid gap-8 order-1 lg:order-2">
-              {topFeatures.map((feature, index) => {
-                const Icon = feature.icon
-                return (
-                <div
-                  key={index}
-                  className={`group relative rounded-2xl border transition-all duration-300 p-8 ${theme === 'dark' ? 'border-gray-800/50 bg-gray-900/80 hover:border-blue-400/50 hover:shadow-xl hover:shadow-blue-500/10' : 'border-gray-200/50 bg-white/80 hover:border-blue-400/50 hover:shadow-xl hover:shadow-blue-500/10'}`}
-                >
-                  <div className="absolute -top-4 -left-4 w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-lg">
-                    {feature.number}
-                  </div>
-
-                  <div className={`w-14 h-14 rounded-xl flex items-center justify-center mb-4 ${theme === 'dark' ? 'bg-blue-900/30' : 'bg-blue-100'}`}>
-                    <Icon className="w-7 h-7 text-blue-600 dark:text-blue-400" strokeWidth={2} />
-                  </div>
-
-                  <h3 className={`text-2xl font-bold mb-3 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-                    {feature.title}
-                  </h3>
-                  <p className={`mb-4 leading-relaxed ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
-                    {feature.description}
-                  </p>
-                  <div className="flex items-center gap-2 text-sm font-semibold text-blue-600 dark:text-blue-400">
-                    <CheckCircle2 className="w-4 h-4" />
-                    {feature.impact}
-                  </div>
-                </div>
-              )
-              })}
+            <div className="space-y-2">
+              <div className="text-5xl font-bold tracking-tighter text-blue-600">2hr+</div>
+              <div className={`text-xs font-semibold uppercase tracking-widest ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
+                {mounted && language === 'id' ? 'Waktu Harian Dihemat' : 'Daily Time Saved'}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <div className={`text-5xl font-bold tracking-tighter ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>50k+</div>
+              <div className={`text-xs font-semibold uppercase tracking-widest ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
+                {mounted && language === 'id' ? 'Profesional Aktif' : 'Active Professionals'}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <div className="text-5xl font-bold tracking-tighter text-indigo-600">4.9<span className="text-2xl">/5</span></div>
+              <div className={`text-xs font-semibold uppercase tracking-widest ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
+                {mounted && language === 'id' ? 'Kepuasan Pengguna' : 'User Satisfaction'}
+              </div>
             </div>
           </div>
         </div>
@@ -439,7 +434,7 @@ export default function LandingPage() {
           </div>
         </div>
 
-        {/* All 10 Features Section */}
+        {/* Features Bento Grid Section */}
         <div className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 border-t ${theme === 'dark' ? 'border-gray-800/50' : 'border-gray-200/50'}`}>
           <div className="text-center mb-16">
             <h2 className={`text-4xl sm:text-5xl font-bold mb-4 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
@@ -453,7 +448,7 @@ export default function LandingPage() {
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[
               { icon: MessageSquare, title: 'AI Understands Your Language', status: 'Available Now', desc: 'Type naturally in any language. Our AI parses casual speech, abbreviations, and mixed languages instantly. No rigid forms, no perfect syntax required.' },
-              { icon: Vibrate, title: 'Wearable Haptic Alerts', status: 'Coming Soon', desc: 'Smart vibration patterns that escalate as your task approaches. Haptic feedback is proven to be 5x more effective than notifications at driving action.' },
+              
               { icon: Calendar, title: 'Google Calendar Native', status: 'Available Now', desc: 'Create, edit, and sync tasks directly with Google Calendar. Your tasks live where you already look—no switching between apps.' },
               { icon: Lightbulb, title: 'AI Knowledge Breakdown', status: 'Coming Soon', desc: 'Tell our AI what you want to learn or achieve. It automatically breaks complex projects into manageable daily tasks with realistic timelines.' },
               { icon: Clock, title: 'Intelligent Scheduling', status: 'Coming Soon', desc: 'Never double-book again. Our AI detects conflicts, suggests optimal times, and prevents burnout with smart work distribution.' },
@@ -504,21 +499,23 @@ export default function LandingPage() {
           <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <div className="rounded-3xl border border-gray-700/30 p-12 space-y-6 bg-gray-950/20 backdrop-blur-md">
               <h2 className="text-4xl sm:text-5xl font-bold text-white">
-                {mounted && language === 'id' ? 'Siap Mengubah Produktivitas Anda?' : 'Ready to Transform Your Productivity?'}
+                {mounted && language === 'id' ? 'Berhenti mengelola, mulai bekerja.' : 'Stop managing, start doing.'}
               </h2>
               <p className="text-lg text-gray-200">
                 {mounted && language === 'id' 
-                  ? 'Bergabunglah dengan beta dan rasakan perencanaan bertenaga AI dengan integrasi wearable'
-                  : 'Join the beta and experience AI-powered planning with wearable integration'
+                  ? 'Bergabunglah dengan ribuan profesional yang telah menguasai jadwal mereka dengan Smart Task Planner.'
+                  : 'Join thousands of professionals who have mastered their schedule with Smart Task Planner.'
                 }
               </p>
               <button
                 onClick={handleStartNow}
-                className="px-10 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl font-bold text-lg transition-all duration-200 inline-flex items-center gap-2 shadow-2xl shadow-blue-500/40 hover:shadow-2xl hover:shadow-blue-500/50 hover:scale-105"
+                className="px-10 py-5 bg-blue-600 hover:bg-white hover:text-gray-900 text-white rounded-full font-bold text-lg transition-all duration-300 inline-flex items-center gap-2 shadow-2xl"
               >
-                {mounted && language === 'id' ? 'Mulai Sekarang' : 'Start Now'}
-                <ArrowRight className="w-5 h-5" strokeWidth={2} />
+                {mounted && language === 'id' ? 'Mulai Gratis' : 'Get Started for Free'}
               </button>
+              <p className="text-white/40 font-semibold uppercase tracking-widest text-xs">
+                {mounted && language === 'id' ? 'Tidak perlu kartu kredit • Uji coba gratis 14 hari' : 'No credit card required • Free 14-day trial'}
+              </p>
             </div>
           </div>
         </div>
@@ -528,11 +525,11 @@ export default function LandingPage() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
               <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
-                © 2026 TaskPlanner. {mounted && language === 'id' ? 'Task Planner Bertenaga AI.' : 'AI-Powered Task Planning.'}
+                © 2024 Smart Task Planner. {mounted && language === 'id' ? 'Semua hak dilindungi.' : 'All rights reserved.'}
               </p>
               <div className={`flex items-center gap-4 text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
-                <a href="#" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">{mounted && language === 'id' ? 'Privasi' : 'Privacy'}</a>
-                <a href="#" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">{mounted && language === 'id' ? 'Persyaratan' : 'Terms'}</a>
+                <a href="#" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">{mounted && language === 'id' ? 'Kebijakan Privasi' : 'Privacy Policy'}</a>
+                <a href="#" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">{mounted && language === 'id' ? 'Ketentuan Layanan' : 'Terms of Service'}</a>
               </div>
             </div>
           </div>
