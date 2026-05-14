@@ -185,9 +185,9 @@ export default function Dashboard() {
     <div 
       className="flex flex-col h-full bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-50"
     >
-      {/* Header with New Task Button - Sticky */}
+      {/* Header with Title and New Task Button - Sticky */}
       <div className="flex-shrink-0 sticky top-0 z-20 border-b border-gray-200/50 dark:border-gray-800/50 bg-white/80 dark:bg-gray-950/80 backdrop-blur-sm px-4 sm:px-6 lg:px-8 py-4">
-        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="max-w-6xl mx-auto flex flex-row items-center justify-between">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Tasks</h1>
           <button
             onClick={() => setIsNewTaskModalOpen(true)}
