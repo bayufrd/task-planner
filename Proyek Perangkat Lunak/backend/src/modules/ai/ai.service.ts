@@ -66,6 +66,50 @@ const normalizeReminderTime = (reminderTime: unknown): number => {
   return rounded;
 };
 
+/**
+ * Deterministic post-processing for common Indonesian date/time phrases.
+ * This fixes LLM timezone/day ambiguity:
+ * - "besok" = local today + 1 day
+ * - "lusa" = local today + 2 days
+ * - "jam 10 malam" = 22:00
+ * - "jam 8 malam" = 20:00
+ * - "jam 3 sore" = 15:00
+ */
+const applyIndonesianTimeHints = (input: string, deadline: Date, now: Date): Date => {
+  const lower = input.toLowerCase();
+  const adjusted = new Date(deadline);
+
+  if (/\bbesok\b/.test(lower)) {
+    adjusted.setFullYear(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+  } else if (/\blusa\b/.test(lower)) {
+    adjusted.setFullYear(now.getFullYear(), now.getMonth(), now.getDate() + 2);
+  } else if (/\b(hari ini|today)\b/.test(lower)) {
+    adjusted.setFullYear(now.getFullYear(), now.getMonth(), now.getDate());
+  }
+
+  const jamMatch = lower.match(/\bjam\s+(\d{1,2})(?:(?::|\.)(\d{2}))?\s*(pagi|siang|sore|malam)?\b/);
+  if (jamMatch) {
+    let hour = Number(jamMatch[1]);
+    const minute = jamMatch[2] ? Number(jamMatch[2]) : 0;
+    const period = jamMatch[3];
+
+    if (period === 'malam') {
+      if (hour === 12) hour = 0;
+      else if (hour >= 1 && hour <= 11) hour += 12;
+    } else if (period === 'sore') {
+      if (hour >= 1 && hour <= 11) hour += 12;
+    } else if (period === 'siang') {
+      if (hour >= 1 && hour <= 10) hour += 12;
+    } else if (period === 'pagi') {
+      if (hour === 12) hour = 0;
+    }
+
+    adjusted.setHours(hour, minute, 0, 0);
+  }
+
+  return adjusted;
+};
+
 export class AiService {
   async parseTaskCommand(input: string): Promise<ParsedTaskCommand> {
     if (!env.NINE_ROUTER_API || !env.NINE_ROUTER_API_KEY) {
@@ -83,7 +127,7 @@ export class AiService {
       body: JSON.stringify({
         model: env.NINE_ROUTER_MODEL || DEFAULT_MODEL,
         stream: false,
-        temperature: 0.1,
+        temperature: 0,
         messages: [
           {
             role: 'system',
@@ -104,6 +148,13 @@ export class AiService {
               'Rules:',
               '- title: clean task title without date/time/duration/priority/tag tokens.',
               '- deadline: always output absolute ISO-8601 datetime using the provided current datetime as reference.',
+              '- Indonesian "besok" means exactly local current date + 1 day, not +2 days.',
+              '- Indonesian "lusa" means exactly local current date + 2 days.',
+              '- Indonesian "hari ini" means local current date.',
+              '- Indonesian "jam 8 malam" = 20:00, "jam 10 malam" = 22:00, "jam 12 malam" = 00:00.',
+              '- Indonesian "jam 8 pagi" = 08:00, "jam 10 pagi" = 10:00.',
+              '- Indonesian "jam 12 siang" = 12:00.',
+              '- Indonesian "jam 3 sore" = 15:00, "jam 7 sore" = 19:00.',
               '- priority default: MEDIUM.',
               '- estimatedDuration default: 60 minutes if omitted.',
               '- reminderTime default: 60 minutes before deadline if omitted.',
@@ -119,6 +170,8 @@ export class AiService {
             role: 'user',
             content: JSON.stringify({
               currentDateTime: now.toISOString(),
+              localDateString: now.toLocaleDateString('en-CA'),
+              localTimeString: now.toTimeString(),
               timezoneOffsetMinutes: now.getTimezoneOffset(),
               command: input,
             }),
@@ -150,10 +203,12 @@ export class AiService {
       throw new Error('Parsed task deadline is invalid');
     }
 
+    const normalizedDeadline = applyIndonesianTimeHints(input, deadline, now);
+
     return {
       title: parsed.title.trim(),
       description: typeof parsed.description === 'string' ? parsed.description.trim() : '',
-      deadline: deadline.toISOString(),
+      deadline: normalizedDeadline.toISOString(),
       priority: normalizePriority(parsed.priority),
       estimatedDuration: normalizeDuration(parsed.estimatedDuration),
       tags: normalizeTags(parsed.tags),
