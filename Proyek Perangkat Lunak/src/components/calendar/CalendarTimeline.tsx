@@ -37,7 +37,8 @@ export default function CalendarTimeline() {
   }
 
   const todayTaskCount = getTasksForDay(new Date()).length
-  const selectedDateTasks = getTasksForDay(selectedDate)
+  const normalizedSelectedDate = selectedDate instanceof Date ? selectedDate : new Date(selectedDate)
+  const selectedDateTasks = getTasksForDay(normalizedSelectedDate)
 
   const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
@@ -137,7 +138,7 @@ export default function CalendarTimeline() {
           <div className="grid grid-cols-7 gap-2">
             {daysInMonth.map((day) => {
               const taskCount = getTasksForDay(day).length
-              const isSelected = isSameDay(day, selectedDate)
+              const isSelected = isSameDay(day, normalizedSelectedDate)
               const isToday = isSameDay(day, new Date())
               const isSameMonthDay = isSameMonth(day, currentMonth)
 
@@ -195,7 +196,7 @@ export default function CalendarTimeline() {
                   Tasks by date
                 </p>
                 <h3 className="text-xl font-bold text-gray-900 dark:text-gray-50">
-                  {format(selectedDate, 'EEEE, MMMM d, yyyy')}
+                  {format(normalizedSelectedDate, 'EEEE, MMMM d, yyyy')}
                 </h3>
                 <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                   {selectedDateTasks.length} active task{selectedDateTasks.length === 1 ? '' : 's'}
