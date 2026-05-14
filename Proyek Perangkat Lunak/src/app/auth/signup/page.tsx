@@ -6,6 +6,8 @@ import { Globe, ArrowRight, Sparkles, Moon, Sun, Mail, Lock, User } from 'lucide
 import { useTheme } from '@/components/providers/ThemeProvider'
 import Link from 'next/link'
 import Image from 'next/image'
+import { signIn } from 'next-auth/react'
+
 
 function SignUpContent() {
   const router = useRouter()
@@ -25,10 +27,9 @@ function SignUpContent() {
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true)
-    // For Google OAuth, we'll use the same signIn function
-    // This will be updated later to use backend Google OAuth
-    window.location.href = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/google?redirect_uri=${encodeURIComponent(window.location.origin + '/auth/callback')}`
+    await signIn('google', { redirect: true, callbackUrl })
   }
+
 
   const handleBackHome = () => {
     router.push('/')
@@ -79,7 +80,7 @@ function SignUpContent() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!validateForm()) {
       return
     }
@@ -316,7 +317,7 @@ function SignUpContent() {
             >
               <Globe className="w-5 h-5" strokeWidth={2} />
               <span className={theme === 'dark' ? 'text-white' : 'text-gray-700'}>
-                Sign up with Google
+                Continue with Google
               </span>
             </button>
 
@@ -324,7 +325,7 @@ function SignUpContent() {
             <div className="text-center pt-4">
               <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
                 Already have an account?{' '}
-                <Link 
+                <Link
                   href={`/auth/signin${callbackUrl ? `?callbackUrl=${encodeURIComponent(callbackUrl)}` : ''}`}
                   className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
                 >

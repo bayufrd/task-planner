@@ -298,9 +298,9 @@ export default function NewTaskModal({ isOpen, onClose, onCreated }: NewTaskModa
                 }`}
                 disabled={isLoading}
               >
-                <option value="HIGH">🔴 High</option>
-                <option value="MEDIUM">🟡 Medium</option>
-                <option value="LOW">🟢 Low</option>
+                <option value="HIGH">High</option>
+                <option value="MEDIUM">Medium</option>
+                <option value="LOW">Low</option>
               </select>
             </div>
 

@@ -274,9 +274,9 @@ export default function EditTaskModal({ isOpen, task, onClose, onSaved }: EditTa
                 }`}
                 disabled={isLoading}
               >
-                <option value="HIGH">🔴 High</option>
-                <option value="MEDIUM">🟡 Medium</option>
-                <option value="LOW">🟢 Low</option>
+                <option value="HIGH">High</option>
+                <option value="MEDIUM">Medium</option>
+                <option value="LOW">Low</option>
               </select>
             </div>
 

@@ -14,7 +14,16 @@ import {
   BarChart3, 
   CheckCircle2,
   ChevronRight,
-  Sparkles
+  Sparkles,
+  Bot,
+  MessageCircle,
+  Lightbulb,
+  Flame,
+  Scale,
+  CalendarDays,
+  Smartphone,
+  TrendingUp,
+  Users
 } from 'lucide-react'
 import { useLanguage } from '@/components/providers/LanguageProvider'
 
@@ -311,7 +320,7 @@ export default function LandingPage() {
             {/* Feature 1 */}
             <div className="rounded-2xl border border-gray-200/50 dark:border-gray-800/50 bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm p-6 hover:border-blue-400/50 hover:shadow-lg transition-all duration-300">
               <div className="flex items-start gap-3 mb-4">
-                <div className="text-2xl">🤖</div>
+                <Bot className="w-7 h-7 text-blue-600 dark:text-blue-400" strokeWidth={2} />
                 <div>
                   <h4 className="text-lg font-bold text-gray-900 dark:text-white">{t('landing.feature1')}</h4>
                   <p className="text-xs text-blue-600 dark:text-blue-400 font-semibold mt-1">{t('landing.feature1Meta')}</p>
@@ -323,7 +332,7 @@ export default function LandingPage() {
             {/* Feature 2 */}
             <div className="rounded-2xl border border-gray-200/50 dark:border-gray-800/50 bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm p-6 hover:border-purple-400/50 hover:shadow-lg transition-all duration-300">
               <div className="flex items-start gap-3 mb-4">
-                <div className="text-2xl">💬</div>
+                <MessageCircle className="w-7 h-7 text-purple-600 dark:text-purple-400" strokeWidth={2} />
                 <div>
                   <h4 className="text-lg font-bold text-gray-900 dark:text-white">{t('landing.feature2')}</h4>
                   <p className="text-xs text-purple-600 dark:text-purple-400 font-semibold mt-1">{t('landing.feature2Meta')}</p>
@@ -335,7 +344,7 @@ export default function LandingPage() {
             {/* Feature 3 */}
             <div className="rounded-2xl border border-gray-200/50 dark:border-gray-800/50 bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm p-6 hover:border-pink-400/50 hover:shadow-lg transition-all duration-300">
               <div className="flex items-start gap-3 mb-4">
-                <div className="text-2xl">💡</div>
+                <Lightbulb className="w-7 h-7 text-pink-600 dark:text-pink-400" strokeWidth={2} />
                 <div>
                   <h4 className="text-lg font-bold text-gray-900 dark:text-white">{t('landing.feature3')}</h4>
                   <p className="text-xs text-pink-600 dark:text-pink-400 font-semibold mt-1">{t('landing.feature3Meta')}</p>
@@ -347,7 +356,7 @@ export default function LandingPage() {
             {/* Feature 4 */}
             <div className="rounded-2xl border border-gray-200/50 dark:border-gray-800/50 bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm p-6 hover:border-orange-400/50 hover:shadow-lg transition-all duration-300">
               <div className="flex items-start gap-3 mb-4">
-                <div className="text-2xl">⏱️</div>
+                <Watch className="w-7 h-7 text-orange-600 dark:text-orange-400" strokeWidth={2} />
                 <div>
                   <h4 className="text-lg font-bold text-gray-900 dark:text-white">{t('landing.feature4')}</h4>
                   <p className="text-xs text-orange-600 dark:text-orange-400 font-semibold mt-1">{t('landing.feature4Meta')}</p>
@@ -359,7 +368,7 @@ export default function LandingPage() {
             {/* Feature 5 */}
             <div className="rounded-2xl border border-gray-200/50 dark:border-gray-800/50 bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm p-6 hover:border-red-400/50 hover:shadow-lg transition-all duration-300">
               <div className="flex items-start gap-3 mb-4">
-                <div className="text-2xl">🔥</div>
+                <Flame className="w-7 h-7 text-red-600 dark:text-red-400" strokeWidth={2} />
                 <div>
                   <h4 className="text-lg font-bold text-gray-900 dark:text-white">{t('landing.feature5')}</h4>
                   <p className="text-xs text-red-600 dark:text-red-400 font-semibold mt-1">{t('landing.feature5Meta')}</p>
@@ -371,7 +380,7 @@ export default function LandingPage() {
             {/* Feature 6 */}
             <div className="rounded-2xl border border-gray-200/50 dark:border-gray-800/50 bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm p-6 hover:border-green-400/50 hover:shadow-lg transition-all duration-300">
               <div className="flex items-start gap-3 mb-4">
-                <div className="text-2xl">⚖️</div>
+                <Scale className="w-7 h-7 text-green-600 dark:text-green-400" strokeWidth={2} />
                 <div>
                   <h4 className="text-lg font-bold text-gray-900 dark:text-white">{t('landing.feature6')}</h4>
                   <p className="text-xs text-green-600 dark:text-green-400 font-semibold mt-1">{t('landing.feature6Meta')}</p>
@@ -383,7 +392,7 @@ export default function LandingPage() {
             {/* Feature 7 */}
             <div className="rounded-2xl border border-gray-200/50 dark:border-gray-800/50 bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm p-6 hover:border-cyan-400/50 hover:shadow-lg transition-all duration-300">
               <div className="flex items-start gap-3 mb-4">
-                <div className="text-2xl">📅</div>
+                <CalendarDays className="w-7 h-7 text-cyan-600 dark:text-cyan-400" strokeWidth={2} />
                 <div>
                   <h4 className="text-lg font-bold text-gray-900 dark:text-white">{t('landing.feature7')}</h4>
                   <p className="text-xs text-cyan-600 dark:text-cyan-400 font-semibold mt-1">{t('landing.feature7Meta')}</p>
@@ -407,7 +416,7 @@ export default function LandingPage() {
             {/* Feature 9 */}
             <div className="rounded-2xl border border-gray-200/50 dark:border-gray-800/50 bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm p-6 hover:border-teal-400/50 hover:shadow-lg transition-all duration-300">
               <div className="flex items-start gap-3 mb-4">
-                <div className="text-2xl">📈</div>
+                <TrendingUp className="w-7 h-7 text-teal-600 dark:text-teal-400" strokeWidth={2} />
                 <div>
                   <h4 className="text-lg font-bold text-gray-900 dark:text-white">{t('landing.feature9')}</h4>
                   <p className="text-xs text-teal-600 dark:text-teal-400 font-semibold mt-1">{t('landing.feature9Meta')}</p>
@@ -419,7 +428,7 @@ export default function LandingPage() {
             {/* Feature 10 */}
             <div className="rounded-2xl border border-gray-200/50 dark:border-gray-800/50 bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm p-6 hover:border-violet-400/50 hover:shadow-lg transition-all duration-300">
               <div className="flex items-start gap-3 mb-4">
-                <div className="text-2xl">👥</div>
+                <Users className="w-7 h-7 text-violet-600 dark:text-violet-400" strokeWidth={2} />
                 <div>
                   <h4 className="text-lg font-bold text-gray-900 dark:text-white">{t('landing.feature10')}</h4>
                   <p className="text-xs text-violet-600 dark:text-violet-400 font-semibold mt-1">{t('landing.feature10Meta')}</p>

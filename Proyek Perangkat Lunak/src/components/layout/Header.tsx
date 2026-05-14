@@ -78,7 +78,6 @@ export default function Header({
                   aria-label="Indonesia"
                   title="Bahasa Indonesia"
                 >
-                  <span>🇮🇩</span>
                   <span>ID</span>
                 </button>
                 <button
@@ -91,7 +90,6 @@ export default function Header({
                   aria-label="English"
                   title="English"
                 >
-                  <span>🇬🇧</span>
                   <span>EN</span>
                 </button>
               </div>
