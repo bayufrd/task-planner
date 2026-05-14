@@ -5,7 +5,7 @@
  * Mengetes semua endpoint yang tercantum di backend/README.md.
  *
  * Prasyarat:
- * - Backend Express berjalan di http://localhost:5000
+ * - Backend Express berjalan di http://localhost:8000
  * - Database MySQL development tersedia dan terhubung
  * - Environment backend sudah dikonfigurasi dengan benar
  *
@@ -15,7 +15,7 @@
 
 const axios = require('axios');
 
-const API_BASE = 'http://localhost:5000';
+const API_BASE = 'http://localhost:8000';
 
 let authToken = null;
 let testUserId = null;

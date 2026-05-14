@@ -72,12 +72,12 @@ export interface TaskStats {
 // Task API helpers
 export const taskApi = {
   getStats: async (): Promise<{ success: boolean; data?: TaskStats; error?: string }> => {
-    const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
+    const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
     return apiRequest<TaskStats>(`${API_BASE}/api/tasks/stats`)
   },
 
   updateStatus: async (taskId: string, status: string) => {
-    const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
+    const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
     return apiRequest(`${API_BASE}/api/tasks/${taskId}/status`, {
       method: 'PATCH',
       body: JSON.stringify({ status }),
@@ -93,7 +93,7 @@ export const taskApi = {
   },
 
   delete: async (taskId: string) => {
-    const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
+    const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
     return apiRequest(`${API_BASE}/api/tasks/${taskId}`, {
       method: 'DELETE',
     })
@@ -113,7 +113,7 @@ export interface ParsedTaskCommand {
 
 export const aiApi = {
   parseTaskCommand: async (command: string): Promise<{ success: boolean; data?: ParsedTaskCommand; error?: string }> => {
-    const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
+    const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
     return apiRequest<ParsedTaskCommand>(`${API_BASE}/api/ai/parse-task`, {
       method: 'POST',
       body: JSON.stringify({ command }),

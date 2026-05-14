@@ -220,7 +220,7 @@ Untuk local development, gunakan konfigurasi backend berikut:
 DATABASE_URL="mysql://root:0202@192.168.1.2:3307/taskplanner"
 
 # Server Configuration
-PORT=5000
+PORT=8000
 NODE_ENV=development
 
 # JWT Authentication
@@ -233,13 +233,13 @@ FRONTEND_URL=http://localhost:3000
 # Google OAuth Configuration
 GOOGLE_CLIENT_ID=your-google-client-id
 GOOGLE_CLIENT_SECRET=your-google-client-secret
-GOOGLE_REDIRECT_URI=http://localhost:5000/api/auth/google/callback
+GOOGLE_REDIRECT_URI=http://localhost:8000/api/auth/google/callback
 ```
 
 Catatan environment:
 
 - `DATABASE_URL` wajib sama dengan koneksi MySQL local development.
-- `PORT=5000` digunakan untuk Express backend.
+- `PORT=8000` digunakan untuk Express backend.
 - `FRONTEND_URL=http://localhost:3000` digunakan CORS agar frontend Next.js dapat mengakses backend.
 - `JWT_SECRET` digunakan untuk register/login regular backend Express.
 - `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, dan `GOOGLE_REDIRECT_URI` digunakan untuk login via Google OAuth Express.
@@ -264,7 +264,7 @@ npm run prisma:migrate
 npm run dev
 ```
 
-Server akan berjalan di `http://localhost:5000`
+Server akan berjalan di `http://localhost:8000`
 
 ### 6. Build untuk Production
 
@@ -290,26 +290,26 @@ Gunakan tools seperti Postman, Insomnia, atau curl untuk testing:
 
 ### Health Check
 ```bash
-curl http://localhost:5000/health
+curl http://localhost:8000/health
 ```
 
 ### Register
 ```bash
-curl -X POST http://localhost:5000/api/auth/register \
+curl -X POST http://localhost:8000/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{"name":"Test User","email":"test@example.com","password":"password123"}'
 ```
 
 ### Login
 ```bash
-curl -X POST http://localhost:5000/api/auth/login \
+curl -X POST http://localhost:8000/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"test@example.com","password":"password123"}'
 ```
 
 ### Google OAuth Login
 ```bash
-open http://localhost:5000/api/auth/google
+open http://localhost:8000/api/auth/google
 ```
 
 Callback sukses akan redirect ke frontend:
@@ -320,7 +320,7 @@ http://localhost:3000/auth/callback?token=JWT_TOKEN
 
 ### Logout
 ```bash
-curl -X POST http://localhost:5000/api/auth/logout \
+curl -X POST http://localhost:8000/api/auth/logout \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
@@ -329,23 +329,23 @@ Logout berlaku untuk login manual dan Google OAuth. Karena JWT stateless, client
 ### Get Tasks (dengan token)
 ```bash
 # Get active tasks (default: excludes DONE)
-curl http://localhost:5000/api/tasks \
+curl http://localhost:8000/api/tasks \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 
 # Get tasks by status
-curl "http://localhost:5000/api/tasks?status=PENDING" \
+curl "http://localhost:8000/api/tasks?status=PENDING" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 
-curl "http://localhost:5000/api/tasks?status=DONE" \
+curl "http://localhost:8000/api/tasks?status=DONE" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 
-curl "http://localhost:5000/api/tasks?status=SKIPPED" \
+curl "http://localhost:8000/api/tasks?status=SKIPPED" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
 ### Create Task
 ```bash
-curl -X POST http://localhost:5000/api/tasks \
+curl -X POST http://localhost:8000/api/tasks \
   -H "Authorization: Bearer YOUR_JWT_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -360,13 +360,13 @@ curl -X POST http://localhost:5000/api/tasks \
 
 ### Get Task by ID
 ```bash
-curl http://localhost:5000/api/tasks/TASK_ID \
+curl http://localhost:8000/api/tasks/TASK_ID \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
 ### Update Task
 ```bash
-curl -X PATCH http://localhost:5000/api/tasks/TASK_ID \
+curl -X PATCH http://localhost:8000/api/tasks/TASK_ID \
   -H "Authorization: Bearer YOUR_JWT_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -379,13 +379,13 @@ curl -X PATCH http://localhost:5000/api/tasks/TASK_ID \
 ### Update Task Status
 ```bash
 # Mark task as DONE
-curl -X PATCH http://localhost:5000/api/tasks/TASK_ID/status \
+curl -X PATCH http://localhost:8000/api/tasks/TASK_ID/status \
   -H "Authorization: Bearer YOUR_JWT_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"status": "DONE"}'
 
 # Mark task as SKIPPED
-curl -X PATCH http://localhost:5000/api/tasks/TASK_ID/status \
+curl -X PATCH http://localhost:8000/api/tasks/TASK_ID/status \
   -H "Authorization: Bearer YOUR_JWT_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"status": "SKIPPED"}'
@@ -393,19 +393,19 @@ curl -X PATCH http://localhost:5000/api/tasks/TASK_ID/status \
 
 ### Skip Overdue Task
 ```bash
-curl -X POST http://localhost:5000/api/tasks/TASK_ID/skip \
+curl -X POST http://localhost:8000/api/tasks/TASK_ID/skip \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
 ### Delete Task
 ```bash
-curl -X DELETE http://localhost:5000/api/tasks/TASK_ID \
+curl -X DELETE http://localhost:8000/api/tasks/TASK_ID \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
 ### Get Task Statistics
 ```bash
-curl http://localhost:5000/api/tasks/stats \
+curl http://localhost:8000/api/tasks/stats \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
@@ -423,7 +423,7 @@ Response:
 
 ### Calculate Task Priority
 ```bash
-curl -X POST http://localhost:5000/api/tasks/TASK_ID/priority \
+curl -X POST http://localhost:8000/api/tasks/TASK_ID/priority \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
@@ -442,7 +442,7 @@ Response:
 
 #### Create Reminder
 ```bash
-curl -X POST http://localhost:5000/api/reminders \
+curl -X POST http://localhost:8000/api/reminders \
   -H "Authorization: Bearer YOUR_JWT_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -454,25 +454,25 @@ curl -X POST http://localhost:5000/api/reminders \
 
 #### Get All Reminders
 ```bash
-curl http://localhost:5000/api/reminders \
+curl http://localhost:8000/api/reminders \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
 #### Get Due Reminders
 ```bash
-curl http://localhost:5000/api/reminders/due \
+curl http://localhost:8000/api/reminders/due \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
 #### Get Reminder by ID
 ```bash
-curl http://localhost:5000/api/reminders/REMINDER_ID \
+curl http://localhost:8000/api/reminders/REMINDER_ID \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
 #### Update Reminder
 ```bash
-curl -X PATCH http://localhost:5000/api/reminders/REMINDER_ID \
+curl -X PATCH http://localhost:8000/api/reminders/REMINDER_ID \
   -H "Authorization: Bearer YOUR_JWT_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -483,7 +483,7 @@ curl -X PATCH http://localhost:5000/api/reminders/REMINDER_ID \
 
 #### Delete Reminder
 ```bash
-curl -X DELETE http://localhost:5000/api/reminders/REMINDER_ID \
+curl -X DELETE http://localhost:8000/api/reminders/REMINDER_ID \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
@@ -491,7 +491,7 @@ curl -X DELETE http://localhost:5000/api/reminders/REMINDER_ID \
 
 #### Create Calendar Entry
 ```bash
-curl -X POST http://localhost:5000/api/calendars \
+curl -X POST http://localhost:8000/api/calendars \
   -H "Authorization: Bearer YOUR_JWT_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -503,31 +503,31 @@ curl -X POST http://localhost:5000/api/calendars \
 
 #### Get All Calendar Entries
 ```bash
-curl http://localhost:5000/api/calendars \
+curl http://localhost:8000/api/calendars \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
 #### Get Default Calendar
 ```bash
-curl http://localhost:5000/api/calendars/default \
+curl http://localhost:8000/api/calendars/default \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
 #### Sync Calendar
 ```bash
-curl -X POST http://localhost:5000/api/calendars/sync \
+curl -X POST http://localhost:8000/api/calendars/sync \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
 #### Get Calendar Entry by ID
 ```bash
-curl http://localhost:5000/api/calendars/CALENDAR_ID \
+curl http://localhost:8000/api/calendars/CALENDAR_ID \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
 #### Update Calendar Entry
 ```bash
-curl -X PATCH http://localhost:5000/api/calendars/CALENDAR_ID \
+curl -X PATCH http://localhost:8000/api/calendars/CALENDAR_ID \
   -H "Authorization: Bearer YOUR_JWT_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -537,12 +537,12 @@ curl -X PATCH http://localhost:5000/api/calendars/CALENDAR_ID \
 
 #### Delete Calendar Entry
 ```bash
-curl -X DELETE http://localhost:5000/api/calendars/CALENDAR_ID \
+curl -X DELETE http://localhost:8000/api/calendars/CALENDAR_ID \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
 #### Refresh Calendar Sync
 ```bash
-curl -X POST http://localhost:5000/api/calendars/CALENDAR_ID/refresh \
+curl -X POST http://localhost:8000/api/calendars/CALENDAR_ID/refresh \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```

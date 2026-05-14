@@ -23,7 +23,7 @@ const database = process.env.MYSQL_DB || '';
       user,
       password,
       database,
-      connectTimeout: 5000
+      connectTimeout: 8000
     });
 
     console.log('Connected. Server version:', (await conn.query('SELECT VERSION() as v'))[0][0].v);

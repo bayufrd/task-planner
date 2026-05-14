@@ -27,7 +27,7 @@ function SignUpContent() {
     setIsLoading(true)
     // For Google OAuth, we'll use the same signIn function
     // This will be updated later to use backend Google OAuth
-    window.location.href = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/auth/google?redirect_uri=${encodeURIComponent(window.location.origin + '/auth/callback')}`
+    window.location.href = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/google?redirect_uri=${encodeURIComponent(window.location.origin + '/auth/callback')}`
   }
 
   const handleBackHome = () => {
@@ -86,7 +86,7 @@ function SignUpContent() {
 
     setIsLoading(true)
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/auth/register`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
