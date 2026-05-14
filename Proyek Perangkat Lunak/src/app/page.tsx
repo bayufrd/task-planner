@@ -24,7 +24,8 @@ import {
   Wand2,
   RotateCcw,
   TrendingUp,
-  Users2
+  Users2,
+  Chrome
 } from 'lucide-react'
 import { useTheme } from '@/components/providers/ThemeProvider'
 import { useLanguage } from '@/components/providers/LanguageProvider'
@@ -212,7 +213,7 @@ export default function LandingPage() {
               onClick={handleStartNow}
               className="flex items-center gap-3 bg-white border border-gray-200 px-8 py-4 rounded-full font-semibold text-lg hover:bg-gray-50 transition-all hover:shadow-xl active:scale-[0.98]"
             >
-              <img alt="Google" className="w-5 h-5" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBlT_lme9gba2n4TdQoZ0wbD9cF3FvInlSmUrbS2k-9DBICpEtgLqJq1TVvyjswVwDcLtVT9ZJZ8XtdBBUrHqCvmRJA453Z_kxrdA_TP7o93H4MPkea2Wr6NvzTatv3lmKoGWgTigbtYezH9lVmypgMBA-eTR-3DVe_WVd6rS2VckkYUnDjQ949m8pjKcv8TcTfScxMnr53_ZZly4g0wOWMAHCh89kYsxrXmIOm_gtbaq5sLv7uhogGTYTuT8Srut-we2KZ8cH3gRt2" />
+              <Chrome className="w-5 h-5" />
               {mounted && language === 'id' ? 'Masuk dengan Google' : 'Sign in with Google'}
             </button>
             <button className="flex items-center gap-2 text-gray-500 hover:text-gray-900 px-8 py-4 font-semibold text-lg transition-colors group">
