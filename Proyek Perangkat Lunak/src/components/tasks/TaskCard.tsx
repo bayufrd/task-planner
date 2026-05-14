@@ -4,11 +4,13 @@ import { Task } from '@/lib/utils/store'
 import { TaskWithScore } from '@/lib/utils/priority'
 import { useTaskStore } from '@/lib/utils/store'
 import { format } from 'date-fns'
-import { Clock, CheckCircle2, Trash2, RotateCcw, Loader2 } from 'lucide-react'
+import { Clock, CheckCircle2, Trash2, RotateCcw, Loader2, AlertTriangle } from 'lucide-react'
 import { TaskStatusIcons, PriorityIcons } from '@/lib/constants/icons'
 import { getPriorityBorder, getPriorityGradient, cn } from '@/lib/utils/ui'
 import { taskApi, getAuthToken } from '@/lib/api/client'
 import { useState } from 'react'
+import { useTheme } from '@/components/providers/ThemeProvider'
+import { useNotification } from '@/lib/hooks/useNotification'
 
 interface TaskCardProps {
   task: Task
@@ -17,7 +19,13 @@ interface TaskCardProps {
 
 export default function TaskCard({ task, scoreInfo }: TaskCardProps) {
   const { updateTask, deleteTask } = useTaskStore()
+  const { theme } = useTheme()
+  const notify = useNotification()
   const [isUpdating, setIsUpdating] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+
+  // Check if task is auto-skipped (overdue)
+  const isSkipped = task.status === 'SKIPPED'
 
   const StatusIcon = TaskStatusIcons[task.status as keyof typeof TaskStatusIcons].icon
   const statusIconClass = TaskStatusIcons[task.status as keyof typeof TaskStatusIcons].className
@@ -26,6 +34,11 @@ export default function TaskCard({ task, scoreInfo }: TaskCardProps) {
   const PriorityIcon = priorityConfig.icon
 
   const handleComplete = async () => {
+    if (isSkipped) {
+      notify.error('Skipped task cannot be marked as done')
+      return
+    }
+
     setIsUpdating(true)
     console.log('[TaskCard] Complete clicked for task:', task.id, 'backendId:', task.backendId)
     
@@ -69,6 +82,8 @@ export default function TaskCard({ task, scoreInfo }: TaskCardProps) {
       })
     }
     
+    notify.success(`Task "${task.title}" marked as done`)
+    window.dispatchEvent(new CustomEvent('tasks:changed'))
     setIsUpdating(false)
   }
 
@@ -78,26 +93,35 @@ export default function TaskCard({ task, scoreInfo }: TaskCardProps) {
     
     const token = getAuthToken()
     
-    if (task.backendId && token) {
-      console.log('[TaskCard] Calling API to delete task:', task.backendId)
-      try {
-        const result = await taskApi.updateStatus(task.backendId, 'DELETED')
+    try {
+      if (task.backendId && token) {
+        console.log('[TaskCard] Calling API to soft delete task:', task.backendId)
+        const result = await taskApi.delete(task.backendId)
         console.log('[TaskCard] Delete API result:', result)
-      } catch (err) {
-        console.error('[TaskCard] Delete API error:', err)
+
+        if (!result.success) {
+          throw new Error(result.error || 'Failed to delete task')
+        }
       }
+      
+      deleteTask(task.id)
+      notify.success(`Task "${task.title}" berhasil didelete`)
+      setShowDeleteConfirm(false)
+      window.dispatchEvent(new CustomEvent('tasks:changed'))
+    } catch (err) {
+      console.error('[TaskCard] Delete failed:', err)
+      notify.error(err instanceof Error ? err.message : 'Failed to delete task')
+    } finally {
+      setIsUpdating(false)
     }
-    
-    // Delete locally regardless
-    deleteTask(task.id)
-    setIsUpdating(false)
   }
 
   return (
     <div
       className={cn(
         'p-4 border-l-4 rounded-xl bg-white dark:bg-gray-900/50 border border-gray-200/50 dark:border-gray-800/50 hover:shadow-lg dark:hover:shadow-lg/50 transition-all duration-200 backdrop-blur-sm',
-        getPriorityBorder(task.priority)
+        getPriorityBorder(task.priority),
+        isSkipped && 'opacity-60'
       )}
     >
       <div className="flex items-start justify-between gap-4">
@@ -107,8 +131,8 @@ export default function TaskCard({ task, scoreInfo }: TaskCardProps) {
             <StatusIcon className={cn('w-5 h-5 flex-shrink-0', statusIconClass)} strokeWidth={2} />
             <div className="flex-1 min-w-0">
               <h3 className={`font-semibold text-base line-clamp-2 ${
-                task.status === 'DONE' 
-                  ? 'line-through text-gray-500 dark:text-gray-400' 
+                task.status === 'DONE' || task.status === 'SKIPPED'
+                  ? 'line-through text-gray-500 dark:text-gray-400'
                   : 'text-gray-900 dark:text-gray-50'
               }`}>
                 {task.title}
@@ -219,7 +243,7 @@ export default function TaskCard({ task, scoreInfo }: TaskCardProps) {
             <RotateCcw className="w-4 h-4" strokeWidth={2} />
             Undo
           </button>
-        ) : (
+        ) : isSkipped ? null : (
           <button
             onClick={handleComplete}
             disabled={isUpdating}
@@ -236,7 +260,7 @@ export default function TaskCard({ task, scoreInfo }: TaskCardProps) {
         )}
 
         <button
-          onClick={handleDelete}
+          onClick={() => setShowDeleteConfirm(true)}
           disabled={isUpdating}
           className="px-3 py-2 rounded-lg bg-red-100/80 dark:bg-red-900/20 hover:bg-red-200/80 dark:hover:bg-red-800/30 transition-all duration-200 font-medium text-sm text-red-700 dark:text-red-400 disabled:opacity-50"
           title="Delete"
@@ -244,6 +268,49 @@ export default function TaskCard({ task, scoreInfo }: TaskCardProps) {
           <Trash2 className="w-4 h-4" strokeWidth={2} />
         </button>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-sm" onClick={() => setShowDeleteConfirm(false)} />
+          <div className={`relative w-full max-w-sm mx-4 rounded-2xl shadow-2xl p-6 ${
+            theme === 'dark' ? 'bg-gray-900 border border-gray-700' : 'bg-white border border-gray-200'
+          }`}>
+            <div className="flex items-center justify-center w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 mx-auto mb-4">
+              <AlertTriangle className="w-6 h-6 text-red-600 dark:text-red-400" />
+            </div>
+            <h3 className={`text-lg font-bold text-center mb-2 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+              Delete Task?
+            </h3>
+            <p className={`text-sm text-center mb-6 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
+              Are you sure you want to delete &quot;{task.title}&quot;? This action cannot be undone.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                disabled={isUpdating}
+                className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${
+                  theme === 'dark' ? 'bg-gray-700 hover:bg-gray-600 text-gray-200' : 'bg-gray-200 hover:bg-gray-300 text-gray-900'
+                } disabled:opacity-50`}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={isUpdating}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium bg-red-600 hover:bg-red-700 text-white transition-colors disabled:opacity-50"
+              >
+                {isUpdating ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Trash2 className="w-4 h-4" />
+                )}
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

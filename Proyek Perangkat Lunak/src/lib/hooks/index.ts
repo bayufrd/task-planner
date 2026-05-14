@@ -111,3 +111,5 @@ export function useClickOutside(callback: () => void) {
 
   return ref
 }
+
+export { useTaskStats } from './useTaskStats'

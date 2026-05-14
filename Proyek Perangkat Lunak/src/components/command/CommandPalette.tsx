@@ -314,18 +314,9 @@ export default function CommandPalette({ isOpen, onClose, onOpen }: CommandPalet
       
       setInput('')
       setSuggestions([])
+      notify.success(`Task "${newTask.title}" berhasil dibuat`)
       onClose()
-
-      // Format time for notification
-      const timeStr = hours > 0 || minutes > 0 
-        ? ` at ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`
-        : ''
-      
-      const syncStatus = data.data?.googleCalendarSync?.synced 
-        ? ' (synced to Google Calendar)'
-        : ''
-      
-      notify.success(`Task added: ${newTask.title}${timeStr}${syncStatus}`)
+      window.dispatchEvent(new CustomEvent('tasks:changed'))
     } catch (error) {
       console.error('Error creating task:', error)
       notify.error(error instanceof Error ? error.message : 'Unknown error')

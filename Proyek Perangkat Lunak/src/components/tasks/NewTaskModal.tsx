@@ -11,6 +11,7 @@ import { getAuthCookie } from '@/lib/auth/cookies'
 interface NewTaskModalProps {
   isOpen: boolean
   onClose: () => void
+  onCreated?: () => void | Promise<void>
 }
 
 type Priority = 'HIGH' | 'MEDIUM' | 'LOW'
@@ -26,7 +27,7 @@ const getCurrentDateTime = () => {
   }
 }
 
-export default function NewTaskModal({ isOpen, onClose }: NewTaskModalProps) {
+export default function NewTaskModal({ isOpen, onClose, onCreated }: NewTaskModalProps) {
   const { theme } = useTheme()
   const notify = useNotification()
   const { addTask } = useTaskStore()
@@ -108,20 +109,35 @@ export default function NewTaskModal({ isOpen, onClose }: NewTaskModalProps) {
         throw new Error('Create task response did not include task data')
       }
 
-      // Add to local store (without id and createdAt as they're auto-generated)
+      // Normalize backend status to frontend status (PENDING→TODO, DONE→DONE, SKIPPED→SKIPPED)
+      let normalizedStatus: 'TODO' | 'IN_PROGRESS' | 'DONE' | 'SKIPPED' = 'TODO'
+      if (data.status === 'DONE') {
+        normalizedStatus = 'DONE'
+      } else if (data.status === 'SKIPPED') {
+        normalizedStatus = 'SKIPPED'
+      } else if (data.status === 'IN_PROGRESS') {
+        normalizedStatus = 'IN_PROGRESS'
+      } else {
+        normalizedStatus = 'TODO'
+      }
+
+      // Add to local store with normalized status
       addTask({
         title: data.title,
         description: data.description,
         priority: data.priority,
         deadline: data.deadline,
         estimatedDuration: data.estimatedDuration,
-        status: data.status,
-        tags: data.tags || [],
-        reminderTime: data.reminderTime || 0,
+        status: normalizedStatus,
+        tags: Array.isArray(data.tags) ? data.tags.map((t: any) => t.tagName || t) : [],
+        reminderTime: data.reminderTime ?? 60,
       })
 
-      notify.success(`Task "${title}" created successfully`)
+
+      notify.success(`Task "${title}" berhasil dibuat`)
       onClose()
+      window.dispatchEvent(new CustomEvent('tasks:changed'))
+      if (onCreated) onCreated()
     } catch (error) {
       console.error('[task:create] failed', error)
       notify.error(error instanceof Error ? error.message : 'Failed to create task. Please try again.')

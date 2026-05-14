@@ -11,7 +11,14 @@ import CalendarTimeline from '@/components/calendar/CalendarTimeline'
 import TaskPriorityList from '@/components/tasks/TaskPriorityList'
 import CommandPalette from '@/components/command/CommandPalette'
 import NewTaskModal from '@/components/tasks/NewTaskModal'
-import { Plus, Command, CheckSquare2 } from 'lucide-react'
+import { Plus, Command, CheckSquare2, Clock, CheckCircle2, XCircle } from 'lucide-react'
+
+// Stats type definition
+interface TaskStats {
+  pending: number
+  done: number
+  skipped: number
+}
 
 export default function Dashboard() {
   const { data: session } = useSession()
@@ -21,6 +28,35 @@ export default function Dashboard() {
   const notify = useNotification()
   const [isLoading, setIsLoading] = useState(true)
   const [isNewTaskModalOpen, setIsNewTaskModalOpen] = useState(false)
+  const [stats, setStats] = useState<TaskStats>({ pending: 0, done: 0, skipped: 0 })
+
+  // Load task stats from backend
+  const loadStats = async () => {
+    const token = localStorage.getItem('token')
+    const hasNextAuthSession = !!session?.user?.id
+    if (!hasNextAuthSession && !token) return
+
+    try {
+      const response = await fetch(API_ROUTES.TASKS.STATS, {
+        headers: {
+          ...(token && { 'Authorization': `Bearer ${token}` }),
+        },
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success && data.data) {
+          setStats({
+            pending: data.data.pending || 0,
+            done: data.data.done || 0,
+            skipped: data.data.skipped || 0,
+          })
+        }
+      }
+    } catch (error) {
+      console.error('[Dashboard] Error loading stats:', error)
+    }
+  }
 
   const loadTasks = async () => {
     // Support both NextAuth (Google OAuth) and Express token login
@@ -62,13 +98,15 @@ export default function Dashboard() {
       if (data.data && Array.isArray(data.data)) {
         const formattedTasks = data.data.map((task: any) => {
           // Map backend status to frontend expected values
-          let normalizedStatus: 'TODO' | 'IN_PROGRESS' | 'DONE' = 'TODO'
+          let normalizedStatus: 'TODO' | 'IN_PROGRESS' | 'DONE' | 'SKIPPED' = 'TODO'
           if (task.status === 'DONE') {
             normalizedStatus = 'DONE'
+          } else if (task.status === 'SKIPPED') {
+            normalizedStatus = 'SKIPPED'
           } else if (task.status === 'IN_PROGRESS') {
             normalizedStatus = 'IN_PROGRESS'
           } else {
-            // PENDING, SKIPPED, etc. default to TODO
+            // PENDING defaults to TODO for frontend active task display
             normalizedStatus = 'TODO'
           }
 
@@ -76,6 +114,7 @@ export default function Dashboard() {
 
           return {
             id: task.id,
+            backendId: task.id,
             title: task.title,
             description: task.description || '',
             deadline: task.deadline,
@@ -104,6 +143,7 @@ export default function Dashboard() {
   // Load tasks on mount — works for both NextAuth and Express token login
   useEffect(() => {
     loadTasks()
+    loadStats()
   }, [session?.user?.id])
 
   // Reload tasks when token changes (e.g., after Express login)
@@ -112,7 +152,20 @@ export default function Dashboard() {
     if (token) {
       console.log('[Dashboard] Token detected in localStorage, reloading tasks...')
       loadTasks()
+      loadStats()
     }
+  }, [])
+
+  // Listen for cross-component task change events (create/update/delete/skip)
+  useEffect(() => {
+    const handleTasksChanged = () => {
+      console.log('[Dashboard] Task change event received, reloading...')
+      loadTasks()
+      loadStats()
+    }
+
+    window.addEventListener('tasks:changed', handleTasksChanged)
+    return () => window.removeEventListener('tasks:changed', handleTasksChanged)
   }, [])
 
   // Global keyboard listener for Ctrl+K
@@ -134,7 +187,7 @@ export default function Dashboard() {
     >
       {/* Header with New Task Button - Sticky */}
       <div className="flex-shrink-0 sticky top-0 z-20 border-b border-gray-200/50 dark:border-gray-800/50 bg-white/80 dark:bg-gray-950/80 backdrop-blur-sm px-4 sm:px-6 lg:px-8 py-4">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
+        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Tasks</h1>
           <button
             onClick={() => setIsNewTaskModalOpen(true)}
@@ -149,6 +202,33 @@ export default function Dashboard() {
         {/* Calendar Timeline - Top Section */}
         <div className="flex-shrink-0 border-b border-gray-200/50 dark:border-gray-800/50 bg-gradient-to-b from-white/80 to-gray-50/80 dark:from-gray-900/80 dark:to-gray-950/80 backdrop-blur-sm">
           <CalendarTimeline />
+        </div>
+
+        {/* Stats Counter Bar */}
+        <div className="flex-shrink-0 border-b border-gray-200/50 dark:border-gray-800/50 bg-white dark:bg-gray-950 px-4 sm:px-6 lg:px-8 py-4">
+          <div className="max-w-6xl mx-auto grid grid-cols-3 gap-3">
+            <div className="flex items-center justify-center gap-2 px-4 py-3 bg-blue-50 dark:bg-blue-950/30 rounded-xl border border-blue-100 dark:border-blue-900/50">
+              <Clock className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              <div className="text-center">
+                <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{stats.pending}</p>
+                <p className="text-xs text-blue-500 dark:text-blue-400/70">Pending</p>
+              </div>
+            </div>
+            <div className="flex items-center justify-center gap-2 px-4 py-3 bg-emerald-50 dark:bg-emerald-950/30 rounded-xl border border-emerald-100 dark:border-emerald-900/50">
+              <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+              <div className="text-center">
+                <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{stats.done}</p>
+                <p className="text-xs text-emerald-500 dark:text-emerald-400/70">Done</p>
+              </div>
+            </div>
+            <div className="flex items-center justify-center gap-2 px-4 py-3 bg-gray-100 dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700/50">
+              <XCircle className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+              <div className="text-center">
+                <p className="text-2xl font-bold text-gray-600 dark:text-gray-400">{stats.skipped}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400/70">Skipped</p>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Tasks Display - Middle Section */}
@@ -196,6 +276,10 @@ export default function Dashboard() {
       <NewTaskModal
         isOpen={isNewTaskModalOpen}
         onClose={() => setIsNewTaskModalOpen(false)}
+        onCreated={() => {
+          loadTasks()
+          loadStats()
+        }}
       />
     </div>
   )

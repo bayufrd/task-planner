@@ -63,8 +63,19 @@ export async function apiRequest<T = any>(
   }
 }
 
+export interface TaskStats {
+  pending: number
+  done: number
+  skipped: number
+}
+
 // Task API helpers
 export const taskApi = {
+  getStats: async (): Promise<{ success: boolean; data?: TaskStats; error?: string }> => {
+    const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
+    return apiRequest<TaskStats>(`${API_BASE}/api/tasks/stats`)
+  },
+
   updateStatus: async (taskId: string, status: string) => {
     const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
     return apiRequest(`${API_BASE}/api/tasks/${taskId}/status`, {
@@ -79,5 +90,12 @@ export const taskApi = {
   
   skip: async (taskId: string) => {
     return taskApi.updateStatus(taskId, 'SKIPPED')
+  },
+
+  delete: async (taskId: string) => {
+    const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
+    return apiRequest(`${API_BASE}/api/tasks/${taskId}`, {
+      method: 'DELETE',
+    })
   },
 }

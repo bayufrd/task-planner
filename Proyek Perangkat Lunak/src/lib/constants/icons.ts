@@ -50,6 +50,10 @@ export const TaskStatusIcons = {
     icon: CheckCircle2,
     className: 'text-green-600 dark:text-green-400',
   },
+  SKIPPED: {
+    icon: AlertCircle,
+    className: 'text-gray-500 dark:text-gray-400',
+  },
 } as const
 
 /**

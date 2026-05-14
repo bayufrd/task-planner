@@ -37,7 +37,7 @@ export class TaskService {
   }
 
   async getTasks(userId: string, status?: string) {
-    const where: any = { userId };
+    const where: any = { userId, deletedAt: null };
     
     if (status) {
       where.status = status.toUpperCase();
@@ -146,8 +146,11 @@ export class TaskService {
   async deleteTask(userId: string, taskId: string) {
     await this.getTaskById(userId, taskId);
 
-    await prisma.task.delete({
+
+    // Soft delete - set deletedAt timestamp instead of actually deleting
+    await prisma.task.update({
       where: { id: taskId },
+      data: { deletedAt: new Date() },
     });
 
     return { message: 'Task deleted successfully' };
@@ -155,12 +158,58 @@ export class TaskService {
 
   async getTaskStats(userId: string) {
     const [pending, done, skipped] = await Promise.all([
-      prisma.task.count({ where: { userId, status: 'PENDING' } }),
-      prisma.task.count({ where: { userId, status: 'DONE' } }),
-      prisma.task.count({ where: { userId, status: 'SKIPPED' } }),
+      prisma.task.count({ where: { userId, status: 'PENDING', deletedAt: null } }),
+      prisma.task.count({ where: { userId, status: 'DONE', deletedAt: null } }),
+      prisma.task.count({ where: { userId, status: 'SKIPPED', deletedAt: null } }),
     ]);
 
     return { pending, done, skipped };
+  }
+
+  async autoSkipOverdueTasks() {
+    const now = new Date();
+    const minimumToleranceMs = 60 * 60 * 1000;
+    const minimumOverdueDeadline = new Date(now.getTime() - minimumToleranceMs);
+
+    const candidates = await prisma.task.findMany({
+      where: {
+        status: 'PENDING',
+        deletedAt: null,
+        deadline: {
+          lte: minimumOverdueDeadline,
+        },
+      },
+      select: {
+        id: true,
+        deadline: true,
+        estimatedDuration: true,
+      },
+    });
+
+    const overdueTaskIds = candidates
+      .filter((task) => {
+        const toleranceMinutes = Math.max(task.estimatedDuration || 60, 60);
+        const skippedAt = task.deadline.getTime() + toleranceMinutes * 60 * 1000;
+
+        return skippedAt <= now.getTime();
+      })
+      .map((task) => task.id);
+
+    if (overdueTaskIds.length === 0) {
+      return { skipped: 0 };
+    }
+
+    const result = await prisma.task.updateMany({
+      where: {
+        id: { in: overdueTaskIds },
+        status: 'PENDING',
+      },
+      data: {
+        status: 'SKIPPED',
+      },
+    });
+
+    return { skipped: result.count };
   }
 
   async calculateTaskPriority(userId: string, taskId: string) {

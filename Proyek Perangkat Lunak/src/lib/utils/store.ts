@@ -9,7 +9,7 @@ export interface Task {
   deadline: string
   priority: 'HIGH' | 'MEDIUM' | 'LOW'
   estimatedDuration?: number
-  status: 'TODO' | 'IN_PROGRESS' | 'DONE'
+  status: 'TODO' | 'IN_PROGRESS' | 'DONE' | 'SKIPPED'
   reminderTime: number
   tags: string[]
   createdAt: string
@@ -92,7 +92,7 @@ export const useTaskStore = create<TaskStore>()(
         getTodayTasks: () => {
           const { getTasksByDate } = get()
           return getTasksByDate(new Date()).filter(
-            (task) => task.status !== 'DONE'
+            (task) => task.status !== 'DONE' && task.status !== 'SKIPPED'
           )
         },
 
@@ -103,13 +103,35 @@ export const useTaskStore = create<TaskStore>()(
 
           return tasks.filter((task) => {
             const deadline = new Date(task.deadline)
-            return deadline >= now && deadline <= sevenDaysFromNow && task.status !== 'DONE'
+            return deadline >= now && deadline <= sevenDaysFromNow && task.status !== 'DONE' && task.status !== 'SKIPPED'
           })
         },
 
         getCompletedTasks: () => {
           const { tasks } = get()
           return tasks.filter((task) => task.status === 'DONE')
+        },
+
+        // Counter methods for task statistics
+        getTaskStats: () => {
+          const { tasks } = get()
+          return {
+            pending: tasks.filter((task) => task.status === 'TODO').length,
+            inProgress: tasks.filter((task) => task.status === 'IN_PROGRESS').length,
+            done: tasks.filter((task) => task.status === 'DONE').length,
+            skipped: tasks.filter((task) => task.status === 'SKIPPED').length,
+            total: tasks.length,
+          }
+        },
+
+        getPendingTasks: () => {
+          const { tasks } = get()
+          return tasks.filter((task) => task.status === 'TODO')
+        },
+
+        getInProgressTasks: () => {
+          const { tasks } = get()
+          return tasks.filter((task) => task.status === 'IN_PROGRESS')
         },
       }),
       {
