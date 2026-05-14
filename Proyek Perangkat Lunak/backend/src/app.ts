@@ -8,6 +8,7 @@ import taskSkipRoutes from './modules/tasks/task.skip.routes';
 import reminderRoutes from './modules/reminders/reminder.routes';
 import calendarRoutes from './modules/calendar/calendar.routes';
 import calendarRefreshRoutes from './modules/calendar/calendar.refresh.routes';
+import aiRoutes from './modules/ai/ai.routes';
 
 export const createApp = (): Application => {
   const app = express();
@@ -29,6 +30,7 @@ export const createApp = (): Application => {
   app.use('/api/reminders', reminderRoutes);
   app.use('/api/calendars', calendarRoutes);
   app.use('/api/calendars', calendarRefreshRoutes);
+  app.use('/api/ai', aiRoutes);
 
   // 404 handler
   app.use((_req, res) => {

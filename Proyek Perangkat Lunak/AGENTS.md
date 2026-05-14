@@ -991,6 +991,142 @@ cd "Proyek Perangkat Lunak/backend" && npx prisma migrate dev --name add_task_de
 
 ---
 
+## 23. AI / LLM Task Parsing — 9Router Integration
+
+Smart Task Planner uses 9Router as an AI backend proxy to parse natural language task commands into structured task payloads. The API key lives server-side only in `backend/.env` and is never exposed to the browser.
+
+### How It Works
+
+1. User types a natural language task command in Command Palette (`Ctrl+K` or navbar button).
+2. Frontend sends `POST /api/ai/parse-task` with the raw command text.
+3. Backend proxies the request to 9Router (`$NINE_ROUTER_API/v1/chat/completions`) with a deterministic system prompt.
+4. 9Router returns a JSON payload with: `title`, `description`, `deadline`, `priority`, `estimatedDuration`, `tags`, `reminderTime`.
+5. Backend validates and returns the parsed payload to the frontend.
+6. Frontend creates the task via `POST /api/tasks`.
+
+If 9Router is unavailable or the LLM parse fails, Command Palette falls back to the existing regex-based parser.
+
+### Environment Variables (Backend — `backend/.env`)
+
+```bash
+# 9Router AI / LLM Configuration
+NINE_ROUTER_API=https://9router.dastrevas.com/v1/chat/completions
+NINE_ROUTER_API_KEY=your_9router_api_key_here
+NINE_ROUTER_MODEL=cx/gpt-5.2  # optional, defaults to cx/gpt-5.2
+```
+
+**IMPORTANT:** These variables must **never** be prefixed with `NEXT_PUBLIC_` or appear in the Next.js frontend `.env`. The API key is only consumed by the Express backend.
+
+### Endpoint
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `POST` | `/api/ai/parse-task` | Bearer token | Parse natural language command → structured task |
+
+**Request body:**
+```json
+{ "command": "add meeting besok jam 3 sore high priority #work 45 menit" }
+```
+
+**Success response (HTTP 200):**
+```json
+{
+  "success": true,
+  "data": {
+    "title": "Meeting",
+    "description": "",
+    "deadline": "2026-05-15T15:00:00.000Z",
+    "priority": "HIGH",
+    "estimatedDuration": 45,
+    "tags": ["work"],
+    "reminderTime": 60
+  },
+  "message": "Task command parsed successfully"
+}
+```
+
+**Error responses:**
+- HTTP 400 — command missing or too long
+- HTTP 401 — unauthorized
+- HTTP 500 — 9Router error or LLM parsing failure
+
+### AI Parsing Rules (System Prompt)
+
+The 9Router system prompt instructs the LLM to:
+- Return ONLY valid JSON, no markdown, no explanation.
+- Parse both Indonesian and English natural language.
+- Extract `title` (clean, no date/time/duration tokens).
+- `deadline` as absolute ISO-8601 datetime; default to tomorrow 09:00 if omitted.
+- `priority` default MEDIUM; HIGH for "important/urgent/penting/mendesak"; LOW for "low/santai/rendah".
+- `estimatedDuration` default 60 minutes.
+- `reminderTime` default 60 minutes before deadline.
+- Extract `#tags` from input, omit `#` prefix, default `[]`.
+- Never invent unrelated details.
+
+### Files Added/Modified
+
+- `backend/src/modules/ai/ai.service.ts` — LLM proxy service (9Router call + response parsing + normalization)
+- `backend/src/modules/ai/ai.controller.ts` — Route handler
+- `backend/src/modules/ai/ai.routes.ts` — Express route `POST /api/ai/parse-task`
+- `backend/src/config/env.ts` — `NINE_ROUTER_API`, `NINE_ROUTER_API_KEY`, `NINE_ROUTER_MODEL`
+- `backend/src/app.ts` — `app.use('/api/ai', aiRoutes)`
+- `src/lib/constants/api.ts` — `API_ROUTES.AI.PARSE_TASK`
+- `src/lib/api/client.ts` — `aiApi.parseTaskCommand()`, `ParsedTaskCommand` interface
+- `src/components/command/CommandPalette.tsx` — LLM integration with fallback to regex parser
+
+### Recommended Model
+
+For simple task parsing, use the light model:
+
+```bash
+NINE_ROUTER_MODEL=cx/gpt-5.2
+```
+
+Avoid `openai/gpt-4o-mini` in this project unless OpenAI credentials are active in 9Router. If 9Router returns `No active credentials for provider: openai`, switch to one of the available `cx/*` models.
+
+### Fallback Behavior
+
+If 9Router is not configured, unavailable, or returns an error, Command Palette automatically falls back to the existing regex-based `parseAndCreateTask()` function. This ensures the command palette always works even without AI.
+
+### AI Testing Checklist
+
+Use these checks after changing the 9Router integration:
+
+- [x] Restart Express backend after adding `/api/ai/parse-task`; otherwise the route can return 404.
+- [x] Verify unauthenticated request returns 401, not 404:
+  ```bash
+  curl -i -X POST http://localhost:5000/api/ai/parse-task \
+    -H "Content-Type: application/json" \
+    -d '{"command":"add meeting besok jam 3 sore high priority #work 45 menit"}'
+  ```
+- [x] Register/login through Express backend and capture Bearer token.
+- [x] Verify authenticated AI parse returns HTTP 200 and structured JSON.
+  - Test command: `"add meeting besok jam 3 sore high priority #work 45 menit"`
+  - Result: `title=meeting`, `priority=HIGH`, `duration=45`, `tags=[work]`, `reminderTime=60`
+- [ ] Verify command palette `Ctrl+K` creates a task from Indonesian input.
+- [ ] Verify command palette navbar button opens the same AI-powered parser.
+- [ ] Verify fallback parser still creates task when 9Router is unavailable.
+- [x] Verify API key is only in `backend/.env`, never in frontend `.env` and never committed.
+
+Expected successful parse shape:
+
+```json
+{
+  "success": true,
+  "data": {
+    "title": "Meeting",
+    "description": "",
+    "deadline": "2026-05-15T15:00:00.000Z",
+    "priority": "HIGH",
+    "estimatedDuration": 45,
+    "tags": ["work"],
+    "reminderTime": 60
+  }
+}
+```
+
+---
+
 ### Environment Setup Guidelines
 
 1. **Never commit `.env` files** - they contain sensitive credentials

@@ -26,6 +26,9 @@ export const API_ROUTES = {
     GOOGLE: `${API_BASE_URL}/api/auth/google`,
     GOOGLE_CALLBACK: `${API_BASE_URL}/api/auth/google/callback`,
   },
+  AI: {
+    PARSE_TASK: `${API_BASE_URL}/api/ai/parse-task`,
+  },
   REMINDERS: {
     BASE: `${API_BASE_URL}/api/reminders`,
     LIST: `${API_BASE_URL}/api/reminders`,

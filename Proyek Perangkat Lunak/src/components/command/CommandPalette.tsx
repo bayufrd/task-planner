@@ -5,7 +5,8 @@ import { useTaskStore } from '@/lib/utils/store'
 import { useLanguage } from '@/components/providers/LanguageProvider'
 import { useNotification } from '@/lib/hooks/useNotification'
 import { API_ROUTES } from '@/lib/constants/api'
-import { Search, X, Lightbulb, Command, History, ArrowUp, ArrowDown } from 'lucide-react'
+import { aiApi, ParsedTaskCommand } from '@/lib/api/client'
+import { Search, X, Lightbulb, Command, History, ArrowUp, ArrowDown, Bot } from 'lucide-react'
 
 interface CommandPaletteProps {
   isOpen: boolean
@@ -325,6 +326,70 @@ export default function CommandPalette({ isOpen, onClose, onOpen }: CommandPalet
     }
   }
 
+  const parseAndCreateTaskWithLLM = async (command: string) => {
+    const token = localStorage.getItem('token')
+    if (!token) {
+      // Fallback to regex parser if no token
+      await parseAndCreateTask(command)
+      return
+    }
+
+    setIsLoading(true)
+    try {
+      // Call backend LLM proxy
+      const result = await aiApi.parseTaskCommand(command)
+
+      if (!result.success || !result.data) {
+        // Fallback to regex parser
+        console.warn('[CommandPalette] LLM parse failed, falling back to regex:', result.error)
+        await parseAndCreateTask(command)
+        return
+      }
+
+      const parsed: ParsedTaskCommand = result.data
+
+      // Create task via API using LLM-parsed payload
+      const response = await fetch(API_ROUTES.TASKS.CREATE, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(parsed),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        notify.error(`Failed to create task: ${data.error || 'Unknown error'}`)
+        return
+      }
+
+      addTask({
+        title: parsed.title,
+        description: parsed.description || '',
+        deadline: parsed.deadline,
+        priority: parsed.priority,
+        estimatedDuration: parsed.estimatedDuration || 60,
+        status: 'TODO',
+        reminderTime: parsed.reminderTime || 60,
+        tags: parsed.tags || [],
+      })
+
+      notify.success(`Task "${parsed.title}" berhasil dibuat via AI`)
+      setInput('')
+      setSuggestions([])
+      onClose()
+      window.dispatchEvent(new CustomEvent('tasks:changed'))
+    } catch (error) {
+      console.error('[CommandPalette] LLM parse error:', error)
+      // Fallback to regex parser on any error
+      await parseAndCreateTask(command)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   const processCommand = async (text: string) => {
     const trimmed = text.trim()
 
@@ -364,8 +429,8 @@ export default function CommandPalette({ isOpen, onClose, onOpen }: CommandPalet
       return
     }
 
-    // Parse natural language
-    await parseAndCreateTask(trimmed)
+    // Try LLM parsing first, fallback to regex parser
+    await parseAndCreateTaskWithLLM(trimmed)
   }
 
   if (!isOpen) return null
@@ -479,6 +544,16 @@ export default function CommandPalette({ isOpen, onClose, onOpen }: CommandPalet
                 {t('command.title')}
               </p>
               <div className="space-y-4 text-left max-w-sm mx-auto">
+                <div className="bg-gradient-to-br from-blue-50/50 to-cyan-50/50 dark:from-blue-950/20 dark:to-cyan-950/20 rounded-xl p-4 border border-blue-200/50 dark:border-blue-800/30">
+                  <p className="font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                    <Bot className="w-4 h-4 text-purple-500" strokeWidth={2} />
+                    AI-Powered Natural Language
+                  </p>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">add meeting besok jam 3 sore high priority 45 menit #work</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                    AI parses Indonesian &amp; English, extracts deadline, priority, duration, tags automatically.
+                  </p>
+                </div>
                 <div className="bg-gradient-to-br from-blue-50/50 to-cyan-50/50 dark:from-blue-950/20 dark:to-cyan-950/20 rounded-xl p-4 border border-blue-200/50 dark:border-blue-800/30">
                   <p className="font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
                     <Lightbulb className="w-4 h-4 text-yellow-500" strokeWidth={2} />

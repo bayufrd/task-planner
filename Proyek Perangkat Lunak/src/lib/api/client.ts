@@ -99,3 +99,24 @@ export const taskApi = {
     })
   },
 }
+
+// AI / LLM parsing helpers
+export interface ParsedTaskCommand {
+  title: string
+  description?: string
+  deadline: string
+  priority: 'HIGH' | 'MEDIUM' | 'LOW'
+  estimatedDuration: number
+  tags: string[]
+  reminderTime: number
+}
+
+export const aiApi = {
+  parseTaskCommand: async (command: string): Promise<{ success: boolean; data?: ParsedTaskCommand; error?: string }> => {
+    const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
+    return apiRequest<ParsedTaskCommand>(`${API_BASE}/api/ai/parse-task`, {
+      method: 'POST',
+      body: JSON.stringify({ command }),
+    })
+  },
+}

@@ -9,6 +9,10 @@ export const env = {
   JWT_SECRET: process.env.JWT_SECRET || '',
   JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || '7d',
   FRONTEND_URL: process.env.FRONTEND_URL || 'http://localhost:3000',
+  // 9Router AI / LLM
+  NINE_ROUTER_API: process.env.NINE_ROUTER_API || '',
+  NINE_ROUTER_API_KEY: process.env.NINE_ROUTER_API_KEY || '',
+  NINE_ROUTER_MODEL: process.env.NINE_ROUTER_MODEL || 'cx/gpt-5.2',
   // Google OAuth
   GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || '',
   GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET || '',
