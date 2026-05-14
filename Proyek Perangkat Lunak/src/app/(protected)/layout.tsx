@@ -104,7 +104,8 @@ export default function ProtectedLayout({
   }
 
   return (
-    <div className="min-h-dvh flex flex-col overflow-hidden">
+
+    <div className="h-screen flex flex-col overflow-hidden">
       {/* Header - Desktop only, no hamburger */}
       <Header
         onToggleTheme={toggleTheme}
@@ -130,7 +131,7 @@ export default function ProtectedLayout({
             className="flex flex-col items-center gap-1 px-4 py-2 rounded-xl text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors min-w-[60px]"
           >
             <CheckSquare2 className="w-5 h-5" strokeWidth={2} />
-            <span className="text-[10px] font-semibold">Tasks</span>
+            <span className="text-[10px] font-semibold">Dashboard</span>
           </Link>
 
           {/* Command Tab */}
@@ -139,7 +140,7 @@ export default function ProtectedLayout({
             className="flex flex-col items-center gap-1 px-4 py-2 rounded-xl text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors min-w-[60px]"
           >
             <Search className="w-5 h-5" strokeWidth={2} />
-            <span className="text-[10px] font-semibold">Search</span>
+            <span className="text-[10px] font-semibold">Command</span>
           </button>
 
           {/* Profile Tab */}
@@ -155,11 +156,11 @@ export default function ProtectedLayout({
 
       {/* Profile Dropdown - Desktop & Mobile */}
       {isProfileOpen && mounted && (
-        <div className="fixed inset-0 z-40" onClick={() => setIsProfileOpen(false)}>
+        <div className="fixed inset-0 z-[70]" onClick={() => setIsProfileOpen(false)}>
           {/* Profile Card - Drops UP from bottom on mobile, top-right on desktop */}
           <div
             ref={profileRef}
-            className="absolute bottom-0 left-0 right-0 z-50 bg-white dark:bg-gray-900 rounded-t-2xl border-t border-gray-200/50 dark:border-gray-800/50 shadow-xl overflow-hidden lg:bottom-auto lg:left-auto lg:right-4 lg:top-20 lg:w-80 lg:rounded-2xl lg:border lg:shadow-2xl"
+            className="absolute bottom-20 left-0 right-0 z-[80] max-h-[calc(100dvh-6rem)] overflow-y-auto bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/50 dark:border-gray-800/50 shadow-xl lg:bottom-auto lg:left-auto lg:right-4 lg:top-20 lg:w-80 lg:max-h-[calc(100dvh-6rem)] lg:shadow-2xl"
           >
             <div className="px-4 py-4 space-y-2">
               {/* User Profile Header */}
