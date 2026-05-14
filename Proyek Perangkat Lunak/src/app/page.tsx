@@ -62,9 +62,6 @@ export default function LandingPage() {
 
   const features = [
     {
-
-
-
       icon: BarChart3,
       title: mounted && language === 'id' ? 'Peringkat Prioritas AI' : 'AI-Priority Ranking',
       description: mounted && language === 'id'
@@ -117,8 +114,6 @@ export default function LandingPage() {
       ]
     }
   ]
-
-  
 
   return (
     <div className={`min-h-screen w-full transition-colors ${theme === 'dark' ? 'bg-gradient-to-br from-gray-950 via-slate-900 to-indigo-950' : 'bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50'}`}>
@@ -189,68 +184,56 @@ export default function LandingPage() {
           </div>
         </nav>
 
-        {/* Hero Section */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-28">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            {/* Text Content */}
-            <div className="space-y-8 text-center lg:text-left">
-              {/* Badge */}
-              <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border ${theme === 'dark' ? 'bg-blue-900/20 border-blue-800/50' : 'bg-blue-100/50 border-blue-200/50'}`}>
-                <Sparkles className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                <span className="text-sm font-semibold text-blue-600 dark:text-blue-400">
-                  {mounted && language === 'id' ? 'Asisten AI & Integrasi WhatsApp sudah aktif' : 'AI Assistant & WhatsApp Integration is now live'}
-                </span>
-              </div>
+        {/* Hero Section - Matched to Reference */}
+        <div className="max-w-[1200px] mx-auto px-[40px] pt-32 pb-24 flex flex-col items-center text-center">
+          {/* Badge */}
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 text-blue-600 font-semibold text-sm border border-blue-500/10 mb-10">
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>{mounted && language === 'id' ? 'Asisten AI & Integrasi WhatsApp sudah aktif' : 'AI Assistant & WhatsApp Integration is now live'}</span>
+          </div>
 
-              {/* Main Heading */}
-              <div className="space-y-4">
-                <h1 className="text-5xl sm:text-6xl md:text-7xl font-black tracking-tight">
-                  <span className={`block ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-                    {mounted && language === 'id' ? 'Rencanakan lebih cerdas.' : 'Plan smarter.'}
-                  </span>
-                  <span className="block bg-gradient-to-r from-blue-600 via-indigo-600 to-cyan-600 bg-clip-text text-transparent">
-                    {mounted && language === 'id' ? 'Selesaikan lebih cepat.' : 'Finish faster.'}
-                  </span>
-                </h1>
-                <p className={`text-lg sm:text-xl max-w-2xl leading-relaxed ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
-                  {mounted && language === 'id' 
-                    ? 'Tugas yang diperingkat AI berdasarkan urgensi, prioritas, pengingat, dan durasi. Dapatkan kembali fokus Anda dan hilangkan kebingungan memilih pekerjaan berikutnya dengan mesin tugas cerdas pribadi.'
-                    : 'AI-ranked tasks based on urgency, priority, reminders, and duration. Regain focus and eliminate decision fatigue with your own intelligent task engine.'
-                  }
-                </p>
-              </div>
+          {/* Main Heading */}
+          <h1 className="text-[64px] leading-[1.1] font-bold tracking-tight mb-8 max-w-4xl">
+            {mounted && language === 'id' ? 'Rencanakan lebih cerdas.' : 'Plan smarter.'}<br />
+            <span className="text-blue-600">{mounted && language === 'id' ? 'Selesaikan lebih cepat.' : 'Finish faster.'}</span>
+          </h1>
 
-              {/* CTA Button */}
-              <div className="flex flex-col sm:flex-row gap-4 pt-4">
-                <button
-                  onClick={handleStartNow}
-                  className="px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl font-bold text-lg transition-all duration-200 flex items-center justify-center gap-2 shadow-2xl shadow-blue-500/40 hover:shadow-2xl hover:shadow-blue-500/50 hover:scale-105"
-                >
-                  {mounted && language === 'id' ? 'Mulai Sekarang' : 'Start Now'}
-                  <ArrowRight className="w-5 h-5" strokeWidth={2} />
-                </button>
-              </div>
+          {/* Description */}
+          <p className="text-lg max-w-2xl mb-14 leading-relaxed text-gray-500 opacity-80">
+            {mounted && language === 'id' 
+              ? 'Tugas yang diperingkat AI berdasarkan urgensi, prioritas, pengingat, dan durasi. Dapatkan kembali fokus Anda dan hilangkan kebingungan memilih pekerjaan berikutnya dengan mesin tugas cerdas pribadi.'
+              : 'AI-ranked tasks based on urgency, priority, reminders, and duration. Regain focus and eliminate decision fatigue with your own intelligent task engine.'
+            }
+          </p>
 
-              {/* Trust Badge */}
-              <div className={`flex items-center gap-2 text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
-                <CheckCircle2 className="w-4 h-4 text-green-600 dark:text-green-400" />
-                Google Calendar integration • Multi-language support • Secure OAuth
-              </div>
-            </div>
+          {/* CTA Buttons */}
+          <div className="flex flex-col sm:flex-row gap-5 items-center">
+            <button
+              onClick={handleStartNow}
+              className="flex items-center gap-3 bg-white border border-gray-200 px-8 py-4 rounded-full font-semibold text-lg hover:bg-gray-50 transition-all hover:shadow-xl active:scale-[0.98]"
+            >
+              <img alt="Google" className="w-5 h-5" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBlT_lme9gba2n4TdQoZ0wbD9cF3FvInlSmUrbS2k-9DBICpEtgLqJq1TVvyjswVwDcLtVT9ZJZ8XtdBBUrHqCvmRJA453Z_kxrdA_TP7o93H4MPkea2Wr6NvzTatv3lmKoGWgTigbtYezH9lVmypgMBA-eTR-3DVe_WVd6rS2VckkYUnDjQ949m8pjKcv8TcTfScxMnr53_ZZly4g0wOWMAHCh89kYsxrXmIOm_gtbaq5sLv7uhogGTYTuT8Srut-we2KZ8cH3gRt2" />
+              {mounted && language === 'id' ? 'Masuk dengan Google' : 'Sign in with Google'}
+            </button>
+            <button className="flex items-center gap-2 text-gray-500 hover:text-gray-900 px-8 py-4 font-semibold text-lg transition-colors group">
+              {mounted && language === 'id' ? 'Lihat Video Demo' : 'View Demo Video'}
+              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" strokeWidth={2} />
+            </button>
+          </div>
 
-            {/* Video */}
-            <div className="relative rounded-2xl overflow-hidden border border-gray-800/50 shadow-2xl shadow-blue-500/20 h-96 lg:h-full">
+          {/* Preview Video */}
+          <div className="mt-28 relative w-full max-w-5xl group">
+            <div className="absolute -inset-10 bg-gradient-to-tr from-blue-300/20 to-emerald-300/20 rounded-full blur-3xl opacity-60"></div>
+            <div className="relative bg-white border border-gray-200 p-1.5 rounded-[1.25rem] shadow-xl overflow-hidden">
               <video
                 autoPlay
                 muted
                 loop
                 playsInline
-                className="w-full h-full object-cover object-left-center rounded-2xl"
-                style={{ objectPosition: '2px center' }}
+                className="rounded-[1.25rem] w-full object-cover aspect-video grayscale-[20%] hover:grayscale-0 transition-all duration-700"
               >
                 <source src={VIDEOS.hero} type="video/mp4" />
               </video>
-              <div className="absolute inset-0 bg-gradient-to-t from-gray-950/20 to-transparent pointer-events-none rounded-2xl"></div>
             </div>
           </div>
         </div>
@@ -307,39 +290,28 @@ export default function LandingPage() {
         </div>
 
         {/* WhatsApp CTA Section */}
-        <div className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 border-t ${theme === 'dark' ? 'border-gray-800/50' : 'border-gray-200/50'}`}>
-          <div className="text-center mb-16">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500 text-white font-semibold text-xs uppercase tracking-widest mb-8">
-              {mounted && language === 'id' ? 'Penawaran Terbaik' : 'Best Deal'}
+        <div className={`py-20 border-t ${theme === 'dark' ? 'border-emerald-900/30 bg-emerald-900/5' : 'border-emerald-200/30 bg-emerald-50/50'}`}>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center">
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500 text-white font-semibold text-xs uppercase tracking-widest mb-8">
+                {mounted && language === 'id' ? 'Penawaran Terbaik' : 'Best Deal'}
+              </div>
+              <h2 className={`text-4xl sm:text-5xl font-bold mb-6 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+                {mounted && language === 'id' ? 'Hack Produktivitas Utama: Task Planner Anda, sekarang di WhatsApp.' : 'The Ultimate Productivity Hack: Your Task Planner, now on WhatsApp.'}
+              </h2>
+              <p className={`text-lg max-w-2xl mx-auto mb-10 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
+                {mounted && language === 'id' 
+                  ? 'Selesaikan pekerjaan di tempat Anda sudah menghabiskan waktu. Tidak perlu aplikasi baru, hanya asisten AI pribadi Anda di aplikasi chat favorit.'
+                  : 'Get things done where you already spend your time. No new apps to download, just your personal AI assistant in your favorite chat app.'
+                }
+              </p>
+              <button
+                onClick={handleStartNow}
+                className={`px-8 py-4 rounded-full font-bold text-lg transition-all duration-200 shadow-lg ${theme === 'dark' ? 'bg-white text-gray-900 hover:bg-gray-100 shadow-gray-900/50' : 'bg-gray-900 text-white hover:bg-gray-800 shadow-gray-300/50'}`}
+              >
+                {mounted && language === 'id' ? 'Hubungkan WhatsApp Sekarang' : 'Connect WhatsApp Now'}
+              </button>
             </div>
-            <h2 className={`text-4xl sm:text-5xl font-bold mb-4 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-              {mounted && language === 'id' ? 'Hack Produktivitas Terbaik: Task Planner Anda, sekarang di WhatsApp.' : 'The Ultimate Productivity Hack: Your Task Planner, now on WhatsApp.'}
-            </h2>
-            <p className={`text-lg max-w-2xl mx-auto ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
-              {mounted && language === 'id' 
-                ? 'Selesaikan pekerjaan di tempat Anda sudah menghabiskan waktu. Tidak perlu aplikasi baru, hanya asisten AI pribadi Anda di aplikasi chat favorit.'
-                : 'Get things done where you already spend your time. No new apps to download, just your personal AI assistant in your favorite chat app.'
-              }
-            </p>
-            <button
-              onClick={handleStartNow}
-              className="mt-8 px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl font-bold text-lg transition-all duration-200 shadow-2xl shadow-blue-500/40 hover:shadow-2xl hover:shadow-blue-500/50 hover:scale-105"
-            >
-              {mounted && language === 'id' ? 'Hubungkan WhatsApp Sekarang' : 'Connect WhatsApp Now'}
-            </button>
-          </div>
-
-          <div className="relative rounded-2xl overflow-hidden border border-gray-800/50 shadow-2xl shadow-blue-500/20 h-96 max-w-4xl mx-auto">
-            <video
-              autoPlay
-              muted
-              loop
-              playsInline
-              className="w-full h-full object-cover"
-            >
-              <source src={VIDEOS.features2} type="video/mp4" />
-            </video>
-            <div className="absolute inset-0 bg-gradient-to-t from-gray-950/20 to-transparent pointer-events-none"></div>
           </div>
         </div>
 
