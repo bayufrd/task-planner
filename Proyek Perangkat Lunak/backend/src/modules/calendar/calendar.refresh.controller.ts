@@ -16,7 +16,7 @@ export const refreshCalendar = async (req: AuthRequest, res: Response) => {
   try {
     // Check if calendar exists and belongs to user
     const calendar = await prisma.calendar.findFirst({
-      where: { id, userId },
+      where: { id: String(id), userId: String(userId) },
     });
 
     if (!calendar) {

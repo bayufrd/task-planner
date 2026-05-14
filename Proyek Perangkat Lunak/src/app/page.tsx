@@ -69,6 +69,9 @@ export default function LandingPage() {
   const handleStartNow = async () => {
     router.push('/auth/signin?callbackUrl=%2Fdashboard')
   }
+  const handleSignUp = async () => {
+    router.push('/auth/signup?callbackUrl=%2Fdashboard')
+  }
 
   const features = [
     {
@@ -225,8 +228,8 @@ export default function LandingPage() {
               <GoogleIcon className="w-5 h-5" />
               {mounted && language === 'id' ? 'Masuk dengan Google' : 'Sign in with Google'}
             </button>
-            <button className="flex items-center gap-2 text-gray-500 hover:text-gray-900 px-8 py-4 font-semibold text-lg transition-colors group">
-              {mounted && language === 'id' ? 'Lihat Video Demo' : 'View Demo Video'}
+            <button onClick={handleSignUp} className="flex items-center gap-2 text-gray-500 hover:text-gray-900 px-8 py-4 font-semibold text-lg transition-colors group">
+              {mounted && language === 'id' ? 'Daftar Sekarang' : 'Sign Up Now'}
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" strokeWidth={2} />
             </button>
           </div>
@@ -409,7 +412,7 @@ export default function LandingPage() {
                 playsInline
                 className="w-full h-full object-cover"
               >
-                <source src={VIDEOS.timeline} type="video/mp4" />
+                <source src={VIDEOS.features1} type="video/mp4" />
               </video>
               <div className="absolute inset-0 bg-gradient-to-t from-gray-950/20 to-transparent pointer-events-none"></div>
             </div>

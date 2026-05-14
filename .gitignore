@@ -26,6 +26,8 @@ Pemrograman Basis Data/TaskPlanner-Java-Backend/.idea/
 Pemrograman Basis Data/TaskPlanner-Java-Backend/.vscode/
 Pemrograman Basis Data/TaskPlanner-Java-Backend/*.iml
 
+.clinerules/
+
 # Dependencies
 /node_modules
 /.pnp
