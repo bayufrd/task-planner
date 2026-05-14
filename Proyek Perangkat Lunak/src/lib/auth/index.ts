@@ -49,7 +49,6 @@ export const authOptions: NextAuthOptions = {
 
       // Check if token needs refresh
       if (token.expiresAt && Date.now() >= (token.expiresAt as number) * 1000) {
-        console.log('🔄 Token expired, attempting refresh...')
         
         // If no refresh token, token is invalid and needs re-authentication
         if (!token.refreshToken) {
@@ -76,7 +75,6 @@ export const authOptions: NextAuthOptions = {
             throw new Error('Token refresh failed')
           }
 
-          console.log('✅ Token refreshed successfully')
           return {
             ...token,
             accessToken: refreshedTokens.access_token,

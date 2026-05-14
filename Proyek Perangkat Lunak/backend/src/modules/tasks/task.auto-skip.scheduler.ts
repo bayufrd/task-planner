@@ -32,7 +32,6 @@ export class TaskAutoSkipScheduler {
       const result = await this.taskService.autoSkipOverdueTasks();
 
       if (result.skipped > 0) {
-        console.log(`✓ Auto-skipped ${result.skipped} overdue task(s)`);
       }
     } catch (error) {
       console.error('Failed to auto-skip overdue tasks:', error);

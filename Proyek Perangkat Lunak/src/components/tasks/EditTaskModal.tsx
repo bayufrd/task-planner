@@ -67,7 +67,6 @@ export default function EditTaskModal({ isOpen, task, onClose, onSaved }: EditTa
         estimatedDuration: parseInt(estimatedDuration, 10) || 60,
       }
 
-      console.debug('[task:update] request', payload, 'taskId:', task.id)
 
       // Update via API if has backendId
       if (task.backendId && token) {

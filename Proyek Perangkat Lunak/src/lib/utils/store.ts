@@ -56,7 +56,6 @@ export const useTaskStore = create<TaskStore>()(
               id: generateId(),
               createdAt: new Date().toISOString(),
             }
-            console.log('[Store] Task created:', newTask)
             return { tasks: [...state.tasks, newTask] }
           }),
 

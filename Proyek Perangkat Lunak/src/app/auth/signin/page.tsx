@@ -77,11 +77,6 @@ function SignInContent() {
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
-      console.debug('[auth:login] request', {
-        apiUrl,
-        callbackUrl,
-        email: formData.email,
-      })
 
       const response = await fetch(`${apiUrl}/api/auth/login`, {
         method: 'POST',
@@ -96,13 +91,6 @@ function SignInContent() {
 
       const data = await response.json().catch(() => null)
 
-      console.debug('[auth:login] response', {
-        status: response.status,
-        ok: response.ok,
-        body: data,
-        hasToken: Boolean(data?.data?.token),
-      })
-
       if (!response.ok) {
         throw new Error(data?.error?.message || 'Login gagal')
       }
@@ -114,24 +102,14 @@ function SignInContent() {
         // Save to localStorage for dashboard/task API calls
         localStorage.setItem('token', data.data.token)
         
-        console.debug('[auth:login] token saved', {
-          hasCookie: document.cookie.includes('backendAuthToken='),
-          hasLocalStorage: localStorage.getItem('token') === data.data.token,
-        })
-        
         // Save user data for form-login fallback profile
         if (data?.data?.user) {
           localStorage.setItem('backendUser', JSON.stringify(data.data.user))
-          console.debug('[auth:login] user saved to localStorage', {
-            userId: data.data.user.id,
-            name: data.data.user.name,
-          })
         }
       } else {
         console.warn('[auth:login] success response did not include token')
       }
 
-      console.debug('[auth:login] redirect', { callbackUrl })
 
       // Redirect to dashboard
       router.push(callbackUrl)

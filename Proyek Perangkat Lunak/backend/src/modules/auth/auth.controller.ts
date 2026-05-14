@@ -130,12 +130,6 @@ export class AuthController {
 
       // Generate Express JWT
       const token = authService.generateToken(user.id)
-
-      console.debug('[auth:sync] NextAuth Google session synced to Express JWT', {
-        email: googleEmail,
-        userId: user.id,
-      })
-
       sendSuccess(res, {
         token,
         user: {

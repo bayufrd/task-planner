@@ -76,8 +76,6 @@ export default function NewTaskModal({ isOpen, onClose, onCreated }: NewTaskModa
         estimatedDuration: parseInt(estimatedDuration, 10) || 60,
       }
 
-      console.debug('[task:create] request', payload)
-
       const response = await fetch(API_ROUTES.TASKS.CREATE, {
         method: 'POST',
         headers: { 
@@ -89,11 +87,6 @@ export default function NewTaskModal({ isOpen, onClose, onCreated }: NewTaskModa
 
       const result = await response.json().catch(() => null)
 
-      console.debug('[task:create] response', {
-        status: response.status,
-        ok: response.ok,
-        body: result,
-      })
 
       if (!response.ok) {
         const message =

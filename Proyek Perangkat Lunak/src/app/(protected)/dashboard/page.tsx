@@ -71,10 +71,6 @@ export default function Dashboard() {
 
     try {
       setIsLoading(true)
-      console.debug('[Dashboard] Loading tasks from backend...', {
-        hasNextAuthSession,
-        hasToken: !!token,
-      })
 
       const response = await fetch(`${API_ROUTES.TASKS.LIST}?limit=100&page=1`, {
         headers: {

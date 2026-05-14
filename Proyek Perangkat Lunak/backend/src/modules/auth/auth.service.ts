@@ -102,7 +102,6 @@ export class AuthService {
     const existingUser = await prisma.user.findUnique({ where: { email } });
 
     if (existingUser) {
-      console.debug('[auth:findOrCreateFromGoogle] Found existing user', { email })
       return existingUser
     }
 
@@ -114,7 +113,6 @@ export class AuthService {
         password: null, // No password, Google OAuth only
       },
     });
-    console.debug('[auth:findOrCreateFromGoogle] Created new user from Google OAuth', { email })
     return newUser
   }
 }

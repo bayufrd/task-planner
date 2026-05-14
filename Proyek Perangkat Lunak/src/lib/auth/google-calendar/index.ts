@@ -146,7 +146,6 @@ export async function createCalendarEvent(
       throw new Error(data.error?.message || `Google Calendar API error: ${response.statusText}`)
     }
 
-    console.log('✅ Event created successfully:', data.id)
     return {
       success: true,
       eventId: data.id,

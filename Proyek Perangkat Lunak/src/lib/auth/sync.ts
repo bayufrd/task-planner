@@ -24,17 +24,14 @@ export async function syncNextAuthToExpress(sessionUser?: {
   // Skip if already has Express token
   const existingToken = localStorage.getItem(AUTH_TOKEN_KEY)
   if (existingToken) {
-    console.debug('[auth:sync] Express token already exists, skipping sync')
     return true
   }
 
   if (!sessionUser?.accessToken) {
-    console.debug('[auth:sync] No NextAuth Google accessToken found in session')
     return false
   }
 
   try {
-    console.debug('[auth:sync] Syncing NextAuth session to Express JWT...')
 
     const response = await fetch(`${API_BASE}/api/auth/sync`, {
       method: 'POST',
@@ -54,10 +51,6 @@ export async function syncNextAuthToExpress(sessionUser?: {
       localStorage.setItem('auth-token', data.data.token)
       localStorage.setItem(BACKEND_USER_KEY, JSON.stringify(data.data.user))
       setBackendAuthCookie(data.data.token)
-
-      console.debug('[auth:sync] Successfully synced NextAuth session to Express JWT', {
-        email: data.data.user?.email,
-      })
       return true
     } else {
       console.warn('[auth:sync] Sync failed:', data.error?.message || 'Unknown error')

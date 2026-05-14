@@ -80,12 +80,6 @@ export default function ProtectedLayout({
           setBackendUser(null)
         }
       }
-      console.debug('[ProtectedLayout] Auth token check:', {
-        hasCookieToken: !!cookieToken,
-        hasLocalStorageToken: !!localStorageToken,
-        finalToken: !!token,
-        nextAuthStatus: status,
-      })
     }
 
     checkAndSyncAuth()
@@ -94,14 +88,8 @@ export default function ProtectedLayout({
   // If not authenticated, redirect to signin
   useEffect(() => {
     if (mounted && status === 'unauthenticated' && !backendToken) {
-      console.debug('[ProtectedLayout] No auth detected, redirecting to signin')
       router.push('/auth/signin')
     } else {
-      console.debug('[ProtectedLayout] Auth detected, allowing access:', {
-        status,
-        hasBackendToken: !!backendToken,
-        hasNextAuthSession: status === 'authenticated',
-      })
     }
   }, [backendToken, mounted, status, router])
 
