@@ -334,21 +334,26 @@ export default function CommandPalette({ isOpen, onClose, onOpen }: CommandPalet
       return
     }
 
+    // Palette langsung close — analisa di background
+    onClose()
+    setInput('')
+    setSuggestions([])
     setIsLoading(true)
+
+    // Snackbar info saat mulai parsing
+    notify.info(`🔍 AI sedang menganalisa: "${command}"`)
+
     try {
-      // Call backend LLM proxy
       const result = await aiApi.parseTaskCommand(command)
 
       if (!result.success || !result.data) {
-        // Fallback to regex parser
-        console.warn('[CommandPalette] LLM parse failed, falling back to regex:', result.error)
+        notify.warning('AI parse gagal — menggunakan parser biasa')
         await parseAndCreateTask(command)
         return
       }
 
       const parsed: ParsedTaskCommand = result.data
 
-      // Create task via API using LLM-parsed payload
       const response = await fetch(API_ROUTES.TASKS.CREATE, {
         method: 'POST',
         headers: {
@@ -361,7 +366,7 @@ export default function CommandPalette({ isOpen, onClose, onOpen }: CommandPalet
       const data = await response.json()
 
       if (!response.ok) {
-        notify.error(`Failed to create task: ${data.error || 'Unknown error'}`)
+        notify.error(`Gagal membuat task: ${data.error || 'Unknown error'}`)
         return
       }
 
@@ -376,14 +381,11 @@ export default function CommandPalette({ isOpen, onClose, onOpen }: CommandPalet
         tags: parsed.tags || [],
       })
 
-      notify.success(`Task "${parsed.title}" berhasil dibuat via AI`)
-      setInput('')
-      setSuggestions([])
-      onClose()
       window.dispatchEvent(new CustomEvent('tasks:changed'))
+      notify.success(`Task "${parsed.title}" berhasil dibuat via AI ✓`)
     } catch (error) {
       console.error('[CommandPalette] LLM parse error:', error)
-      // Fallback to regex parser on any error
+      notify.error('Gagal menganalisa — coba lagi atau gunakan format manual')
       await parseAndCreateTask(command)
     } finally {
       setIsLoading(false)
@@ -458,34 +460,61 @@ export default function CommandPalette({ isOpen, onClose, onOpen }: CommandPalet
           className="w-full max-w-2xl bg-white dark:bg-gray-900 rounded-2xl shadow-2xl dark:shadow-2xl overflow-hidden border border-gray-200/50 dark:border-gray-800/50 animate-in fade-in slide-in-from-top-4 duration-200 pointer-events-auto"
           onClick={(e) => e.stopPropagation()}
         >
-          {/* Input */}
-          <form onSubmit={handleSubmit} className="border-b border-gray-200/50 dark:border-gray-800/50 bg-gradient-to-r from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
-            <div className="flex items-center px-4 py-4 gap-3">
-              <Search className="w-5 h-5 text-gray-400 dark:text-gray-600 flex-shrink-0" strokeWidth={2} />
-              <input
-                ref={inputRef}
-                type="text"
-                value={input}
-                onChange={(e) => handleInputChange(e.target.value)}
-                placeholder={t('command.placeholder')}
-                className="flex-1 bg-transparent outline-none text-gray-900 dark:text-gray-50 placeholder-gray-500 dark:placeholder-gray-400 text-sm sm:text-base font-medium"
-              />
-              <div className="flex items-center gap-2">
-                <kbd className="hidden sm:inline-flex items-center gap-1 px-2 py-1 bg-gray-200/60 dark:bg-gray-700/60 rounded-md text-xs text-gray-600 dark:text-gray-400 font-medium">
-                  <span>Enter</span>
-                </kbd>
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="p-1.5 hover:bg-gray-200/60 dark:hover:bg-gray-700/60 rounded-lg transition-colors text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-50"
-                  aria-label="Close command palette"
-                  title="Close (Esc)"
-                >
-                  <X className="w-5 h-5" strokeWidth={2} />
-                </button>
+          {/* AI Loading State */}
+          {isLoading ? (
+            <div className="border-b border-gray-200/50 dark:border-gray-800/50 bg-gradient-to-r from-purple-50/30 to-blue-50/30 dark:from-purple-950/20 dark:to-blue-950/20 px-4 py-5">
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0 mt-0.5">
+                  <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center shadow-lg shadow-purple-500/30">
+                    <Bot className="w-5 h-5 text-white animate-pulse" strokeWidth={2} />
+                  </div>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <p className="text-sm font-semibold text-purple-700 dark:text-purple-300">
+                      AI sedang menganalisa perintah…
+                    </p>
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate font-mono bg-white/60 dark:bg-gray-800/60 px-3 py-2 rounded-lg border border-gray-200/50 dark:border-gray-700/50">
+                    &ldquo;{input}&rdquo;
+                  </p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
+                    Esc untuk batal
+                  </p>
+                </div>
               </div>
             </div>
-          </form>
+          ) : (
+            /* Normal Input */
+            <form onSubmit={handleSubmit} className="border-b border-gray-200/50 dark:border-gray-800/50 bg-gradient-to-r from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
+              <div className="flex items-center px-4 py-4 gap-3">
+                <Search className="w-5 h-5 text-gray-400 dark:text-gray-600 flex-shrink-0" strokeWidth={2} />
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={input}
+                  onChange={(e) => handleInputChange(e.target.value)}
+                  placeholder={t('command.placeholder')}
+                  className="flex-1 bg-transparent outline-none text-gray-900 dark:text-gray-50 placeholder-gray-500 dark:placeholder-gray-400 text-sm sm:text-base font-medium"
+                  disabled={isLoading}
+                />
+                <div className="flex items-center gap-2">
+                  <kbd className="hidden sm:inline-flex items-center gap-1 px-2 py-1 bg-gray-200/60 dark:bg-gray-700/60 rounded-md text-xs text-gray-600 dark:text-gray-400 font-medium">
+                    <span>Enter</span>
+                  </kbd>
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="p-1.5 hover:bg-gray-200/60 dark:hover:bg-gray-700/60 rounded-lg transition-colors text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-50"
+                    aria-label="Close command palette"
+                    title="Close (Esc)"
+                  >
+                    <X className="w-5 h-5" strokeWidth={2} />
+                  </button>
+                </div>
+              </div>
+            </form>
+          )}
 
           {/* Suggestions & History */}
           {suggestions.length > 0 && (
