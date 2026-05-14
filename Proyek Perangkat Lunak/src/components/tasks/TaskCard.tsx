@@ -332,3 +332,4 @@ export default function TaskCard({ task, scoreInfo }: TaskCardProps) {
       </div>
     </>
   )
+}

@@ -1,7 +1,6 @@
 'use client'
 
-import { ReactNode, useState, useEffect } from 'react'
-import { createPortal } from 'react-dom'
+import { ReactNode, useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
@@ -10,7 +9,7 @@ import Header from '@/components/layout/Header'
 import { useTheme } from '@/components/providers/ThemeProvider'
 import { useCommandPalette } from '@/components/providers/CommandPaletteProvider'
 import { useLanguage } from '@/components/providers/LanguageProvider'
-import { Search, CheckSquare2, LogOut, UserCircle } from 'lucide-react'
+import { Search, CheckSquare2, LogOut, UserCircle, LayoutDashboard, User, Moon, Sun, Globe } from 'lucide-react'
 import { signOut } from 'next-auth/react'
 import { getAuthCookie, removeAuthCookie } from '@/lib/auth/cookies'
 
@@ -18,6 +17,7 @@ type BackendUser = {
   id?: string | number
   name?: string | null
   email?: string | null
+  image?: string | null
 }
 
 export default function ProtectedLayout({
@@ -27,15 +27,29 @@ export default function ProtectedLayout({
 }) {
   const { theme, toggleTheme } = useTheme()
   const { open } = useCommandPalette()
-  const { language, setLanguage, t } = useLanguage()
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const { language, setLanguage } = useLanguage()
+  const [isProfileOpen, setIsProfileOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
   const [backendToken, setBackendToken] = useState<string | null>(null)
   const [backendUser, setBackendUser] = useState<BackendUser | null>(null)
   const { status, data: session } = useSession()
   const router = useRouter()
+  const profileRef = useRef<HTMLDivElement>(null)
 
   const activeUser = session?.user ?? backendUser
+
+  // Close profile dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
+        setIsProfileOpen(false)
+      }
+    }
+    if (isProfileOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [isProfileOpen])
 
   useEffect(() => {
     // Check both cookie and localStorage for token
@@ -90,102 +104,144 @@ export default function ProtectedLayout({
   }
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden">
-      <Header 
-        onToggleTheme={toggleTheme} 
+    <div className="min-h-dvh flex flex-col overflow-hidden">
+      {/* Header - Desktop only, no hamburger */}
+      <Header
+        onToggleTheme={toggleTheme}
         currentTheme={theme}
         onOpenCommand={open}
-        onMenuToggle={() => setIsMenuOpen(!isMenuOpen)}
-        isMenuOpen={isMenuOpen}
+        onProfileToggle={() => setIsProfileOpen(!isProfileOpen)}
+        isProfileOpen={isProfileOpen}
+        activeUser={activeUser}
+        onLanguageToggle={() => setLanguage(language === 'en' ? 'id' : 'en')}
+        language={language}
+        
       />
-      <div className="flex-1 overflow-y-auto relative z-0">
+      <div className="flex-1 overflow-y-auto relative z-0 pb-20 lg:pb-0">
         {children}
       </div>
 
-      {/* Menu Dropdown & Backdrop - Render backdrop via Portal to body */}
-      {isMenuOpen && mounted && typeof document !== 'undefined' && createPortal(
-        <>
-          {/* Backdrop - spans full viewport */}
-          <div 
-            className="fixed inset-0 bg-black/50 dark:bg-black/70 backdrop-blur-sm z-30 pointer-events-auto"
-            onClick={() => setIsMenuOpen(false)}
-            aria-hidden="true"
-          />
-          
-          {/* Menu Panel */}
-          <div className="fixed right-0 sm:right-0 lg:right-0 top-16 w-full sm:w-96 max-w-sm bg-white dark:bg-gray-900 rounded-b-2xl sm:rounded-2xl border-b sm:border border-gray-200/50 dark:border-gray-800/50 z-40 overflow-y-auto shadow-xl shadow-black/10 dark:shadow-black/40 sm:rounded-t-2xl">
-            <nav className="px-4 py-4 space-y-2">
-              {/* User Profile Card */}
+      {/* Bottom Tab Bar - Mobile only */}
+      <div className="lg:hidden fixed inset-x-0 bottom-0 z-[60] bg-white/95 dark:bg-gray-950/95 backdrop-blur-xl border-t border-gray-200/50 dark:border-gray-800/50 pb-[env(safe-area-inset-bottom)]">
+        <div className="flex items-center justify-around py-2 px-2">
+          {/* Tasks Tab */}
+          <Link
+            href="/dashboard"
+            className="flex flex-col items-center gap-1 px-4 py-2 rounded-xl text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors min-w-[60px]"
+          >
+            <CheckSquare2 className="w-5 h-5" strokeWidth={2} />
+            <span className="text-[10px] font-semibold">Tasks</span>
+          </Link>
+
+          {/* Command Tab */}
+          <button
+            onClick={open}
+            className="flex flex-col items-center gap-1 px-4 py-2 rounded-xl text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors min-w-[60px]"
+          >
+            <Search className="w-5 h-5" strokeWidth={2} />
+            <span className="text-[10px] font-semibold">Search</span>
+          </button>
+
+          {/* Profile Tab */}
+          <button
+            onClick={() => setIsProfileOpen(!isProfileOpen)}
+            className="flex flex-col items-center gap-1 px-4 py-2 rounded-xl text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors min-w-[60px]"
+          >
+            <User className="w-5 h-5" strokeWidth={2} />
+            <span className="text-[10px] font-semibold">Profil</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Profile Dropdown - Desktop & Mobile */}
+      {isProfileOpen && mounted && (
+        <div className="fixed inset-0 z-40" onClick={() => setIsProfileOpen(false)}>
+          {/* Profile Card - Drops UP from bottom on mobile, top-right on desktop */}
+          <div
+            ref={profileRef}
+            className="absolute bottom-0 left-0 right-0 z-50 bg-white dark:bg-gray-900 rounded-t-2xl border-t border-gray-200/50 dark:border-gray-800/50 shadow-xl overflow-hidden lg:bottom-auto lg:left-auto lg:right-4 lg:top-20 lg:w-80 lg:rounded-2xl lg:border lg:shadow-2xl"
+          >
+            <div className="px-4 py-4 space-y-2">
+              {/* User Profile Header */}
               {mounted && activeUser && (
-                <div className="px-4 py-4 rounded-lg bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950/30 dark:to-cyan-950/30 border border-blue-200/50 dark:border-blue-800/50 mb-4">
-                  <div className="flex items-center gap-3">
-                    {'image' in activeUser && activeUser.image ? (
-                      <Image
-                        src={activeUser.image}
-                        alt={activeUser.name || 'User'}
-                        width={48}
-                        height={48}
-                        className="w-12 h-12 rounded-full object-cover border-2 border-white dark:border-gray-800"
-                      />
-                    ) : (
-                      <UserCircle className="w-12 h-12 text-blue-600 dark:text-blue-400" strokeWidth={1.5} />
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-gray-900 dark:text-white truncate">
-                        {activeUser.name || 'User'}
-                      </p>
-                      <p className="text-xs text-gray-600 dark:text-gray-400 truncate">
-                        {activeUser.email || '-'}
-                      </p>
-                      {activeUser.id && (
-                        <p className="text-xs text-gray-500 dark:text-gray-500 truncate font-mono mt-1">
-                          ID: {activeUser.id}
-                        </p>
-                      )}
+                <div className="flex items-center gap-3 px-2 py-3">
+                  {activeUser.image ? (
+                    <Image
+                      src={activeUser.image}
+                      alt={activeUser.name || 'User'}
+                      width={44}
+                      height={44}
+                      className="w-11 h-11 rounded-full object-cover border-2 border-blue-200 dark:border-blue-800"
+                    />
+                  ) : (
+                    <div className="w-11 h-11 rounded-full bg-gradient-to-br from-blue-100 to-cyan-100 dark:from-blue-900/50 dark:to-cyan-900/50 flex items-center justify-center">
+                      <UserCircle className="w-7 h-7 text-blue-600 dark:text-blue-400" strokeWidth={1.5} />
                     </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-gray-900 dark:text-white truncate">
+                      {activeUser.name || 'User'}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                      {activeUser.email || 'No email'}
+                    </p>
                   </div>
                 </div>
               )}
 
-              <button
-                onClick={() => {
-                  open()
-                  setIsMenuOpen(false)
-                }}
-                className="w-full text-left px-4 py-3 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-950/30 transition-colors flex items-center gap-3 text-gray-700 dark:text-gray-300 font-medium"
-              >
-                <Search className="w-5 h-5 flex-shrink-0" strokeWidth={2} />
-                <span>{t('header.command')}</span>
-              </button>
-              
-              <Link
-                href="/dashboard"
-                onClick={() => setIsMenuOpen(false)}
-                className="block px-4 py-3 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-950/30 transition-colors text-gray-700 dark:text-gray-300 font-medium flex items-center gap-3"
-              >
-                <CheckSquare2 className="w-5 h-5 flex-shrink-0" strokeWidth={2} />
-                <span>{t('header.dashboard')}</span>
-              </Link>
-              
-              <div className="border-t border-gray-200/50 dark:border-gray-800/50 my-4 pt-4">
-                <button
-                  onClick={() => {
-                    setIsMenuOpen(false)
-                    removeAuthCookie()
-                    localStorage.removeItem('token')
-                    localStorage.removeItem('backendUser')
-                    signOut({ redirect: true, callbackUrl: '/' })
-                  }}
-                  className="w-full text-left px-4 py-3 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors text-red-600 dark:text-red-400 font-medium flex items-center gap-3"
+              <div className="border-t border-gray-200/50 dark:border-gray-800/50 pt-2 mt-2 space-y-1">
+                {/* Dashboard Link */}
+                <Link
+                  href="/dashboard"
+                  onClick={() => setIsProfileOpen(false)}
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-950/30 transition-colors text-gray-700 dark:text-gray-300 text-sm font-medium"
                 >
-                  <LogOut className="w-5 h-5 flex-shrink-0" strokeWidth={2} />
-                  <span>Logout</span>
+                  <LayoutDashboard className="w-4 h-4 flex-shrink-0" strokeWidth={2} />
+                  <span>Dashboard</span>
+                </Link>
+
+                {/* Language Toggle */}
+                <button
+                  onClick={() => setLanguage(language === 'en' ? 'id' : 'en')}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-950/30 transition-colors text-gray-700 dark:text-gray-300 text-sm font-medium"
+                >
+                  <Globe className="w-4 h-4 flex-shrink-0" strokeWidth={2} />
+                  <span>Language ({language === 'en' ? 'EN' : 'ID'})</span>
                 </button>
+
+                {/* Theme Toggle */}
+                <button
+                  onClick={toggleTheme}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-950/30 transition-colors text-gray-700 dark:text-gray-300 text-sm font-medium"
+                >
+                  {theme === 'light' ? (
+                    <Moon className="w-4 h-4 flex-shrink-0" strokeWidth={2} />
+                  ) : (
+                    <Sun className="w-4 h-4 flex-shrink-0" strokeWidth={2} />
+                  )}
+                  <span>{theme === 'light' ? 'Dark Mode' : 'Light Mode'}</span>
+                </button>
+
+                <div className="border-t border-gray-200/50 dark:border-gray-800/50 pt-2 mt-2">
+                  {/* Logout */}
+                  <button
+                    onClick={() => {
+                      setIsProfileOpen(false)
+                      removeAuthCookie()
+                      localStorage.removeItem('token')
+                      localStorage.removeItem('backendUser')
+                      signOut({ redirect: true, callbackUrl: '/' })
+                    }}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors text-red-600 dark:text-red-400 text-sm font-medium"
+                  >
+                    <LogOut className="w-4 h-4 flex-shrink-0" strokeWidth={2} />
+                    <span>Logout</span>
+                  </button>
+                </div>
               </div>
-            </nav>
+            </div>
           </div>
-        </>,
-        document.body
+        </div>
       )}
     </div>
   )
