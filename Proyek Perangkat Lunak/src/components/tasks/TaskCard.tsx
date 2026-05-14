@@ -11,6 +11,7 @@ import { taskApi, getAuthToken } from '@/lib/api/client'
 import { useState } from 'react'
 import { useTheme } from '@/components/providers/ThemeProvider'
 import { useNotification } from '@/lib/hooks/useNotification'
+import EditTaskModal from './EditTaskModal'
 
 interface TaskCardProps {
   task: Task
@@ -23,6 +24,7 @@ export default function TaskCard({ task, scoreInfo }: TaskCardProps) {
   const notify = useNotification()
   const [isUpdating, setIsUpdating] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [showEditModal, setShowEditModal] = useState(false)
 
   // Check if task is auto-skipped (overdue)
   const isSkipped = task.status === 'SKIPPED'
@@ -117,13 +119,15 @@ export default function TaskCard({ task, scoreInfo }: TaskCardProps) {
   }
 
   return (
-    <div
-      className={cn(
-        'p-4 border-l-4 rounded-xl bg-white dark:bg-gray-900/50 border border-gray-200/50 dark:border-gray-800/50 hover:shadow-lg dark:hover:shadow-lg/50 transition-all duration-200 backdrop-blur-sm',
-        getPriorityBorder(task.priority),
-        isSkipped && 'opacity-60'
-      )}
-    >
+    <>
+      <div
+        onClick={() => setShowEditModal(true)}
+        className={cn(
+          'p-4 border-l-4 rounded-xl bg-white dark:bg-gray-900/50 border border-gray-200/50 dark:border-gray-800/50 hover:shadow-lg dark:hover:shadow-lg/50 transition-all duration-200 backdrop-blur-sm cursor-pointer',
+          getPriorityBorder(task.priority),
+          isSkipped && 'opacity-60'
+        )}
+      >
       <div className="flex items-start justify-between gap-4">
         {/* Left Content */}
         <div className="flex-1 min-w-0">
@@ -227,7 +231,10 @@ export default function TaskCard({ task, scoreInfo }: TaskCardProps) {
       </div>
 
       {/* Actions */}
-      <div className="flex gap-2 mt-4 pt-4 border-t border-gray-200/50 dark:border-gray-800/50">
+      <div
+        className="flex gap-2 mt-4 pt-4 border-t border-gray-200/50 dark:border-gray-800/50"
+        onClick={(e) => e.stopPropagation()}
+      >
         {task.status === 'DONE' ? (
           <button
             onClick={() =>
@@ -268,6 +275,12 @@ export default function TaskCard({ task, scoreInfo }: TaskCardProps) {
           <Trash2 className="w-4 h-4" strokeWidth={2} />
         </button>
       </div>
+
+      <EditTaskModal
+        isOpen={showEditModal}
+        task={task}
+        onClose={() => setShowEditModal(false)}
+      />
 
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
@@ -311,6 +324,7 @@ export default function TaskCard({ task, scoreInfo }: TaskCardProps) {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </>
   )
 }
