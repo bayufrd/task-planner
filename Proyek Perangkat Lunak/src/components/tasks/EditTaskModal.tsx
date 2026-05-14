@@ -113,7 +113,7 @@ export default function EditTaskModal({ isOpen, task, onClose, onSaved }: EditTa
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center"
+      className="fixed inset-0 z-[99999] flex items-center justify-center"
       onClick={(e) => e.stopPropagation()}
     >
       {/* Backdrop */}

@@ -121,11 +121,14 @@ export default function TaskCard({ task, scoreInfo }: TaskCardProps) {
   return (
     <>
       <div
-        onClick={() => setShowEditModal(true)}
+        onClick={() => {
+          if (!isSkipped) setShowEditModal(true)
+        }}
         className={cn(
-          'p-4 border-l-4 rounded-xl bg-white dark:bg-gray-900/50 border border-gray-200/50 dark:border-gray-800/50 hover:shadow-lg dark:hover:shadow-lg/50 transition-all duration-200 backdrop-blur-sm cursor-pointer',
+          'p-4 border-l-4 rounded-xl bg-white dark:bg-gray-900/50 border border-gray-200/50 dark:border-gray-800/50 hover:shadow-lg dark:hover:shadow-lg/50 transition-all duration-200 backdrop-blur-sm',
+          !isSkipped && 'cursor-pointer',
           getPriorityBorder(task.priority),
-          isSkipped && 'opacity-60'
+          isSkipped && 'opacity-60 cursor-default'
         )}
       >
       <div className="flex items-start justify-between gap-4">
@@ -253,7 +256,7 @@ export default function TaskCard({ task, scoreInfo }: TaskCardProps) {
         ) : isSkipped ? null : (
           <button
             onClick={handleComplete}
-            disabled={isUpdating}
+            disabled={isUpdating || isSkipped}
             className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-green-100/80 dark:bg-green-900/20 hover:bg-green-200/80 dark:hover:bg-green-800/30 transition-all duration-200 font-medium text-sm text-green-700 dark:text-green-400 disabled:opacity-50"
             title="Complete"
           >
@@ -276,11 +279,13 @@ export default function TaskCard({ task, scoreInfo }: TaskCardProps) {
         </button>
       </div>
 
-      <EditTaskModal
-        isOpen={showEditModal}
-        task={task}
-        onClose={() => setShowEditModal(false)}
-      />
+      {!isSkipped && (
+        <EditTaskModal
+          isOpen={showEditModal}
+          task={task}
+          onClose={() => setShowEditModal(false)}
+        />
+      )}
 
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
@@ -296,7 +301,7 @@ export default function TaskCard({ task, scoreInfo }: TaskCardProps) {
               Delete Task?
             </h3>
             <p className={`text-sm text-center mb-6 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
-              Are you sure you want to delete &quot;{task.title}&quot;? This action cannot be undone.
+              Are you sure you want to delete "{task.title}"? This action cannot be undone.
             </p>
             <div className="flex gap-3">
               <button
@@ -327,4 +332,3 @@ export default function TaskCard({ task, scoreInfo }: TaskCardProps) {
       </div>
     </>
   )
-}
