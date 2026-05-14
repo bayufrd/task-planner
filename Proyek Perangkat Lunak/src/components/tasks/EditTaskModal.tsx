@@ -2,13 +2,14 @@
 
 import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { X, Save } from 'lucide-react'
+import { X, Save, Calendar } from 'lucide-react'
 import { Task } from '@/lib/utils/store'
 import { useTaskStore } from '@/lib/utils/store'
 import { useNotification } from '@/lib/hooks/useNotification'
 import { useTheme } from '@/components/providers/ThemeProvider'
 import { API_ROUTES } from '@/lib/constants/api'
 import { getAuthCookie } from '@/lib/auth/cookies'
+import CalendarPicker from '@/components/ui/CalendarPicker'
 
 interface EditTaskModalProps {
   isOpen: boolean
@@ -226,18 +227,23 @@ export default function EditTaskModal({ isOpen, task, onClose, onSaved }: EditTa
               Deadline
             </label>
             <div className="grid grid-cols-2 gap-3">
-              <input
-                id="edit-deadline"
-                type="date"
-                value={deadline}
-                onChange={(e) => setDeadline(e.target.value)}
-                className={`px-3 py-2 rounded-lg border transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  theme === 'dark'
-                    ? 'bg-gray-800 border-gray-700 text-white'
-                    : 'bg-white border-gray-300 text-gray-900'
-                }`}
-                disabled={isLoading}
-              />
+              <div className="relative">
+                <input
+                  id="edit-deadline"
+                  type="text"
+                  value={deadline}
+                  readOnly
+                  className={`w-full px-3 py-2 rounded-lg border transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    theme === 'dark'
+                      ? 'bg-gray-800 border-gray-700 text-white'
+                      : 'bg-white border-gray-300 text-gray-900'
+                  }`}
+                  disabled={isLoading}
+                />
+                <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                  <Calendar className="w-4 h-4 text-gray-400" />
+                </div>
+              </div>
               <input
                 id="edit-deadlineTime"
                 type="time"
@@ -249,6 +255,12 @@ export default function EditTaskModal({ isOpen, task, onClose, onSaved }: EditTa
                     : 'bg-white border-gray-300 text-gray-900'
                 }`}
                 disabled={isLoading}
+              />
+            </div>
+            <div className="mt-2">
+              <CalendarPicker 
+                value={deadline}
+                onChange={(date) => setDeadline(date)}
               />
             </div>
           </div>

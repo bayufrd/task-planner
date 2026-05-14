@@ -1,12 +1,13 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { X, Plus } from 'lucide-react'
+import { X, Plus, Calendar } from 'lucide-react'
 import { useTaskStore } from '@/lib/utils/store'
 import { useNotification } from '@/lib/hooks/useNotification'
 import { useTheme } from '@/components/providers/ThemeProvider'
 import { API_ROUTES } from '@/lib/constants/api'
 import { getAuthCookie } from '@/lib/auth/cookies'
+import CalendarPicker from '@/components/ui/CalendarPicker'
 
 interface NewTaskModalProps {
   isOpen: boolean
@@ -247,18 +248,23 @@ export default function NewTaskModal({ isOpen, onClose, onCreated }: NewTaskModa
               Deadline
             </label>
             <div className="grid grid-cols-2 gap-3">
-              <input
-                id="deadline"
-                type="date"
-                value={deadline}
-                onChange={(e) => setDeadline(e.target.value)}
-                className={`px-3 py-2 rounded-lg border transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  theme === 'dark'
-                    ? 'bg-gray-800 border-gray-700 text-white'
-                    : 'bg-white border-gray-300 text-gray-900'
-                }`}
-                disabled={isLoading}
-              />
+              <div className="relative">
+                <input
+                  id="deadline"
+                  type="text"
+                  value={deadline}
+                  readOnly
+                  className={`w-full px-3 py-2 rounded-lg border transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    theme === 'dark'
+                      ? 'bg-gray-800 border-gray-700 text-white'
+                      : 'bg-white border-gray-300 text-gray-900'
+                  }`}
+                  disabled={isLoading}
+                />
+                <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                  <Calendar className="w-4 h-4 text-gray-400" />
+                </div>
+              </div>
               <input
                 id="deadlineTime"
                 type="time"
@@ -272,9 +278,13 @@ export default function NewTaskModal({ isOpen, onClose, onCreated }: NewTaskModa
                 disabled={isLoading}
               />
             </div>
-            <p className={`text-xs mt-1 ${theme === 'dark' ? 'text-gray-500' : 'text-gray-500'}`}>
-              Defaults to current date and time
-            </p>
+            <div className="mt-2">
+              <CalendarPicker 
+                value={deadline}
+                onChange={(date) => setDeadline(date)}
+                minDate={new Date()}
+              />
+            </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
             {/* Priority */}
