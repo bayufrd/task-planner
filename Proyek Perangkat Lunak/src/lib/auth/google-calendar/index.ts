@@ -139,7 +139,7 @@ export async function createCalendarEvent(
     const data = await response.json()
 
     if (!response.ok) {
-      console.error('❌ Google Calendar API error response:')
+      console.error('Google Calendar API error response:')
       console.error('Status:', response.status)
       console.error('Error body:', JSON.stringify(data, null, 2))
       
@@ -153,7 +153,7 @@ export async function createCalendarEvent(
       webLink: data.htmlLink,
     }
   } catch (error: any) {
-    console.error('❌ Failed to create Google Calendar event')
+    console.error('Failed to create Google Calendar event')
     console.error('Error message:', error?.message)
     console.error('Full error:', error)
     

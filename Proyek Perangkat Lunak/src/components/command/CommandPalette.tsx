@@ -341,7 +341,7 @@ export default function CommandPalette({ isOpen, onClose, onOpen }: CommandPalet
     setIsLoading(true)
 
     // Snackbar info saat mulai parsing
-    notify.info(`🔍 AI sedang menganalisa: "${command}"`)
+    notify.info(`AI sedang menganalisa: "${command}"`)
 
     try {
       const result = await aiApi.parseTaskCommand(command)
@@ -382,7 +382,7 @@ export default function CommandPalette({ isOpen, onClose, onOpen }: CommandPalet
       })
 
       window.dispatchEvent(new CustomEvent('tasks:changed'))
-      notify.success(`Task "${parsed.title}" berhasil dibuat via AI ✓`)
+      notify.success(`Task "${parsed.title}" berhasil dibuat via AI`)
     } catch (error) {
       console.error('[CommandPalette] LLM parse error:', error)
       notify.error('Gagal menganalisa — coba lagi atau gunakan format manual')
@@ -534,7 +534,7 @@ export default function CommandPalette({ isOpen, onClose, onOpen }: CommandPalet
                     <div className="flex-1 min-w-0">
                       <div className="font-medium text-gray-900 dark:text-gray-50 truncate">{suggestion}</div>
                       <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                        {suggestion.includes('/') ? '⌘ ' + t('command.slashCommands') : '💡 ' + t('command.naturalLanguage')}
+                        {suggestion.includes('/') ? 'Slash ' + t('command.slashCommands') : 'NLP ' + t('command.naturalLanguage')}
                       </div>
                     </div>
                   </div>

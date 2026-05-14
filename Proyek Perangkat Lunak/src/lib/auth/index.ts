@@ -52,7 +52,7 @@ export const authOptions: NextAuthOptions = {
         
         // If no refresh token, token is invalid and needs re-authentication
         if (!token.refreshToken) {
-          console.warn('⚠️ No refresh token available. User needs to re-authenticate.')
+          console.warn('No refresh token available. User needs to re-authenticate.')
           return token
         }
 
@@ -71,7 +71,7 @@ export const authOptions: NextAuthOptions = {
           const refreshedTokens = await response.json()
 
           if (!response.ok) {
-            console.error('❌ Token refresh failed:', refreshedTokens)
+            console.error('Token refresh failed:', refreshedTokens)
             throw new Error('Token refresh failed')
           }
 
@@ -82,7 +82,7 @@ export const authOptions: NextAuthOptions = {
             refreshToken: refreshedTokens.refresh_token || token.refreshToken,
           }
         } catch (error) {
-          console.error('❌ Failed to refresh token:', error)
+          console.error('Failed to refresh token:', error)
           return token
         }
       }

@@ -11,7 +11,7 @@ const prisma = prismaModule.prisma
 export async function connectDB() {
   try {
     await prisma.$connect()
-    console.log('✅ Connected to database')
+    console.log('Connected to database')
   } catch (error) {
     console.error('❌ Failed to connect to database:', error)
     throw error

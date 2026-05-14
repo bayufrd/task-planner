@@ -404,7 +404,7 @@ export default function LandingPage() {
             {/* Feature 8 */}
             <div className="rounded-2xl border border-gray-200/50 dark:border-gray-800/50 bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm p-6 hover:border-indigo-400/50 hover:shadow-lg transition-all duration-300">
               <div className="flex items-start gap-3 mb-4">
-                <div className="text-2xl">📱</div>
+                <Smartphone className="w-7 h-7 text-indigo-600 dark:text-indigo-400" strokeWidth={2} />
                 <div>
                   <h4 className="text-lg font-bold text-gray-900 dark:text-white">{t('landing.feature8')}</h4>
                   <p className="text-xs text-indigo-600 dark:text-indigo-400 font-semibold mt-1">{t('landing.feature8Meta')}</p>

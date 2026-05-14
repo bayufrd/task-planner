@@ -160,7 +160,7 @@ export default function LandingPage() {
                       : 'text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-800'
                   }`}
                 >
-                  🇬🇧 EN
+                  EN
                 </button>
                 <button
                   onClick={() => setLanguage('id')}
@@ -170,7 +170,7 @@ export default function LandingPage() {
                       : 'text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-800'
                   }`}
                 >
-                  🇮🇩 ID
+                  ID
                 </button>
               </div>
 
