@@ -10,7 +10,7 @@ import { API_ROUTES } from '@/lib/constants/api'
 import CalendarTimeline from '@/components/calendar/CalendarTimeline'
 import TaskPriorityList from '@/components/tasks/TaskPriorityList'
 import CommandPalette from '@/components/command/CommandPalette'
-import NewTaskModal from '@/components/tasks/NewTaskModal'
+import TaskModal from '@/components/tasks/TaskModal'
 import { Plus, Command, CheckSquare2, Clock, CheckCircle2, XCircle } from 'lucide-react'
 
 // Stats type definition
@@ -261,9 +261,10 @@ export default function Dashboard() {
         onOpen={open}
       />
 
-      {/* New Task Modal */}
-      <NewTaskModal
+      {/* Task Modal */}
+      <TaskModal
         isOpen={isNewTaskModalOpen}
+        mode="create"
         onClose={() => setIsNewTaskModalOpen(false)}
         onCreated={() => {
           loadTasks()

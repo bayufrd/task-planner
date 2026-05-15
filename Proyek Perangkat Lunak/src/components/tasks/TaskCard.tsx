@@ -11,7 +11,7 @@ import { taskApi, getAuthToken } from '@/lib/api/client'
 import { useState } from 'react'
 import { useTheme } from '@/components/providers/ThemeProvider'
 import { useNotification } from '@/lib/hooks/useNotification'
-import EditTaskModal from './EditTaskModal'
+import TaskModal from './TaskModal'
 
 interface TaskCardProps {
   task: Task
@@ -272,10 +272,14 @@ export default function TaskCard({ task, scoreInfo }: TaskCardProps) {
       </div>
 
       {!isSkipped && (
-        <EditTaskModal
+        <TaskModal
           isOpen={showEditModal}
+          mode="edit"
           task={task}
           onClose={() => setShowEditModal(false)}
+          onSaved={() => {
+            window.dispatchEvent(new CustomEvent('tasks:changed'))
+          }}
         />
       )}
 
