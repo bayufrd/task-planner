@@ -2,7 +2,7 @@
 
 import { signIn } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Suspense, useState } from 'react'
+import { Suspense, useCallback, useState } from 'react'
 import { Globe, ArrowRight, Sparkles, Moon, Sun, Mail, Lock } from 'lucide-react'
 import { useTheme } from '@/components/providers/ThemeProvider'
 import Link from 'next/link'
@@ -78,6 +78,14 @@ function SignInContent() {
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
+
+  const handleCaptchaVerify = useCallback((token: string) => {
+    setCaptchaToken(token)
+  }, [])
+
+  const handleCaptchaExpire = useCallback(() => {
+    setCaptchaToken('')
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -267,8 +275,8 @@ function SignInContent() {
               {turnstileSiteKey && (
                 <TurnstileWidget
                   siteKey={turnstileSiteKey}
-                  onVerify={(token) => setCaptchaToken(token)}
-                  onExpire={() => setCaptchaToken('')}
+                  onVerify={handleCaptchaVerify}
+                  onExpire={handleCaptchaExpire}
                   theme="auto"
                 />
               )}

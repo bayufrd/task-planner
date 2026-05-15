@@ -59,6 +59,7 @@ export async function verifyTurnstileToken(
       return { success: true }
     }
 
+    console.error('Cloudflare Turnstile verification failed:', response.data);
     return {
       success: false,
       errorCodes: response.data['error-codes'] || ['unknown-error'],

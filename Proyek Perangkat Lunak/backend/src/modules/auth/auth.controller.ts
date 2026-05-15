@@ -19,18 +19,24 @@ export class AuthController {
       if (!env.TURNSTILE_SECRET_KEY) {
         console.warn('[captcha] TURNSTILE_SECRET_KEY not configured, skipping verification')
       } else {
-        const remoteIp = req.ip || req.socket.remoteAddress
-        const verifyResult = await verifyTurnstileToken(data.captchaToken, env.TURNSTILE_SECRET_KEY, remoteIp)
-        
-        if (!verifyResult.success) {
-          res.status(400).json({
-            success: false,
-            error: {
-              code: 'CAPTCHA_FAILED',
-              message: getErrorMessage(verifyResult.errorCodes),
-            },
-          })
-          return
+        // Check for testing mode - 2x prefix = always pass
+        const isTestingMode = env.TURNSTILE_SECRET_KEY.startsWith('2x00000000000000000000')
+        if (isTestingMode) {
+          console.log('[captcha] Testing mode - skipping verification')
+        } else {
+          const remoteIp = req.ip || req.socket.remoteAddress
+          const verifyResult = await verifyTurnstileToken(data.captchaToken, env.TURNSTILE_SECRET_KEY, remoteIp)
+          
+          if (!verifyResult.success) {
+            res.status(400).json({
+              success: false,
+              error: {
+                code: 'CAPTCHA_FAILED',
+                message: getErrorMessage(verifyResult.errorCodes),
+              },
+            })
+            return
+          }
         }
       }
 
@@ -49,18 +55,24 @@ export class AuthController {
       if (!env.TURNSTILE_SECRET_KEY) {
         console.warn('[captcha] TURNSTILE_SECRET_KEY not configured, skipping verification')
       } else {
-        const remoteIp = req.ip || req.socket.remoteAddress
-        const verifyResult = await verifyTurnstileToken(data.captchaToken, env.TURNSTILE_SECRET_KEY, remoteIp)
-        
-        if (!verifyResult.success) {
-          res.status(400).json({
-            success: false,
-            error: {
-              code: 'CAPTCHA_FAILED',
-              message: getErrorMessage(verifyResult.errorCodes),
-            },
-          })
-          return
+        // Check for testing mode - 2x prefix = always pass
+        const isTestingMode = env.TURNSTILE_SECRET_KEY.startsWith('2x00000000000000000000')
+        if (isTestingMode) {
+          console.log('[captcha] Testing mode - skipping verification')
+        } else {
+          const remoteIp = req.ip || req.socket.remoteAddress
+          const verifyResult = await verifyTurnstileToken(data.captchaToken, env.TURNSTILE_SECRET_KEY, remoteIp)
+          
+          if (!verifyResult.success) {
+            res.status(400).json({
+              success: false,
+              error: {
+                code: 'CAPTCHA_FAILED',
+                message: getErrorMessage(verifyResult.errorCodes),
+              },
+            })
+            return
+          }
         }
       }
 

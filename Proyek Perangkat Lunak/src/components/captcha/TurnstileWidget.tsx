@@ -99,11 +99,11 @@ interface TurnstileWidgetProps {
   className?: string
 }
 
-export function TurnstileWidget({ 
-  siteKey, 
-  onVerify, 
-  onError, 
-  onExpire, 
+export function TurnstileWidget({
+  siteKey,
+  onVerify,
+  onError,
+  onExpire,
   theme = 'auto',
   className = ''
 }: TurnstileWidgetProps) {
@@ -112,10 +112,24 @@ export function TurnstileWidget({
   const { theme: appTheme } = useTheme()
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(false)
+  const onVerifyRef = useRef(onVerify)
+  const onErrorRef = useRef(onError)
+  const onExpireRef = useRef(onExpire)
 
   useEffect(() => {
-    if (!containerRef.current) return
+    onVerifyRef.current = onVerify
+  }, [onVerify])
 
+  useEffect(() => {
+    onErrorRef.current = onError
+  }, [onError])
+
+  useEffect(() => {
+    onExpireRef.current = onExpire
+  }, [onExpire])
+
+  // Load script only once
+  useEffect(() => {
     const scriptId = 'cloudflare-turnstile-script'
     let script = document.getElementById(scriptId) as HTMLScriptElement
 
@@ -135,6 +149,8 @@ export function TurnstileWidget({
         script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit'
         script.async = true
         script.defer = true
+        // Reduce preload warnings
+        script.setAttribute('data-as', 'script')
         document.head.appendChild(script)
       }
       script.addEventListener('load', onScriptLoad)
@@ -149,34 +165,39 @@ export function TurnstileWidget({
         script.removeEventListener('error', onScriptError)
       }
     }
-  }, [])
+  }, []) // Empty dependency array - run once on mount
 
+  // Render widget once per mount/theme/key change; not on form typing
   useEffect(() => {
     if (!containerRef.current || isLoading || error) return
+    if (widgetIdRef.current) return
 
-    const effectiveTheme = theme === 'auto' 
+    const effectiveTheme = theme === 'auto'
       ? (appTheme === 'dark' ? 'dark' : 'light')
       : theme
 
     widgetIdRef.current = window.turnstile!.render(containerRef.current, {
       sitekey: siteKey,
       theme: effectiveTheme as 'light' | 'dark',
-      callback: onVerify,
+      callback: (token: string) => {
+        onVerifyRef.current(token)
+      },
       'error-callback': () => {
         setError(true)
-        onError?.()
+        onErrorRef.current?.()
       },
       'expired-callback': () => {
-        onExpire?.()
+        onExpireRef.current?.()
       },
     })
 
     return () => {
       if (widgetIdRef.current && window.turnstile) {
         window.turnstile.remove(widgetIdRef.current)
+        widgetIdRef.current = null
       }
     }
-  }, [siteKey, isLoading, error, theme, appTheme, onVerify, onError, onExpire])
+  }, [siteKey, isLoading, error, theme, appTheme])
 
   if (error) {
     return (

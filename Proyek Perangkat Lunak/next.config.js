@@ -19,8 +19,15 @@ const nextConfig = {
     formats: ['image/webp', 'image/avif'],
     unoptimized: false,
   },
-  // Webpack optimizations
+  // Exclude backend directory from Next.js build
   webpack: (config, { isServer }) => {
+    // Ignore backend directory to prevent Next.js from processing backend files
+    config.module.rules.push({
+      test: /\.(ts|tsx|js|jsx)$/,
+      loader: 'ignore-loader',
+      include: [/backend/],
+    });
+    
     if (!isServer) {
       config.optimization.splitChunks.cacheGroups = {
         ...config.optimization.splitChunks.cacheGroups,
@@ -29,9 +36,9 @@ const nextConfig = {
           name: 'vendors',
           priority: 10,
         },
-      }
+      };
     }
-    return config
+    return config;
   },
   // Video caching headers
   async headers() {
@@ -58,8 +65,8 @@ const nextConfig = {
           },
         ],
       },
-    ]
+    ];
   },
-}
+};
 
-module.exports = nextConfig
+module.exports = nextConfig;
