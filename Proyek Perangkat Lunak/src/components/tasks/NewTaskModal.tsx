@@ -59,7 +59,7 @@ export default function NewTaskModal({ isOpen, onClose, onCreated }: NewTaskModa
     }
     try {
       setIsLoading(true)
-      const token = getAuthCookie() || localStorage.getItem('token') || localStorage.getItem('auth-token')
+      const token = getAuthCookie() || localStorage.getItem('auth-token')
       const payload = {
         title: title.trim(),
         description: description.trim() || undefined,
@@ -94,6 +94,7 @@ export default function NewTaskModal({ isOpen, onClose, onCreated }: NewTaskModa
         status: normalizedStatus,
         tags: Array.isArray(data.tags) ? data.tags.map((t: any) => t.tagName || t) : [],
         reminderTime: data.reminderTime ?? 60,
+        backendId: data.id, // Store backend task ID for ownership validation
       })
       notify.success(`Task "${title}" berhasil dibuat`)
       onClose()

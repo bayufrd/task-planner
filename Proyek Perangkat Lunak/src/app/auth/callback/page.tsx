@@ -12,8 +12,7 @@ function CallbackContent() {
     const token = searchParams.get('token')
     
     if (token) {
-      // Save token to both keys for compatibility
-      localStorage.setItem('token', token)
+      // Save token to unified key
       localStorage.setItem('auth-token', token)
       // Redirect to dashboard
       router.push('/dashboard')

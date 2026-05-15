@@ -291,7 +291,7 @@ export default function CommandPalette({ isOpen, onClose, onOpen }: CommandPalet
 
     setIsLoading(true)
     try {
-      const token = localStorage.getItem('token')
+      const token = localStorage.getItem('auth-token')
       // Call Express backend API to create task
       const response = await fetch(API_ROUTES.TASKS.CREATE, {
         method: 'POST',
@@ -310,8 +310,11 @@ export default function CommandPalette({ isOpen, onClose, onOpen }: CommandPalet
         return
       }
 
-      // Also add to local store for UI
-      addTask(newTask)
+      // Add to local store with backendId for ownership validation
+      addTask({
+        ...newTask,
+        backendId: data.data?.id,
+      })
       
       setInput('')
       setSuggestions([])
@@ -327,7 +330,7 @@ export default function CommandPalette({ isOpen, onClose, onOpen }: CommandPalet
   }
 
   const parseAndCreateTaskWithLLM = async (command: string) => {
-    const token = localStorage.getItem('token')
+    const token = localStorage.getItem('auth-token')
     if (!token) {
       // Fallback to regex parser if no token
       await parseAndCreateTask(command)
@@ -379,6 +382,7 @@ export default function CommandPalette({ isOpen, onClose, onOpen }: CommandPalet
         status: 'TODO',
         reminderTime: parsed.reminderTime || 60,
         tags: parsed.tags || [],
+        backendId: data.data?.id, // Store backend task ID for ownership validation
       })
 
       window.dispatchEvent(new CustomEvent('tasks:changed'))

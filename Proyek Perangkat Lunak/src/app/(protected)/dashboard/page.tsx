@@ -21,7 +21,7 @@ interface TaskStats {
 }
 
 export default function Dashboard() {
-  const { data: session } = useSession()
+  const { data: session, status } = useSession()
   const { tasks, setTasks } = useTaskStore()
   const { t } = useLanguage()
   const { open } = useCommandPalette()
@@ -32,14 +32,15 @@ export default function Dashboard() {
 
   // Load task stats from backend
   const loadStats = async () => {
-    const token = localStorage.getItem('token')
-    const hasNextAuthSession = !!session?.user?.id
-    if (!hasNextAuthSession && !token) return
+    const token = localStorage.getItem('auth-token')
+    
+    // We need the Express token to call the backend
+    if (!token) return
 
     try {
       const response = await fetch(API_ROUTES.TASKS.STATS, {
         headers: {
-          ...(token && { 'Authorization': `Bearer ${token}` }),
+          'Authorization': `Bearer ${token}`,
         },
       })
 
@@ -60,12 +61,14 @@ export default function Dashboard() {
 
   const loadTasks = async () => {
     // Support both NextAuth (Google OAuth) and Express token login
-    const token = localStorage.getItem('token')
-    const hasNextAuthSession = !!session?.user?.id
+    const token = localStorage.getItem('auth-token')
 
-    // Skip if neither session nor token available
-    if (!hasNextAuthSession && !token) {
-      setIsLoading(false)
+    // Skip if no token available. If using NextAuth, wait for sync in ProtectedLayout
+    if (!token) {
+      // Only stop loading if we're not authenticated with NextAuth either
+      if (status === 'unauthenticated') {
+        setIsLoading(false)
+      }
       return
     }
 
@@ -74,7 +77,7 @@ export default function Dashboard() {
 
       const response = await fetch(`${API_ROUTES.TASKS.LIST}?limit=100&page=1`, {
         headers: {
-          ...(token && { 'Authorization': `Bearer ${token}` }),
+          'Authorization': `Bearer ${token}`,
         },
       })
 
@@ -133,13 +136,15 @@ export default function Dashboard() {
 
   // Load tasks on mount — works for both NextAuth and Express token login
   useEffect(() => {
-    loadTasks()
-    loadStats()
+    if (localStorage.getItem('auth-token')) {
+      loadTasks()
+      loadStats()
+    }
   }, [session?.user?.id])
 
   // Reload tasks when token changes (e.g., after Express login)
   useEffect(() => {
-    const token = localStorage.getItem('token')
+    const token = localStorage.getItem('auth-token')
     if (token) {
       loadTasks()
       loadStats()

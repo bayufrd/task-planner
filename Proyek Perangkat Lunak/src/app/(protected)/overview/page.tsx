@@ -44,11 +44,27 @@ export default function OverviewPage() {
   const [analysis, setAnalysis] = useState<OverviewAnalysis | null>(null)
 
   useEffect(() => {
-    loadTaskData()
+    if (typeof window !== 'undefined' && localStorage.getItem('auth-token')) {
+      loadTaskData()
+    }
+
+    const handleTasksChanged = () => {
+      loadTaskData()
+    }
+
+    window.addEventListener('tasks:changed', handleTasksChanged)
+    return () => window.removeEventListener('tasks:changed', handleTasksChanged)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const loadTaskData = async () => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('auth-token') : null
+    if (!token) {
+      // If no token yet, we might be waiting for sync in ProtectedLayout
+      // We'll let the useEffect handle it when session changes or just wait
+      return
+    }
+
     try {
       setLoading(true)
       setError(null)

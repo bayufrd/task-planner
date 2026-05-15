@@ -3,8 +3,8 @@
  * Called when NextAuth session exists but no Express token in localStorage
  */
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
-const AUTH_TOKEN_KEY = 'token'
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+const AUTH_TOKEN_KEY = 'auth-token'
 const BACKEND_USER_KEY = 'backendUser'
 
 function setBackendAuthCookie(token: string, expiresInDays: number = 7) {
@@ -48,7 +48,6 @@ export async function syncNextAuthToExpress(sessionUser?: {
     if (data.success && data.data?.token) {
       // Store Express token and user info
       localStorage.setItem(AUTH_TOKEN_KEY, data.data.token)
-      localStorage.setItem('auth-token', data.data.token)
       localStorage.setItem(BACKEND_USER_KEY, JSON.stringify(data.data.user))
       setBackendAuthCookie(data.data.token)
       return true

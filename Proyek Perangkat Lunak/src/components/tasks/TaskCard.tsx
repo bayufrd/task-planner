@@ -45,7 +45,9 @@ export default function TaskCard({ task, scoreInfo }: TaskCardProps) {
     
     const token = getAuthToken()
     
-    // If has backendId and token, call API first
+    // Only call API if we have a valid backendId AND token
+    // Skip API if no backendId (task created locally before sync was implemented)
+    // or if token is missing
     if (task.backendId && token) {
       try {
         const result = await taskApi.complete(task.backendId)
@@ -58,10 +60,17 @@ export default function TaskCard({ task, scoreInfo }: TaskCardProps) {
           })
         } else {
           console.error('[TaskCard] API failed, updating local only:', result.error)
+          
+          // If 403 Forbidden, the backendId is likely invalid/belongs to another user
+          // Clear it to prevent future 403s for this task
+          const isForbidden = typeof result.error === 'string' && result.error.includes('403') ||
+                             (result.error as any)?.code === 'FORBIDDEN';
+          
           // Still update locally even if API fails
           updateTask(task.id, {
             status: 'DONE',
             completedAt: new Date().toISOString(),
+            ...(isForbidden ? { backendId: undefined } : {})
           })
         }
       } catch (err) {
@@ -90,11 +99,23 @@ export default function TaskCard({ task, scoreInfo }: TaskCardProps) {
     const token = getAuthToken()
     
     try {
+      // Only call API if we have a valid backendId AND token
+      // Skip API if no backendId (task created locally before sync was implemented)
       if (task.backendId && token) {
         const result = await taskApi.delete(task.backendId)
 
         if (!result.success) {
-          throw new Error(result.error || 'Failed to delete task')
+          console.error('[TaskCard] Delete API failed, deleting local only:', result.error)
+          
+          // If 403 Forbidden, the backendId is likely invalid/belongs to another user
+          // Clear it to prevent future 403s for this task
+          const isForbidden = typeof result.error === 'string' && result.error.includes('403') ||
+                             (result.error as any)?.code === 'FORBIDDEN';
+          
+          if (isForbidden) {
+            console.warn('[TaskCard] 403 Forbidden on delete. Clearing invalid backendId.')
+            updateTask(task.id, { backendId: undefined })
+          }
         }
       }
       
@@ -104,7 +125,11 @@ export default function TaskCard({ task, scoreInfo }: TaskCardProps) {
       window.dispatchEvent(new CustomEvent('tasks:changed'))
     } catch (err) {
       console.error('[TaskCard] Delete failed:', err)
-      notify.error(err instanceof Error ? err.message : 'Failed to delete task')
+      // Still delete locally even if API throws
+      deleteTask(task.id)
+      notify.success(`Task "${task.title}" deleted (local only)`)
+      setShowDeleteConfirm(false)
+      window.dispatchEvent(new CustomEvent('tasks:changed'))
     } finally {
       setIsUpdating(false)
     }

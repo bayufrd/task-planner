@@ -3,12 +3,25 @@
  * Uses localStorage token for authenticated requests
  */
 
-const AUTH_TOKEN_KEY = 'auth-token'
+export const AUTH_TOKEN_KEY = 'auth-token'
 
 export function getAuthToken(): string | null {
   if (typeof window === 'undefined') return null
-  // Support both 'auth-token' and 'token' key from Express or NextAuth
-  return localStorage.getItem(AUTH_TOKEN_KEY) || localStorage.getItem('token')
+  
+  // 1. Check localStorage - unified to use only AUTH_TOKEN_KEY ('auth-token')
+  const localToken = localStorage.getItem(AUTH_TOKEN_KEY)
+  if (localToken) return localToken
+
+  // 2. Check cookies (backendAuthToken)
+  const cookies = document.cookie.split(';')
+  for (const cookie of cookies) {
+    const [name, value] = cookie.trim().split('=')
+    if (name === 'backendAuthToken') {
+      return value
+    }
+  }
+
+  return null
 }
 
 export function setAuthToken(token: string): void {

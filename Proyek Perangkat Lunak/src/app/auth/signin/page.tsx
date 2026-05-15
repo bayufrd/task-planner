@@ -108,8 +108,8 @@ function SignInContent() {
       if (data?.data?.token) {
         // Save to cookie for middleware
         setAuthCookie(data.data.token, 7) // 7 days expiry
-        // Save to localStorage for dashboard/task API calls
-        localStorage.setItem('token', data.data.token)
+        // Save to localStorage for dashboard/task API calls (single auth key)
+        localStorage.setItem('auth-token', data.data.token)
 
         // Save user data for form-login fallback profile
         if (data?.data?.user) {

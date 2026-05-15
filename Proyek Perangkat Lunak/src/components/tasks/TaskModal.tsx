@@ -105,7 +105,6 @@ export default function TaskModal({
       if (mode === 'create') {
         const token =
           getAuthCookie() ||
-          localStorage.getItem('token') ||
           localStorage.getItem('auth-token')
 
         const response = await fetch(API_ROUTES.TASKS.CREATE, {
@@ -142,6 +141,7 @@ export default function TaskModal({
           status: normalizedStatus,
           tags: Array.isArray(data.tags) ? data.tags.map((t: any) => t.tagName || t) : [],
           reminderTime: data.reminderTime ?? 60,
+          backendId: data.id, // Store backend task ID for ownership validation
         })
 
         notify.success(`Task "${title}" berhasil dibuat`)

@@ -55,9 +55,9 @@ export default function ProtectedLayout({
 
   useEffect(() => {
     const checkAndSyncAuth = async () => {
-      // Check both cookie and localStorage for token
+      // Check both cookie and localStorage for token (single localStorage key)
       const cookieToken = getAuthCookie()
-      const localStorageToken = typeof window !== 'undefined' ? localStorage.getItem('token') : null
+      const localStorageToken = typeof window !== 'undefined' ? localStorage.getItem('auth-token') : null
       let token = cookieToken || localStorageToken
       const savedUser = typeof window !== 'undefined' ? localStorage.getItem('backendUser') : null
       setMounted(true)
@@ -66,7 +66,7 @@ export default function ProtectedLayout({
       if (!token && status === 'authenticated' && session?.user) {
         const synced = await syncNextAuthToExpress(session.user as BackendUser & { accessToken?: string })
         if (synced) {
-          token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
+          token = typeof window !== 'undefined' ? localStorage.getItem('auth-token') : null
           window.dispatchEvent(new CustomEvent('tasks:changed'))
         }
       }
@@ -261,7 +261,7 @@ export default function ProtectedLayout({
                     onClick={() => {
                       setIsProfileOpen(false)
                       removeAuthCookie()
-                      localStorage.removeItem('token')
+                      localStorage.removeItem('auth-token')
                       localStorage.removeItem('backendUser')
                       signOut({ redirect: true, callbackUrl: '/' })
                     }}
