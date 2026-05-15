@@ -24,7 +24,7 @@ export default function PublicLayout({
             {/* Logo - Click to home */}
             <Link href="/" className="flex items-center" aria-label="Go to home">
               <Image
-                src="/logo3.webp"
+                src="/opt-logo/logo3.png"
                 alt="Task Planner"
                 width={160}
                 height={48}

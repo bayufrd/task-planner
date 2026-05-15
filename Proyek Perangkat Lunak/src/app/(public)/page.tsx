@@ -82,7 +82,7 @@ export default function LandingPage() {
             <div className="flex items-center gap-10">
               <Link href="/" className="flex items-center" aria-label="Go to home">
                 <Image
-                  src="/logo3.webp"
+                  src="/opt-logo/logo3.png"
                   alt="Smart Task Planner"
                   width={160}
                   height={48}
@@ -392,7 +392,7 @@ export default function LandingPage() {
             <div className="col-span-1">
               <div className="flex items-center gap-2 mb-6">
                 <Image
-                  src="/logo3.webp"
+                  src="/opt-logo/logo3.png"
                   alt="Smart Task Planner"
                   width={140}
                   height={40}

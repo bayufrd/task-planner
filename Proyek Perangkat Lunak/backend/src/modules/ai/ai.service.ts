@@ -232,20 +232,34 @@ export class AiService {
     });
 
     const now = new Date();
-    const isCacheValid = cached && cached.expiresAt > now;
-    const isDataConsistent = cached &&
-      cached.totalTasks === total &&
-      cached.completedTasks === stats.done &&
-      cached.pendingTasks === stats.pending &&
-      cached.skippedTasks === stats.skipped;
+    let isCacheValid = false;
+    let isDataConsistent = false;
+
+    if (cached) {
+      // Handle potential null/undefined expiresAt
+      const expiresAt = cached.expiresAt || new Date(0);
+      isCacheValid = expiresAt > now;
+      
+      isDataConsistent =
+        cached.totalTasks === total &&
+        cached.completedTasks === stats.done &&
+        cached.pendingTasks === stats.pending &&
+        cached.skippedTasks === stats.skipped;
+    }
 
     // Return cached data if valid and consistent
-    if (isCacheValid && isDataConsistent) {
-      return {
-        score: cached.score,
-        insights: JSON.parse(cached.insights),
-        advice: JSON.parse(cached.advice),
-      };
+    if (isCacheValid && isDataConsistent && cached) {
+      try {
+        return {
+          score: cached.score,
+          insights: cached.insights ? JSON.parse(cached.insights) : [],
+          advice: cached.advice ? JSON.parse(cached.advice) : [],
+        };
+      } catch (error) {
+        console.error('Failed to parse cached analysis data:', error);
+        // If JSON parsing fails, invalidate cache and continue to generate new analysis
+        await this.invalidateCache(userId);
+      }
     }
 
     // If no cache or invalid, generate new analysis

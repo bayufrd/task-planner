@@ -42,7 +42,7 @@ export default function Header({
           {/* Logo */}
           <Link href="/dashboard" className="flex items-center" aria-label="Go to dashboard">
             <Image
-              src="/logo3.webp"
+              src="/opt-logo/logo3.png"
               alt="Smart Task Planner"
               width={160}
               height={48}

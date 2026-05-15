@@ -28,8 +28,8 @@ export const refreshCalendar = async (req: AuthRequest, res: Response) => {
 
     // Simulate refresh logic (placeholder for actual Google Calendar sync)
     const refreshedCalendar = await prisma.calendar.update({
-      where: { id },
-      data: { lastSyncedAt: new Date() },
+      where: { id: String(id) },
+      data: { updatedAt: new Date() },
     });
 
     return res.status(200).json({

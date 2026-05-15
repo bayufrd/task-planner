@@ -16,7 +16,7 @@ export const skipTask = async (req: AuthRequest, res: Response) => {
   try {
     // Check if task exists and belongs to user
     const task = await prisma.task.findFirst({
-      where: { id, userId },
+      where: { id: String(id), userId: String(userId) },
     });
 
     if (!task) {
@@ -28,7 +28,7 @@ export const skipTask = async (req: AuthRequest, res: Response) => {
 
     // Update task status to SKIPPED
     const updatedTask = await prisma.task.update({
-      where: { id },
+      where: { id: String(id) },
       data: { status: 'SKIPPED' },
     });
 

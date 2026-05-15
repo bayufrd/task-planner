@@ -131,7 +131,7 @@ function SignUpContent() {
       <nav className={`border-b transition-colors ${theme === 'dark' ? 'border-gray-800/50 backdrop-blur-sm bg-gray-950/50' : 'border-white/20 dark:border-gray-800/50 backdrop-blur-sm bg-white/50 dark:bg-gray-950/50'}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
           <Link href="/" className="flex items-center">
-            <Image src="/logo3.webp" alt="TaskPlanner Logo" width={120} height={40} className="h-10 w-auto" priority />
+            <Image src="/opt-logo/logo3.png" alt="TaskPlanner Logo" width={120} height={40} className="h-10 w-auto" priority />
           </Link>
 
           {/* Theme Toggle */}
