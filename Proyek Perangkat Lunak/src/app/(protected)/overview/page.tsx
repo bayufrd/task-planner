@@ -3,7 +3,28 @@
 import { useEffect, useState } from 'react'
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { taskApi, aiApi, type DailyStat, type WeeklyStat, type OverviewAnalysis, type TaskStats } from '@/lib/api/client'
-import { TrendingUp, Calendar, CheckCircle2, AlertCircle, Info, Loader2, RefreshCw } from 'lucide-react'
+import { TrendingUp, Calendar, CheckCircle2, AlertCircle, Info, Loader2, RefreshCw, Trophy, Star, Zap } from 'lucide-react'
+
+// Animal Level System based on AI score
+interface AnimalLevel {
+  name: string
+  imagePath: string
+  description: string
+  color: string
+}
+
+const getAnimalLevel = (score: number): AnimalLevel => {
+  if (score <= 10) return { name: 'Batu Rebahan', imagePath: '/leveling/1.webp', description: 'Hampir tidak bergerak, task cuma dilihat doang', color: 'from-gray-400 to-gray-600' }
+  if (score <= 20) return { name: 'Siput Loading', imagePath: '/leveling/2.webp', description: 'Ada niat, tapi progress lambat banget', color: 'from-amber-400 to-amber-600' }
+  if (score <= 30) return { name: 'Kucing Mager', imagePath: '/leveling/3.webp', description: 'Mau produktif, tapi kasur lebih kuat', color: 'from-orange-400 to-orange-600' }
+  if (score <= 40) return { name: 'Panda Santuy', imagePath: '/leveling/4.webp', description: 'Ada kerjaan selesai, tapi banyak jeda ngemil', color: 'from-gray-500 to-gray-700' }
+  if (score <= 50) return { name: 'Badak Si Pemalas', imagePath: '/leveling/5.webp', description: 'Kuat sebenarnya, tapi susah mulai', color: 'from-slate-500 to-slate-700' }
+  if (score <= 60) return { name: 'Bebek Mulai Jalan', imagePath: '/leveling/6.webp', description: 'Sudah mulai konsisten, walau masih goyang', color: 'from-yellow-400 to-yellow-600' }
+  if (score <= 70) return { name: 'Kelinci Si Rajin', imagePath: '/leveling/7.webp', description: 'Task mulai banyak selesai, ritme bagus', color: 'from-pink-400 to-pink-600' }
+  if (score <= 80) return { name: 'Semut Produktif', imagePath: '/leveling/8.webp', description: 'Rapi, konsisten, dan jarang skip', color: 'from-amber-600 to-amber-800' }
+  if (score <= 90) return { name: 'Elang Fokus', imagePath: '/leveling/9.webp', description: 'Fokus tinggi, prioritas jelas', color: 'from-purple-500 to-purple-700' }
+  return { name: 'Naga Deadline', imagePath: '/leveling/10.webp', description: 'Mode legenda, task tunduk semua', color: 'from-red-500 to-red-700' }
+}
 
 // Skeleton component
 function Skeleton({ className }: { className?: string }) {
@@ -204,52 +225,84 @@ export default function OverviewPage() {
             </div>
           </div>
         ) : analysis ? (
-          <div className="bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl p-6 text-white">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h2 className="text-xl font-bold">Skor Produktivitas AI</h2>
-                <p className="text-blue-100 text-sm mt-1">Berdasarkan aktivitas terbaru Anda</p>
-              </div>
-              <div className="relative w-24 h-24">
-                <svg className="transform -rotate-90 w-24 h-24">
-                  <circle
-                    cx="48"
-                    cy="48"
-                    r="40"
-                    stroke="rgba(255,255,255,0.2)"
-                    strokeWidth="8"
-                    fill="none"
-                  />
-                  <circle
-                    cx="48"
-                    cy="48"
-                    r="40"
-                    stroke="white"
-                    strokeWidth="8"
-                    fill="none"
-                    strokeDasharray={`${2 * Math.PI * 40}`}
-                    strokeDashoffset={`${2 * Math.PI * 40 * (1 - analysis.score / 100)}`}
-                    strokeLinecap="round"
-                  />
-                </svg>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-2xl font-bold">{analysis.score}</span>
+          (() => {
+            const animal = getAnimalLevel(analysis.score)
+            return (
+              <div className="space-y-4">
+                {/* Animal Hero Section - Separate Panel */}
+                <div className={`bg-gradient-to-br ${animal.color} rounded-xl p-8 text-white`}>
+                  <div className="flex flex-col items-center text-center">
+                    {/* Large Centered Animal Image */}
+                    <div className="mb-4">
+                      <img
+                        src={animal.imagePath}
+                        alt={animal.name}
+                        className="w-64 h-64 object-contain rounded-2xl border-4 border-white/30 shadow-2xl"
+                      />
+                    </div>
+                    
+                    {/* Level Badge */}
+                    <div className="flex items-center gap-2 mb-2">
+                      <Trophy className="w-5 h-5 text-yellow-300" />
+                      <span className="text-sm font-medium text-blue-100">Level Hari Ini</span>
+                    </div>
+                    
+                    {/* Animal Name */}
+                    <h2 className="text-3xl font-bold mb-2">{animal.name}</h2>
+                    <p className="text-blue-50 text-sm max-w-md">{animal.description}</p>
+                  </div>
+                </div>
+
+                {/* Score Panel - Separate */}
+                <div className="bg-white dark:bg-gray-900 rounded-xl p-6 border border-gray-200 dark:border-gray-800">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h3 className="text-xl font-bold text-gray-900 dark:text-white">Skor Produktivitas AI</h3>
+                      <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Berdasarkan aktivitas terbaru Anda</p>
+                    </div>
+                    <div className="relative w-24 h-24">
+                      <svg className="transform -rotate-90 w-24 h-24">
+                        <circle
+                          cx="48"
+                          cy="48"
+                          r="40"
+                          stroke="rgba(59, 130, 246, 0.2)"
+                          strokeWidth="8"
+                          fill="none"
+                        />
+                        <circle
+                          cx="48"
+                          cy="48"
+                          r="40"
+                          stroke="#3b82f6"
+                          strokeWidth="8"
+                          fill="none"
+                          strokeDasharray={`${2 * Math.PI * 40}`}
+                          strokeDashoffset={`${2 * Math.PI * 40 * (1 - analysis.score / 100)}`}
+                          strokeLinecap="round"
+                        />
+                      </svg>
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <span className="text-2xl font-bold text-gray-900 dark:text-white">{analysis.score}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Insights */}
+                  {analysis.insights.length > 0 && (
+                    <div className="space-y-2">
+                      {analysis.insights.map((insight, idx) => (
+                        <div key={idx} className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-400">
+                          <div className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-1.5 flex-shrink-0" />
+                          <span>{insight}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
-            </div>
-
-            {/* Insights */}
-            {analysis.insights.length > 0 && (
-              <div className="space-y-2">
-                {analysis.insights.map((insight, idx) => (
-                  <div key={idx} className="flex items-start gap-2 text-sm text-blue-50">
-                    <div className="w-1.5 h-1.5 rounded-full bg-white mt-1.5 flex-shrink-0" />
-                    <span>{insight}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+            )
+          })()
         ) : (
           <div className="bg-gray-100 dark:bg-gray-800 rounded-xl p-6">
             <div className="flex items-center justify-between">
@@ -373,6 +426,87 @@ export default function OverviewPage() {
                 )
               })}
             </div>
+          </div>
+        )}
+
+        {/* Summary - Animal Level Summary */}
+        {analysis && (
+          <div className="bg-white dark:bg-gray-900 rounded-xl p-6 border border-gray-200 dark:border-gray-800">
+            <div className="flex items-center gap-2 mb-4">
+              <Star className="w-5 h-5 text-yellow-500" />
+              <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+                Ringkasan Level Anda
+              </h2>
+            </div>
+            
+            {(() => {
+              const animal = getAnimalLevel(analysis.score)
+              const levelNumber = Math.floor(analysis.score / 10) + 1
+              
+              return (
+                <div className="flex flex-col md:flex-row items-center gap-6">
+                  {/* Animal Avatar */}
+                  <img
+                    src={animal.imagePath}
+                    alt={animal.name}
+                    className="w-48 h-48 object-contain rounded-full border-4 border-gray-200 dark:border-gray-700 shadow-lg"
+                  />
+                  
+                  {/* Level Info */}
+                  <div className="flex-1 text-center md:text-left">
+                    <div className="flex items-center justify-center md:justify-start gap-2 mb-2">
+                      <span className="px-3 py-1 bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-sm font-bold rounded-full">
+                        Level {levelNumber}
+                      </span>
+                      <span className="text-gray-500 dark:text-gray-400 text-sm">
+                        Score: {analysis.score}/100
+                      </span>
+                    </div>
+                    <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
+                      {animal.name}
+                    </h3>
+                    <p className="text-gray-600 dark:text-gray-400 mb-4">
+                      {animal.description}
+                    </p>
+                    
+                    {/* Progress to next level */}
+                    {analysis.score < 100 && (
+                      <div className="space-y-1">
+                        <div className="flex justify-between text-sm text-gray-500 dark:text-gray-400">
+                          <span>Progress ke level berikutnya</span>
+                          <span>{analysis.score % 10}/10</span>
+                        </div>
+                        <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full bg-gradient-to-r ${animal.color} rounded-full transition-all duration-500`}
+                            style={{ width: `${(analysis.score % 10) * 10}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Tips for next level */}
+                  <div className="w-full md:w-48 p-4 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950 dark:to-orange-950 rounded-lg border border-amber-200 dark:border-amber-800">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Zap className="w-4 h-4 text-amber-500" />
+                      <span className="text-sm font-semibold text-amber-700 dark:text-amber-400">
+                        Tips Level Up
+                      </span>
+                    </div>
+                    <p className="text-sm text-amber-600 dark:text-amber-300">
+                      {analysis.score <= 30
+                        ? 'Coba selesaikan 1 task kecil dulu setiap hari!'
+                        : analysis.score <= 60
+                        ? 'Tingkatkan konsistensi dengan menyelesaikan lebih banyak task.'
+                        : analysis.score <= 80
+                        ? 'Pertahankan ritme dan fokus pada task prioritas!'
+                        : 'Hampir sempurna! Jaga fokus dan hindari menunda.'}
+                    </p>
+                  </div>
+                </div>
+              )
+            })()}
           </div>
         )}
       </div>

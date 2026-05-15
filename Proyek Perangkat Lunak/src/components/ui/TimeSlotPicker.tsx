@@ -44,7 +44,7 @@ export default function TimeSlotPicker({ value, onChange, disabled }: TimeSlotPi
       </div>
       
       {/* Quick time slots */}
-      <div className="grid grid-cols-4 gap-1.5" style={{ maxHeight: '200px', overflowY: 'auto' }}>
+      <div className="grid grid-cols-4 md:grid-cols-1 gap-1.5" style={{ maxHeight: '200px', overflowY: 'auto' }}>
         {timeSlots.map((time) => {
           const selected = value === time
           return (
