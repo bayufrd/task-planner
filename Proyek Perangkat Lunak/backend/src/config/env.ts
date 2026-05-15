@@ -1,6 +1,7 @@
 import * as dotenv from 'dotenv';
 
-dotenv.config();
+// Load .env from the backend directory (not the monorepo root)
+dotenv.config({ path: __dirname + '/../../.env' });
 
 export const env = {
   DATABASE_URL: process.env.DATABASE_URL || '',
