@@ -167,24 +167,29 @@ function SignInContent() {
         <div className="w-full max-w-md relative z-10">
           {/* Card */}
           <div className={`rounded-3xl shadow-xl shadow-black/10 dark:shadow-black/30 border transition-colors ${theme === 'dark' ? 'bg-gray-800/80 border-gray-700/50' : 'bg-white/80 border-gray-200/50'} backdrop-blur-sm p-8 space-y-8`}>
-            {/* Header */}
-            <div className="space-y-3 text-center">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border" style={{
-                backgroundColor: theme === 'dark' ? 'rgba(59, 130, 246, 0.1)' : 'rgba(191, 219, 254, 0.5)',
-                borderColor: theme === 'dark' ? 'rgba(59, 130, 246, 0.3)' : 'rgba(147, 197, 253, 0.5)'
-              }}>
-                <Sparkles className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                <span className="text-sm font-semibold text-blue-600 dark:text-blue-400">
-                  Secure Login
-                </span>
+            {/* Logo & Header */}
+            <div className="space-y-5 text-center">
+              <div className="flex justify-center">
+                <div className="rounded-2xl p-1.5 shadow-xl shadow-black/20 dark:shadow-black/40 bg-white/30 dark:bg-gray-700/30 backdrop-blur-sm">
+                  <Image
+                    src="/opt-logo/logo1.png"
+                    alt="TaskPlanner Logo"
+                    width={160}
+                    height={160}
+                    className="w-28 h-auto sm:w-32 md:w-36 rounded-xl"
+                    priority
+                  />
+                </div>
               </div>
 
-              <h1 className={`text-3xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-                Welcome Back
-              </h1>
-              <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
-                Sign in to continue managing your tasks
-              </p>
+              <div className="space-y-2">
+                <h1 className={`text-3xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+                  Welcome Back
+                </h1>
+                <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
+                  Sign in to continue managing your tasks
+                </p>
+              </div>
             </div>
 
             {/* Success Message */}
