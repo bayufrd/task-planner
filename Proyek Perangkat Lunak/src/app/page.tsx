@@ -3,14 +3,14 @@
 import { signIn } from 'next-auth/react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
-import { 
-  ArrowRight, 
-  Zap, 
-  Brain, 
-  Watch, 
-  BarChart3, 
-  Users, 
+import { useEffect, useState, useRef } from 'react'
+import {
+  ArrowRight,
+  Zap,
+  Brain,
+  Watch,
+  BarChart3,
+  Users,
   CheckCircle2,
   ChevronRight,
   Sparkles,
@@ -24,7 +24,9 @@ import {
   Wand2,
   RotateCcw,
   TrendingUp,
-  Users2
+  Users2,
+  ChevronLeft,
+  ChevronRight as ChevronRightIcon
 } from 'lucide-react'
 
 // Custom Google Icon Component
@@ -38,6 +40,7 @@ const GoogleIcon = ({ className }: { className?: string }) => (
 )
 import { useTheme } from '@/components/providers/ThemeProvider'
 import { useLanguage } from '@/components/providers/LanguageProvider'
+import { CollectionSlider } from '@/components/CollectionSlider'
 
 // Static video paths
 const VIDEOS = {
@@ -326,6 +329,9 @@ export default function LandingPage() {
           </div>
         </div>
 
+        {/* Collection Slider Section - moved to correct position */}
+        <CollectionSlider />
+
         {/* Stats Section */}
         <div className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 border-t ${theme === 'dark' ? 'border-gray-800/50' : 'border-gray-200/50'}`}>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-12 text-center">
@@ -521,3 +527,4 @@ export default function LandingPage() {
     </div>
   )
 }
+
