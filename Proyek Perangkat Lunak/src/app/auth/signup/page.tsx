@@ -7,12 +7,14 @@ import { useTheme } from '@/components/providers/ThemeProvider'
 import Link from 'next/link'
 import Image from 'next/image'
 import { signIn } from 'next-auth/react'
+import { TurnstileWidget } from '@/components/captcha/TurnstileWidget'
 
 
 function SignUpContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [isLoading, setIsLoading] = useState(false)
+  const [captchaToken, setCaptchaToken] = useState<string>('')
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -21,6 +23,8 @@ function SignUpContent() {
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
   const { theme, toggleTheme } = useTheme()
+
+  const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ''
 
   // Get callback URL from query params or default to dashboard
   const callbackUrl = searchParams.get('callbackUrl') || '/dashboard'
@@ -104,7 +108,8 @@ function SignUpContent() {
         body: JSON.stringify({
           name: formData.name,
           email: formData.email,
-          password: formData.password
+          password: formData.password,
+          captchaToken
         }),
       })
 
@@ -292,10 +297,20 @@ function SignUpContent() {
                 )}
               </div>
 
+              {/* CAPTCHA Widget */}
+              {turnstileSiteKey && (
+                <TurnstileWidget
+                  siteKey={turnstileSiteKey}
+                  onVerify={(token) => setCaptchaToken(token)}
+                  onExpire={() => setCaptchaToken('')}
+                  theme="auto"
+                />
+              )}
+
               {/* Submit Button */}
               <button
                 type="submit"
-                disabled={isLoading}
+                disabled={isLoading || (!turnstileSiteKey && !captchaToken)}
                 className="w-full relative h-12 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:from-blue-500 disabled:to-indigo-500 disabled:cursor-not-allowed text-white font-semibold transition-all duration-200 flex items-center justify-center gap-3 shadow-lg shadow-blue-500/20 hover:shadow-lg hover:shadow-blue-500/30"
               >
                 {isLoading ? (

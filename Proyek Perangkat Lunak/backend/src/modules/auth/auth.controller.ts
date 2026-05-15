@@ -5,6 +5,7 @@ import { GoogleOAuthService } from './google-oauth.service';
 import { sendSuccess } from '../../lib/response';
 import { RegisterInput, LoginInput } from './auth.validation';
 import { env } from '../../config/env';
+import { verifyTurnstileToken, getErrorMessage } from '../../lib/captcha/turnstile.service';
 
 const authService = new AuthService();
 const googleOAuthService = new GoogleOAuthService();
@@ -13,6 +14,26 @@ export class AuthController {
   async register(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const data: RegisterInput = req.body;
+
+      // Verify CAPTCHA
+      if (!env.TURNSTILE_SECRET_KEY) {
+        console.warn('[captcha] TURNSTILE_SECRET_KEY not configured, skipping verification')
+      } else {
+        const remoteIp = req.ip || req.socket.remoteAddress
+        const verifyResult = await verifyTurnstileToken(data.captchaToken, env.TURNSTILE_SECRET_KEY, remoteIp)
+        
+        if (!verifyResult.success) {
+          res.status(400).json({
+            success: false,
+            error: {
+              code: 'CAPTCHA_FAILED',
+              message: getErrorMessage(verifyResult.errorCodes),
+            },
+          })
+          return
+        }
+      }
+
       const result = await authService.register(data);
       sendSuccess(res, result, 'Registration successful', 201);
     } catch (error) {
@@ -23,6 +44,26 @@ export class AuthController {
   async login(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const data: LoginInput = req.body;
+
+      // Verify CAPTCHA
+      if (!env.TURNSTILE_SECRET_KEY) {
+        console.warn('[captcha] TURNSTILE_SECRET_KEY not configured, skipping verification')
+      } else {
+        const remoteIp = req.ip || req.socket.remoteAddress
+        const verifyResult = await verifyTurnstileToken(data.captchaToken, env.TURNSTILE_SECRET_KEY, remoteIp)
+        
+        if (!verifyResult.success) {
+          res.status(400).json({
+            success: false,
+            error: {
+              code: 'CAPTCHA_FAILED',
+              message: getErrorMessage(verifyResult.errorCodes),
+            },
+          })
+          return
+        }
+      }
+
       const result = await authService.login(data);
       sendSuccess(res, result, 'Login successful');
     } catch (error) {
