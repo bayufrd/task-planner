@@ -144,8 +144,10 @@ export default function LandingPage() {
         {/* Navbar */}
           <nav className={`border-b transition-colors ${theme === 'dark' ? 'border-gray-800/50 backdrop-blur-sm bg-gray-950/50' : 'border-white/20 dark:border-gray-800/50 backdrop-blur-sm bg-white/50 dark:bg-gray-950/50'}`}>
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-              <a href="/" className="flex items-center gap-2 rounded-xl overflow-hidden">
-                <img src="/opt-logo/logo3.png" alt="TaskPlanner" className="h-10 w-auto rounded-xl" />
+              <a href="/" className="flex items-center">
+                <div className="rounded-xl shadow-sm shadow-black/5 dark:shadow-black/10 bg-white/20 dark:bg-gray-800/20 backdrop-blur-sm p-0.5">
+                  <img src="/opt-logo/logo3.png" alt="TaskPlanner" className="h-10 w-auto rounded-xl" />
+                </div>
               </a>
             
             <div className="flex items-center gap-3">
@@ -238,15 +240,11 @@ export default function LandingPage() {
           <div className="mt-28 relative w-full max-w-5xl group">
             <div className="absolute -inset-10 bg-gradient-to-tr from-blue-300/20 to-emerald-300/20 rounded-full blur-3xl opacity-60"></div>
             <div className="relative bg-white border border-gray-200 p-1.5 rounded-[1.25rem] shadow-xl overflow-hidden">
-              <video
-                autoPlay
-                muted
-                loop
-                playsInline
+              <img
+                src="/opt-hero/1.png"
+                alt="Hero preview"
                 className="rounded-[1.25rem] w-full object-cover aspect-video grayscale-[20%] hover:grayscale-0 transition-all duration-700"
-              >
-                <source src={VIDEOS.hero} type="video/mp4" />
-              </video>
+              />
             </div>
           </div>
         </div>
@@ -412,7 +410,7 @@ export default function LandingPage() {
                 playsInline
                 className="w-full h-full object-cover"
               >
-                <source src={VIDEOS.features1} type="video/mp4" />
+                <source src={VIDEOS.hero} type="video/mp4" />
               </video>
               <div className="absolute inset-0 bg-gradient-to-t from-gray-950/20 to-transparent pointer-events-none"></div>
             </div>

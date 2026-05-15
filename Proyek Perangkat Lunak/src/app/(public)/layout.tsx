@@ -23,14 +23,16 @@ export default function PublicLayout({
           <div className="flex items-center justify-between h-16">
             {/* Logo - Click to home */}
             <Link href="/" className="flex items-center" aria-label="Go to home">
-              <Image
-                src="/opt-logo/logo3.png"
-                alt="Task Planner"
-                width={160}
-                height={48}
-                className="h-11 w-auto"
-                priority
-              />
+              <div className="rounded-xl shadow-sm shadow-black/5 dark:shadow-black/10 bg-white/20 dark:bg-gray-800/20 backdrop-blur-sm p-0.5">
+                <Image
+                  src="/opt-logo/logo3.png"
+                  alt="Task Planner"
+                  width={160}
+                  height={48}
+                  className="h-11 w-auto rounded-xl"
+                  priority
+                />
+              </div>
             </Link>
 
             {/* Right Actions */}

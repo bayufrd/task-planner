@@ -130,8 +130,10 @@ function SignUpContent() {
       {/* Header */}
       <nav className={`border-b transition-colors ${theme === 'dark' ? 'border-gray-800/50 backdrop-blur-sm bg-gray-950/50' : 'border-white/20 dark:border-gray-800/50 backdrop-blur-sm bg-white/50 dark:bg-gray-950/50'}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center rounded-xl overflow-hidden">
-            <Image src="/opt-logo/logo3.png" alt="TaskPlanner Logo" width={120} height={40} className="h-10 w-auto rounded-xl" priority />
+          <Link href="/" className="flex items-center">
+            <div className="rounded-xl shadow-sm shadow-black/5 dark:shadow-black/10 bg-white/20 dark:bg-gray-800/20 backdrop-blur-sm p-0.5">
+              <Image src="/opt-logo/logo3.png" alt="TaskPlanner Logo" width={120} height={40} className="h-10 w-auto rounded-xl" priority />
+            </div>
           </Link>
 
           {/* Theme Toggle */}
@@ -163,13 +165,13 @@ function SignUpContent() {
             {/* Logo & Header */}
             <div className="space-y-5 text-center">
               <div className="flex justify-center">
-                <div className="rounded-2xl p-1.5 shadow-xl shadow-black/20 dark:shadow-black/40 bg-white/30 dark:bg-gray-700/30 backdrop-blur-sm">
+                <div className="rounded-xl p-1 shadow-md shadow-black/10 dark:shadow-black/30 bg-white/20 dark:bg-gray-800/20 backdrop-blur-sm">
                   <Image
                     src="/opt-logo/logo1.png"
                     alt="TaskPlanner Logo"
                     width={160}
                     height={160}
-                    className="w-28 h-auto sm:w-32 md:w-36 rounded-xl"
+                    className="w-28 h-auto sm:w-32 md:w-36 rounded-lg"
                     priority
                   />
                 </div>

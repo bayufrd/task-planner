@@ -18,7 +18,6 @@ import {
   Play,
   CalendarSync,
   BarChart3,
-  MessageCircle,
   Globe
 } from 'lucide-react'
 import { useLanguage } from '@/components/providers/LanguageProvider'
@@ -80,15 +79,17 @@ export default function LandingPage() {
         <header className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/50 dark:border-slate-800/50 fixed top-0 left-0 w-full z-50">
           <div className="max-w-[1200px] mx-auto px-10 py-0 h-20 flex justify-between items-center w-full">
             <div className="flex items-center gap-10">
-              <Link href="/" className="flex items-center rounded-xl overflow-hidden" aria-label="Go to home">
-                <Image
-                  src="/opt-logo/logo3.png"
-                  alt="Smart Task Planner"
-                  width={160}
-                  height={48}
-                  priority
-                  className="h-11 w-auto rounded-xl"
-                />
+              <Link href="/" className="flex items-center" aria-label="Go to home">
+                <div className="rounded-xl shadow-sm shadow-black/5 dark:shadow-black/10 bg-white/20 dark:bg-gray-800/20 backdrop-blur-sm p-0.5">
+                  <Image
+                    src="/opt-logo/logo3.png"
+                    alt="Smart Task Planner"
+                    width={160}
+                    height={48}
+                    priority
+                    className="h-11 w-auto rounded-xl"
+                  />
+                </div>
               </Link>
               <nav className="hidden md:flex gap-8 items-center">
                 <Link href="#features" className="text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors font-medium">
