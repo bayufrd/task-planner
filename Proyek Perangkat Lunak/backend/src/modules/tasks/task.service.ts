@@ -185,6 +185,11 @@ export class TaskService {
 
   async getDailyTaskStats(userId: string, days: number = 30) {
     const now = new Date();
+    
+    // Use local time for date boundaries to ensure "today" is correct for the user
+    const endDate = new Date(now);
+    endDate.setHours(23, 59, 59, 999);
+    
     const startDate = new Date(now);
     startDate.setDate(startDate.getDate() - days);
     startDate.setHours(0, 0, 0, 0);
@@ -195,6 +200,7 @@ export class TaskService {
         deletedAt: null,
         completedAt: {
           gte: startDate,
+          lte: endDate,
         },
         status: 'DONE',
       },
@@ -206,21 +212,29 @@ export class TaskService {
       },
     });
 
+    // Helper to get YYYY-MM-DD in local time to avoid UTC shifting
+    const getLocalDateKey = (date: Date) => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+
     // Group by date
     const dailyStats: Record<string, number> = {};
     
-    // Initialize all days with 0
-    for (let i = 0; i < days; i++) {
+    // Initialize all days with 0 (from startDate to today)
+    for (let i = 0; i <= days; i++) {
       const date = new Date(startDate);
       date.setDate(date.getDate() + i);
-      const dateKey = date.toISOString().split('T')[0];
+      const dateKey = getLocalDateKey(date);
       dailyStats[dateKey] = 0;
     }
 
     // Count completed tasks per day
     tasks.forEach((task) => {
       if (task.completedAt) {
-        const dateKey = task.completedAt.toISOString().split('T')[0];
+        const dateKey = getLocalDateKey(task.completedAt);
         if (dailyStats[dateKey] !== undefined) {
           dailyStats[dateKey]++;
         }
@@ -235,6 +249,10 @@ export class TaskService {
 
   async getWeeklyTaskStats(userId: string, weeks: number = 12) {
     const now = new Date();
+    
+    const endDate = new Date(now);
+    endDate.setHours(23, 59, 59, 999);
+    
     const startDate = new Date(now);
     startDate.setDate(startDate.getDate() - (weeks * 7));
     startDate.setHours(0, 0, 0, 0);
@@ -245,6 +263,7 @@ export class TaskService {
         deletedAt: null,
         completedAt: {
           gte: startDate,
+          lte: endDate,
         },
         status: 'DONE',
       },
@@ -259,17 +278,20 @@ export class TaskService {
     // Group by week
     const weeklyStats: Record<string, number> = {};
     
-    // Helper to get week key
+    // Helper to get week key using local time
     const getWeekKey = (date: Date) => {
-      const year = date.getFullYear();
-      const weekNum = Math.ceil(
-        ((date.getTime() - new Date(year, 0, 1).getTime()) / 86400000 + 1) / 7
-      );
-      return `${year}-W${weekNum.toString().padStart(2, '0')}`;
+      const d = new Date(date);
+      d.setHours(0, 0, 0, 0);
+      // Set to nearest Thursday: current date + 4 - current day number
+      // Make Sunday's day number 7
+      d.setDate(d.getDate() + 4 - (d.getDay() || 7));
+      const yearStart = new Date(d.getFullYear(), 0, 1);
+      const weekNo = Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+      return `${d.getFullYear()}-W${weekNo.toString().padStart(2, '0')}`;
     };
 
-    // Initialize all weeks with 0
-    for (let i = 0; i < weeks; i++) {
+    // Initialize all weeks with 0 (from startDate to today)
+    for (let i = 0; i <= weeks; i++) {
       const date = new Date(startDate);
       date.setDate(date.getDate() + (i * 7));
       const weekKey = getWeekKey(date);
