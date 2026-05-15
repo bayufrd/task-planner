@@ -81,6 +81,28 @@ export class TaskController {
     }
   }
 
+  async getDailyStats(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      if (!req.userId) throw new Error('User ID not found');
+      const days = req.query.days ? parseInt(req.query.days as string, 10) : 30;
+      const stats = await taskService.getDailyTaskStats(req.userId, days);
+      sendSuccess(res, stats);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getWeeklyStats(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      if (!req.userId) throw new Error('User ID not found');
+      const weeks = req.query.weeks ? parseInt(req.query.weeks as string, 10) : 12;
+      const stats = await taskService.getWeeklyTaskStats(req.userId, weeks);
+      sendSuccess(res, stats);
+    } catch (error) {
+      next(error);
+    }
+  }
+
   async calculatePriority(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       if (!req.userId) throw new Error('User ID not found');

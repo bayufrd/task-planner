@@ -1,4 +1,7 @@
 import { env } from '../../config/env';
+import { prisma } from '../../lib/prisma';
+
+const CACHE_DURATION_HOURS = 1;
 
 export interface ParsedTaskCommand {
   title: string;
@@ -214,5 +217,164 @@ export class AiService {
       tags: normalizeTags(parsed.tags),
       reminderTime: normalizeReminderTime(parsed.reminderTime),
     };
+  }
+
+  async analyzeOverview(userId: string, stats: any, dailyData: any[]): Promise<{
+    score: number;
+    insights: string[];
+    advice: Array<{ title: string; description: string; type: string }>;
+  }> {
+    const total = stats.pending + stats.done + stats.skipped;
+    
+    // Check cache first
+    const cached = await prisma.overviewAnalysisCache.findUnique({
+      where: { userId },
+    });
+
+    const now = new Date();
+    const isCacheValid = cached && cached.expiresAt > now;
+    const isDataConsistent = cached &&
+      cached.totalTasks === total &&
+      cached.completedTasks === stats.done &&
+      cached.pendingTasks === stats.pending &&
+      cached.skippedTasks === stats.skipped;
+
+    // Return cached data if valid and consistent
+    if (isCacheValid && isDataConsistent) {
+      return {
+        score: cached.score,
+        insights: JSON.parse(cached.insights),
+        advice: JSON.parse(cached.advice),
+      };
+    }
+
+    // If no cache or invalid, generate new analysis
+    if (!env.NINE_ROUTER_API || !env.NINE_ROUTER_API_KEY) {
+      throw new Error('9Router is not configured');
+    }
+
+    const completionRate = total > 0 ? Math.round((stats.done / total) * 100) : 0;
+    const skipRate = total > 0 ? Math.round((stats.skipped / total) * 100) : 0;
+
+    // Calculate average daily completion
+    const recentDays = dailyData.slice(-7);
+    const avgDailyCompletion = recentDays.length > 0
+      ? Math.round(recentDays.reduce((sum, day) => sum + day.count, 0) / recentDays.length)
+      : 0;
+
+    const response = await fetch(env.NINE_ROUTER_API, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${env.NINE_ROUTER_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: env.NINE_ROUTER_MODEL || DEFAULT_MODEL,
+        stream: false,
+        temperature: 0.3,
+        messages: [
+          {
+            role: 'system',
+            content: [
+              'Anda adalah AI analisis produktivitas untuk Smart Task Planner.',
+              'Analisis pola penyelesaian tugas pengguna dan berikan wawasan yang dapat ditindaklanjuti.',
+              'Kembalikan HANYA JSON yang valid. Tidak ada markdown, tidak ada penjelasan.',
+              'Skema output:',
+              '{',
+              '  "score": number (0-100),',
+              '  "insights": string[] (3-5 observasi kunci dalam Bahasa Indonesia),',
+              '  "advice": [{ "title": string, "description": string, "type": "success"|"warning"|"info" }] (3 kartu dalam Bahasa Indonesia)',
+              '}',
+              'Aturan:',
+              '- score: 0-100 berdasarkan tingkat penyelesaian, konsistensi, dan keseimbangan beban kerja',
+              '- insights: observasi spesifik tentang pola dalam Bahasa Indonesia',
+              '- advice: rekomendasi yang dapat ditindaklanjuti dengan tipe yang sesuai dalam Bahasa Indonesia',
+              '- Bersikaplah mendorong tetapi jujur',
+              '- Fokus pada peningkatan produktivitas',
+            ].join('\n'),
+          },
+          {
+            role: 'user',
+            content: JSON.stringify({
+              totalTasks: total,
+              completed: stats.done,
+              pending: stats.pending,
+              skipped: stats.skipped,
+              completionRate: `${completionRate}%`,
+              skipRate: `${skipRate}%`,
+              avgDailyCompletion,
+              recentDailyData: recentDays,
+            }),
+          },
+        ],
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => '');
+      throw new Error(`9Router request failed: ${response.status} ${errorText}`);
+    }
+
+    const result = (await response.json()) as NineRouterChatResponse;
+    const content = result.choices?.[0]?.message?.content;
+
+    if (!content) {
+      throw new Error('9Router response did not include message content');
+    }
+
+    const parsed = getJsonFromText(content) as any;
+
+    // Validate and normalize response
+    const analysis = {
+      score: typeof parsed.score === 'number' ? Math.min(100, Math.max(0, parsed.score)) : 50,
+      insights: Array.isArray(parsed.insights) ? parsed.insights.slice(0, 5) : [],
+      advice: Array.isArray(parsed.advice)
+        ? parsed.advice.slice(0, 3).map((item: any) => ({
+            title: String(item.title || 'Tip'),
+            description: String(item.description || ''),
+            type: ['success', 'warning', 'info'].includes(item.type) ? item.type : 'info',
+          }))
+        : [],
+    };
+
+    // Cache the result
+    const expiresAt = new Date(now.getTime() + CACHE_DURATION_HOURS * 60 * 60 * 1000);
+    
+    await prisma.overviewAnalysisCache.upsert({
+      where: { userId },
+      create: {
+        userId,
+        score: analysis.score,
+        insights: JSON.stringify(analysis.insights),
+        advice: JSON.stringify(analysis.advice),
+        totalTasks: total,
+        completedTasks: stats.done,
+        pendingTasks: stats.pending,
+        skippedTasks: stats.skipped,
+        expiresAt,
+      },
+      update: {
+        score: analysis.score,
+        insights: JSON.stringify(analysis.insights),
+        advice: JSON.stringify(analysis.advice),
+        totalTasks: total,
+        completedTasks: stats.done,
+        pendingTasks: stats.pending,
+        skippedTasks: stats.skipped,
+        expiresAt,
+        updatedAt: now,
+      },
+    });
+
+    return analysis;
+  }
+
+  // Invalidate cache when tasks change
+  async invalidateCache(userId: string): Promise<void> {
+    await prisma.overviewAnalysisCache.delete({
+      where: { userId },
+    }).catch(() => {
+      // Ignore if not found
+    });
   }
 }

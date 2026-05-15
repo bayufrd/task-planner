@@ -31,6 +31,7 @@
     "smoke:nextjs": "node scripts/smoke-test-nextjs.js"
   },
   "dependencies": {
+    "@ark-ui/react": "^5.36.2",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@next-auth/prisma-adapter": "^1.0.7",
@@ -48,6 +49,7 @@
     "notistack": "^3.0.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "recharts": "^3.8.1",
     "zustand": "^4.4.0"
   },
   "devDependencies": {

@@ -38,4 +38,37 @@ export class AiController {
       next(error);
     }
   }
+
+  async analyzeOverview(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      if (!req.userId) {
+        res.status(401).json({
+          success: false,
+          error: {
+            code: 'UNAUTHORIZED',
+            message: 'User ID not found',
+          },
+        });
+        return;
+      }
+
+      const { stats, dailyData } = req.body;
+
+      if (!stats || !dailyData) {
+        res.status(400).json({
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Stats and dailyData are required',
+          },
+        });
+        return;
+      }
+
+      const analysis = await aiService.analyzeOverview(req.userId, stats, dailyData);
+      sendSuccess(res, analysis, 'Overview analysis completed');
+    } catch (error) {
+      next(error);
+    }
+  }
 }

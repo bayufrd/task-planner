@@ -13,6 +13,8 @@ router.use(authenticate);
 router.get('/', taskController.getTasks);
 router.post('/', validate(createTaskSchema), taskController.createTask);
 router.get('/stats', taskController.getTaskStats);
+router.get('/stats/daily', taskController.getDailyStats);
+router.get('/stats/weekly', taskController.getWeeklyStats);
 router.get('/:id', taskController.getTaskById);
 router.patch('/:id', validate(updateTaskSchema), taskController.updateTask);
 router.patch('/:id/status', validate(updateTaskStatusSchema), taskController.updateTaskStatus);

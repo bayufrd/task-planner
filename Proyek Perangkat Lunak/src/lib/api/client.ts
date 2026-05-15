@@ -70,11 +70,41 @@ export interface TaskStats {
   skipped: number
 }
 
+export interface DailyStat {
+  date: string
+  count: number
+}
+
+export interface WeeklyStat {
+  week: string
+  count: number
+}
+
+export interface OverviewAnalysis {
+  score: number
+  insights: string[]
+  advice: Array<{
+    title: string
+    description: string
+    type: 'success' | 'warning' | 'info'
+  }>
+}
+
 // Task API helpers
 export const taskApi = {
   getStats: async (): Promise<{ success: boolean; data?: TaskStats; error?: string }> => {
     const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
     return apiRequest<TaskStats>(`${API_BASE}/api/tasks/stats`)
+  },
+
+  getDailyStats: async (days: number = 30): Promise<{ success: boolean; data?: DailyStat[]; error?: string }> => {
+    const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+    return apiRequest<DailyStat[]>(`${API_BASE}/api/tasks/stats/daily?days=${days}`)
+  },
+
+  getWeeklyStats: async (weeks: number = 12): Promise<{ success: boolean; data?: WeeklyStat[]; error?: string }> => {
+    const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+    return apiRequest<WeeklyStat[]>(`${API_BASE}/api/tasks/stats/weekly?weeks=${weeks}`)
   },
 
   updateStatus: async (taskId: string, status: string) => {
@@ -118,6 +148,17 @@ export const aiApi = {
     return apiRequest<ParsedTaskCommand>(`${API_BASE}/api/ai/parse-task`, {
       method: 'POST',
       body: JSON.stringify({ command }),
+    })
+  },
+
+  analyzeOverview: async (
+    stats: TaskStats,
+    dailyData: DailyStat[]
+  ): Promise<{ success: boolean; data?: OverviewAnalysis; error?: string }> => {
+    const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+    return apiRequest<OverviewAnalysis>(`${API_BASE}/api/ai/overview-analysis`, {
+      method: 'POST',
+      body: JSON.stringify({ stats, dailyData }),
     })
   },
 }

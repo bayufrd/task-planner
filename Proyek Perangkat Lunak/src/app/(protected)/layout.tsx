@@ -9,7 +9,7 @@ import Header from '@/components/layout/Header'
 import { useTheme } from '@/components/providers/ThemeProvider'
 import { useCommandPalette } from '@/components/providers/CommandPaletteProvider'
 import { useLanguage } from '@/components/providers/LanguageProvider'
-import { Search, CheckSquare2, LogOut, UserCircle, LayoutDashboard, User, Moon, Sun, Globe } from 'lucide-react'
+import { Search, CheckSquare2, LogOut, UserCircle, LayoutDashboard, User, Moon, Sun, Globe, PieChart } from 'lucide-react'
 import { signOut } from 'next-auth/react'
 import { getAuthCookie, removeAuthCookie } from '@/lib/auth/cookies'
 import { syncNextAuthToExpress } from '@/lib/auth/sync'
@@ -148,6 +148,15 @@ export default function ProtectedLayout({
             <span className="text-[10px] font-semibold">Command</span>
           </button>
 
+          {/* Overview Tab */}
+          <Link
+            href="/overview"
+            className="flex flex-col items-center gap-1 px-4 py-2 rounded-xl text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors min-w-[60px]"
+          >
+            <PieChart className="w-5 h-5" strokeWidth={2} />
+            <span className="text-[10px] font-semibold">Overview</span>
+          </Link>
+
           {/* Profile Tab */}
           <button
             onClick={() => setIsProfileOpen(!isProfileOpen)}
@@ -204,6 +213,16 @@ export default function ProtectedLayout({
                 >
                   <LayoutDashboard className="w-4 h-4 flex-shrink-0" strokeWidth={2} />
                   <span>Dashboard</span>
+                </Link>
+
+                {/* Overview Link */}
+                <Link
+                  href="/overview"
+                  onClick={() => setIsProfileOpen(false)}
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-950/30 transition-colors text-gray-700 dark:text-gray-300 text-sm font-medium"
+                >
+                  <PieChart className="w-4 h-4 flex-shrink-0" strokeWidth={2} />
+                  <span>Overview</span>
                 </Link>
 
                 {/* Language Toggle */}

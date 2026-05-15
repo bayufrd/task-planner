@@ -2,6 +2,9 @@ import { prisma } from '../../lib/prisma';
 import { NotFoundError, ForbiddenError } from '../../lib/errors';
 import { CreateTaskInput, UpdateTaskInput, UpdateTaskStatusInput } from './task.validation';
 import { calculatePriorityScore } from '../../utils/priority';
+import { AiService } from '../ai/ai.service';
+
+const aiService = new AiService();
 
 export class TaskService {
   async createTask(userId: string, data: CreateTaskInput) {
@@ -33,7 +36,11 @@ export class TaskService {
       });
     }
 
-    return this.getTaskById(userId, task.id);
+    return this.getTaskById(userId, task.id).then(async (result) => {
+      // Invalidate AI overview cache
+      await aiService.invalidateCache(userId).catch(() => {});
+      return result;
+    });
   }
 
   async getTasks(userId: string, status?: string) {
@@ -120,7 +127,11 @@ export class TaskService {
       }
     }
 
-    return this.getTaskById(userId, taskId);
+    return this.getTaskById(userId, taskId).then(async (result) => {
+      // Invalidate AI overview cache
+      await aiService.invalidateCache(userId).catch(() => {});
+      return result;
+    });
   }
 
   async updateTaskStatus(userId: string, taskId: string, data: UpdateTaskStatusInput) {
@@ -140,6 +151,9 @@ export class TaskService {
       },
     });
 
+    // Invalidate AI overview cache
+    await aiService.invalidateCache(userId).catch(() => {});
+
     return task;
   }
 
@@ -153,6 +167,9 @@ export class TaskService {
       data: { deletedAt: new Date() },
     });
 
+    // Invalidate AI overview cache
+    await aiService.invalidateCache(userId).catch(() => {});
+
     return { message: 'Task deleted successfully' };
   }
 
@@ -164,6 +181,115 @@ export class TaskService {
     ]);
 
     return { pending, done, skipped };
+  }
+
+  async getDailyTaskStats(userId: string, days: number = 30) {
+    const now = new Date();
+    const startDate = new Date(now);
+    startDate.setDate(startDate.getDate() - days);
+    startDate.setHours(0, 0, 0, 0);
+
+    const tasks = await prisma.task.findMany({
+      where: {
+        userId,
+        deletedAt: null,
+        completedAt: {
+          gte: startDate,
+        },
+        status: 'DONE',
+      },
+      select: {
+        completedAt: true,
+      },
+      orderBy: {
+        completedAt: 'asc',
+      },
+    });
+
+    // Group by date
+    const dailyStats: Record<string, number> = {};
+    
+    // Initialize all days with 0
+    for (let i = 0; i < days; i++) {
+      const date = new Date(startDate);
+      date.setDate(date.getDate() + i);
+      const dateKey = date.toISOString().split('T')[0];
+      dailyStats[dateKey] = 0;
+    }
+
+    // Count completed tasks per day
+    tasks.forEach((task) => {
+      if (task.completedAt) {
+        const dateKey = task.completedAt.toISOString().split('T')[0];
+        if (dailyStats[dateKey] !== undefined) {
+          dailyStats[dateKey]++;
+        }
+      }
+    });
+
+    return Object.entries(dailyStats).map(([date, count]) => ({
+      date,
+      count,
+    }));
+  }
+
+  async getWeeklyTaskStats(userId: string, weeks: number = 12) {
+    const now = new Date();
+    const startDate = new Date(now);
+    startDate.setDate(startDate.getDate() - (weeks * 7));
+    startDate.setHours(0, 0, 0, 0);
+
+    const tasks = await prisma.task.findMany({
+      where: {
+        userId,
+        deletedAt: null,
+        completedAt: {
+          gte: startDate,
+        },
+        status: 'DONE',
+      },
+      select: {
+        completedAt: true,
+      },
+      orderBy: {
+        completedAt: 'asc',
+      },
+    });
+
+    // Group by week
+    const weeklyStats: Record<string, number> = {};
+    
+    // Helper to get week key
+    const getWeekKey = (date: Date) => {
+      const year = date.getFullYear();
+      const weekNum = Math.ceil(
+        ((date.getTime() - new Date(year, 0, 1).getTime()) / 86400000 + 1) / 7
+      );
+      return `${year}-W${weekNum.toString().padStart(2, '0')}`;
+    };
+
+    // Initialize all weeks with 0
+    for (let i = 0; i < weeks; i++) {
+      const date = new Date(startDate);
+      date.setDate(date.getDate() + (i * 7));
+      const weekKey = getWeekKey(date);
+      weeklyStats[weekKey] = 0;
+    }
+
+    // Count completed tasks per week
+    tasks.forEach((task) => {
+      if (task.completedAt) {
+        const weekKey = getWeekKey(task.completedAt);
+        if (weeklyStats[weekKey] !== undefined) {
+          weeklyStats[weekKey]++;
+        }
+      }
+    });
+
+    return Object.entries(weeklyStats).map(([week, count]) => ({
+      week,
+      count,
+    }));
   }
 
   async autoSkipOverdueTasks() {

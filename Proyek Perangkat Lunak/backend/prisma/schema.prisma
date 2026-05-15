@@ -28,6 +28,7 @@ model User {
   tasks                 Task[]
   reminders             Reminder[]
   calendars             Calendar[]
+  overviewAnalysis      OverviewAnalysisCache?
   
   @@index([email])
 }
@@ -163,4 +164,31 @@ model Calendar {
   
   @@unique([userId, calendarId])
   @@index([userId])
+}
+
+// Overview Analysis Cache - stores AI analysis results per user
+model OverviewAnalysisCache {
+  id                    String      @id @default(cuid())
+  userId                String
+  user                  User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Cached data
+  score                 Int
+  insights              String      @db.Text // JSON array stored as string
+  advice                String      @db.Text // JSON array stored as string
+  
+  // Cache metadata for invalidation
+  totalTasks            Int         @default(0)
+  completedTasks        Int         @default(0)
+  pendingTasks          Int         @default(0)
+  skippedTasks          Int         @default(0)
+  
+  // Timestamps
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+  expiresAt             DateTime    // Cache expiration time
+  
+  @@unique([userId])
+  @@index([userId])
+  @@index([expiresAt])
 }
