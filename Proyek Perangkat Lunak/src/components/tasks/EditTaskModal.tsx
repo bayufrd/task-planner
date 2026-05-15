@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { X, Save, Calendar } from 'lucide-react'
+import { X, Save } from 'lucide-react'
 import { Task } from '@/lib/utils/store'
 import { useTaskStore } from '@/lib/utils/store'
 import { useNotification } from '@/lib/hooks/useNotification'
@@ -10,6 +10,7 @@ import { useTheme } from '@/components/providers/ThemeProvider'
 import { API_ROUTES } from '@/lib/constants/api'
 import { getAuthCookie } from '@/lib/auth/cookies'
 import CalendarPicker from '@/components/ui/CalendarPicker'
+import TimeSlotPicker from '@/components/ui/TimeSlotPicker'
 
 interface EditTaskModalProps {
   isOpen: boolean
@@ -113,7 +114,7 @@ export default function EditTaskModal({ isOpen, task, onClose, onSaved }: EditTa
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[99999] flex items-center justify-center"
+      className="fixed inset-0 z-[99999] flex items-center justify-center p-4 sm:p-6 md:p-8"
       onClick={(e) => e.stopPropagation()}
     >
       {/* Backdrop */}
@@ -131,7 +132,7 @@ export default function EditTaskModal({ isOpen, task, onClose, onSaved }: EditTa
 
       {/* Modal */}
       <div
-        className={`relative w-full max-w-md mx-4 rounded-2xl shadow-2xl overflow-hidden transition-all ${
+        className={`relative w-full max-w-lg mx-4 rounded-2xl shadow-2xl overflow-hidden transition-all ${
           theme === 'dark'
             ? 'bg-gray-900 border border-gray-800'
             : 'bg-white border border-gray-200'
@@ -165,7 +166,7 @@ export default function EditTaskModal({ isOpen, task, onClose, onSaved }: EditTa
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+        <form onSubmit={handleSubmit} className="p-6 space-y-5 max-h-[calc(100vh-8rem)] overflow-y-auto">
           {/* Title */}
           <div>
             <label
@@ -218,49 +219,18 @@ export default function EditTaskModal({ isOpen, task, onClose, onSaved }: EditTa
 
           {/* Deadline */}
           <div>
-            <label
-              htmlFor="edit-deadline"
-              className={`block text-sm font-medium mb-2 ${
-                theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
-              }`}
-            >
+            <p className={`text-sm font-medium mb-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
               Deadline
-            </label>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="relative">
-                <input
-                  id="edit-deadline"
-                  type="text"
-                  value={deadline}
-                  readOnly
-                  className={`w-full px-3 py-2 rounded-lg border transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    theme === 'dark'
-                      ? 'bg-gray-800 border-gray-700 text-white'
-                      : 'bg-white border-gray-300 text-gray-900'
-                  }`}
-                  disabled={isLoading}
-                />
-                <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                  <Calendar className="w-4 h-4 text-gray-400" />
-                </div>
-              </div>
-              <input
-                id="edit-deadlineTime"
-                type="time"
-                value={deadlineTime}
-                onChange={(e) => setDeadlineTime(e.target.value)}
-                className={`px-3 py-2 rounded-lg border transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  theme === 'dark'
-                    ? 'bg-gray-800 border-gray-700 text-white'
-                    : 'bg-white border-gray-300 text-gray-900'
-                }`}
-                disabled={isLoading}
-              />
-            </div>
-            <div className="mt-2">
-              <CalendarPicker 
+            </p>
+            <div className="flex flex-col md:flex-row gap-3">
+              <CalendarPicker
                 value={deadline}
                 onChange={(date) => setDeadline(date)}
+              />
+              <TimeSlotPicker
+                value={deadlineTime}
+                onChange={(time) => setDeadlineTime(time)}
+                disabled={isLoading}
               />
             </div>
           </div>
