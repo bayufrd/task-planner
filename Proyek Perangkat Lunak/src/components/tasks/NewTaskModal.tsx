@@ -136,7 +136,7 @@ export default function NewTaskModal({ isOpen, onClose, onCreated }: NewTaskModa
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-5 max-h-[85vh] overflow-y-auto">
+        <form onSubmit={handleSubmit} className="p-6 space-y-5 max-h-[calc(100vh-8rem)] overflow-y-auto">
           <div>
             <label htmlFor="title" className={`block text-sm font-medium mb-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
               Task Title <span className="text-red-500">*</span>
