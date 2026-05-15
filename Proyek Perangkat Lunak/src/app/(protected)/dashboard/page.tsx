@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Image from 'next/image'
 import { useSession } from 'next-auth/react'
 import { useTaskStore } from '@/lib/utils/store'
 import { useLanguage } from '@/components/providers/LanguageProvider'
@@ -9,7 +10,6 @@ import { useNotification } from '@/lib/hooks/useNotification'
 import { API_ROUTES } from '@/lib/constants/api'
 import CalendarTimeline from '@/components/calendar/CalendarTimeline'
 import TaskPriorityList from '@/components/tasks/TaskPriorityList'
-import CommandPalette from '@/components/command/CommandPalette'
 import TaskModal from '@/components/tasks/TaskModal'
 import { Plus, Command, CheckSquare2, Clock, CheckCircle2, XCircle } from 'lucide-react'
 
@@ -24,7 +24,7 @@ export default function Dashboard() {
   const { data: session } = useSession()
   const { tasks, setTasks } = useTaskStore()
   const { t } = useLanguage()
-  const { isOpen, open, close } = useCommandPalette()
+  const { open } = useCommandPalette()
   const notify = useNotification()
   const [isLoading, setIsLoading] = useState(true)
   const [isNewTaskModalOpen, setIsNewTaskModalOpen] = useState(false)
@@ -220,6 +220,22 @@ export default function Dashboard() {
           </div>
         </div>
 
+        {/* Hero Image Section */}
+        <div className="flex-shrink-0 px-4 sm:px-6 lg:px-8 py-4">
+          <div className="max-w-6xl mx-auto">
+            <div className="relative w-full aspect-[21/9] sm:aspect-[3/1] rounded-2xl overflow-hidden shadow-lg border border-gray-200/50 dark:border-gray-800/50">
+              <Image
+                src="/opt-hero/2.png"
+                alt="Dashboard Hero"
+                fill
+                priority
+                className="object-cover"
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 100vw, 1200px"
+              />
+            </div>
+          </div>
+        </div>
+
         {/* Tasks Display - Middle Section */}
         <div className="flex-1">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24 lg:pb-8">
@@ -253,13 +269,6 @@ export default function Dashboard() {
             )}
           </div>
         </div>
-
-      {/* Command Palette - Bottom Section */}
-      <CommandPalette 
-        isOpen={isOpen}
-        onClose={close}
-        onOpen={open}
-      />
 
       {/* Task Modal */}
       <TaskModal

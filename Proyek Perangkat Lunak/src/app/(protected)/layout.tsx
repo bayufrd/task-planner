@@ -6,6 +6,7 @@ import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import Header from '@/components/layout/Header'
+import CommandPalette from '@/components/command/CommandPalette'
 import { useTheme } from '@/components/providers/ThemeProvider'
 import { useCommandPalette } from '@/components/providers/CommandPaletteProvider'
 import { useLanguage } from '@/components/providers/LanguageProvider'
@@ -27,7 +28,7 @@ export default function ProtectedLayout({
   children: ReactNode
 }) {
   const { theme, toggleTheme } = useTheme()
-  const { open } = useCommandPalette()
+  const { isOpen, open, close } = useCommandPalette()
   const { language, setLanguage } = useLanguage()
   const [isProfileOpen, setIsProfileOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
@@ -126,6 +127,13 @@ export default function ProtectedLayout({
       <div className="flex-1 overflow-y-auto relative z-0 pb-20 lg:pb-0">
         {children}
       </div>
+
+      {/* Command Palette - Available on all protected pages */}
+      <CommandPalette
+        isOpen={isOpen}
+        onClose={close}
+        onOpen={open}
+      />
 
       {/* Bottom Tab Bar - Mobile only */}
       <div className="lg:hidden fixed inset-x-0 bottom-0 z-[60] bg-white/95 dark:bg-gray-950/95 backdrop-blur-xl border-t border-gray-200/50 dark:border-gray-800/50 pb-[env(safe-area-inset-bottom)]">

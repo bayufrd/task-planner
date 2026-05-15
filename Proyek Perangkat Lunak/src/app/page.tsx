@@ -144,8 +144,8 @@ export default function LandingPage() {
         {/* Navbar */}
           <nav className={`border-b transition-colors ${theme === 'dark' ? 'border-gray-800/50 backdrop-blur-sm bg-gray-950/50' : 'border-white/20 dark:border-gray-800/50 backdrop-blur-sm bg-white/50 dark:bg-gray-950/50'}`}>
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-              <a href="/" className="flex items-center gap-2">
-                <img src="/opt-logo/logo3.png" alt="TaskPlanner" className="h-10 w-auto" />
+              <a href="/" className="flex items-center gap-2 rounded-xl overflow-hidden">
+                <img src="/opt-logo/logo3.png" alt="TaskPlanner" className="h-10 w-auto rounded-xl" />
               </a>
             
             <div className="flex items-center gap-3">

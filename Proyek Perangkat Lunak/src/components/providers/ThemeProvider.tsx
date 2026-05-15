@@ -6,20 +6,20 @@ export const ThemeContext = React.createContext<{
   theme: string
   toggleTheme: () => void
 }>({
-  theme: 'dark',
+  theme: 'light',
   toggleTheme: () => {},
 })
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState('dark')
+  const [theme, setTheme] = useState('light')
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
     setMounted(true)
-    // Get theme from localStorage, otherwise default to dark mode
+    // Get theme from localStorage, otherwise default to light mode
     const savedTheme = localStorage.getItem('theme')
-    
-    const initialTheme = savedTheme || 'dark'
+
+    const initialTheme = savedTheme || 'light'
     setTheme(initialTheme)
     applyTheme(initialTheme)
   }, [])

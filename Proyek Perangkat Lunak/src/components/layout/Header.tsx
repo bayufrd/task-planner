@@ -40,14 +40,14 @@ export default function Header({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link href="/dashboard" className="flex items-center" aria-label="Go to dashboard">
+          <Link href="/dashboard" className="flex items-center rounded-xl overflow-hidden" aria-label="Go to dashboard">
             <Image
               src="/opt-logo/logo3.png"
               alt="Smart Task Planner"
               width={160}
               height={48}
               priority
-              className="h-11 w-auto"
+              className="h-11 w-auto rounded-xl"
             />
           </Link>
 

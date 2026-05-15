@@ -6,9 +6,9 @@ import { signIn } from 'next-auth/react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { 
-  ArrowRight, 
-  Brain, 
+import {
+  ArrowRight,
+  Brain,
   CheckCircle2,
   Sparkles,
   Bot,
@@ -17,8 +17,8 @@ import {
   Users,
   Play,
   CalendarSync,
-  ChatCircle,
-  Analytics,
+  BarChart3,
+  MessageCircle,
   Globe
 } from 'lucide-react'
 import { useLanguage } from '@/components/providers/LanguageProvider'
@@ -80,14 +80,14 @@ export default function LandingPage() {
         <header className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/50 dark:border-slate-800/50 fixed top-0 left-0 w-full z-50">
           <div className="max-w-[1200px] mx-auto px-10 py-0 h-20 flex justify-between items-center w-full">
             <div className="flex items-center gap-10">
-              <Link href="/" className="flex items-center" aria-label="Go to home">
+              <Link href="/" className="flex items-center rounded-xl overflow-hidden" aria-label="Go to home">
                 <Image
                   src="/opt-logo/logo3.png"
                   alt="Smart Task Planner"
                   width={160}
                   height={48}
                   priority
-                  className="h-11 w-auto"
+                  className="h-11 w-auto rounded-xl"
                 />
               </Link>
               <nav className="hidden md:flex gap-8 items-center">
@@ -230,7 +230,7 @@ export default function LandingPage() {
             <div className="bg-gray-50 dark:bg-gray-900 p-10 rounded-3xl border border-gray-200 dark:border-gray-800 flex flex-col justify-between hover:shadow-lg transition-all duration-300">
               <div className="mb-12">
                 <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg flex items-center justify-center mb-8">
-                  <Analytics className="w-5 h-5" />
+                  <BarChart3 className="w-5 h-5" />
                 </div>
                 <h3 className="text-xl lg:text-2xl font-semibold mb-4 tracking-tight">{t('landing.aiPriorityTitle')}</h3>
                 <p className="text-gray-600 dark:text-gray-400 max-w-md opacity-80 leading-relaxed">{t('landing.aiPriorityDesc')}</p>
@@ -289,7 +289,7 @@ export default function LandingPage() {
             <div className="bg-gray-50 dark:bg-gray-900 p-10 rounded-3xl border border-gray-200 dark:border-gray-800 flex flex-col lg:flex-row-reverse items-center gap-10 hover:shadow-lg transition-all duration-300">
               <div className="lg:w-5/12">
                 <div className="w-10 h-10 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-500 rounded-lg flex items-center justify-center mb-8">
-                  <ChatCircle className="w-5 h-5" />
+                  <MessageCircle className="w-5 h-5" />
                 </div>
                 <h3 className="text-xl lg:text-2xl font-semibold mb-4 tracking-tight">{t('landing.whatsappTitle')}</h3>
                 <p className="text-gray-600 dark:text-gray-400 opacity-80 leading-relaxed">{t('landing.whatsappDesc')}</p>
@@ -396,7 +396,7 @@ export default function LandingPage() {
                   alt="Smart Task Planner"
                   width={140}
                   height={40}
-                  className="h-10 w-auto"
+                  className="h-10 w-auto rounded-xl"
                 />
               </div>
               <p className="text-sm text-gray-600 dark:text-gray-400 opacity-70 leading-relaxed">

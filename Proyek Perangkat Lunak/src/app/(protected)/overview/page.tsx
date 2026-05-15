@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Image from 'next/image'
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { taskApi, aiApi, type DailyStat, type WeeklyStat, type OverviewAnalysis, type TaskStats } from '@/lib/api/client'
 import { TrendingUp, Calendar, CheckCircle2, AlertCircle, Info, Loader2, RefreshCw, Trophy, Star, Zap } from 'lucide-react'
@@ -317,6 +318,20 @@ export default function OverviewPage() {
             </div>
           </div>
         )}
+
+        {/* Hero Image Section */}
+        <div className="mt-8 bg-white dark:bg-gray-900 rounded-xl p-6 border border-gray-200 dark:border-gray-800">
+          <div className="relative w-full aspect-[21/9] sm:aspect-[3/1] rounded-xl overflow-hidden shadow-lg">
+            <Image
+              src="/opt-hero/3.png"
+              alt="Overview Hero"
+              fill
+              priority
+              className="object-cover"
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 100vw, 1200px"
+            />
+          </div>
+        </div>
 
         {/* Daily Completion Chart */}
         <div className="bg-white dark:bg-gray-900 rounded-xl p-6 border border-gray-200 dark:border-gray-800">
