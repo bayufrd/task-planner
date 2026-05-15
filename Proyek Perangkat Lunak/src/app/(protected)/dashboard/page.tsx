@@ -222,7 +222,7 @@ export default function Dashboard() {
 
         {/* Tasks Display - Middle Section */}
         <div className="flex-1">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24 lg:pb-8">
             {tasks.length === 0 ? (
               <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
                 <div className="mb-6">
