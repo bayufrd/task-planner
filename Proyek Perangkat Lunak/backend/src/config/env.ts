@@ -10,6 +10,8 @@ export const env = {
   JWT_SECRET: process.env.JWT_SECRET || '',
   JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || '7d',
   FRONTEND_URL: process.env.FRONTEND_URL || 'http://localhost:3000',
+  TOKEN_WHATSAPP: process.env.TOKEN_WHATSAPP || '',
+  WHATSAPP_BOT_URL: process.env.WHATSAPP_BOT_URL || '',
   // 9Router AI / LLM
   NINE_ROUTER_API: process.env.NINE_ROUTER_API || '',
   NINE_ROUTER_API_KEY: process.env.NINE_ROUTER_API_KEY || '',
