@@ -79,28 +79,75 @@ const normalizeReminderTime = (reminderTime: unknown): number => {
   return rounded;
 };
 
+const INDONESIA_TIME_ZONE = 'Asia/Jakarta';
+const INDONESIA_UTC_OFFSET_HOURS = 7;
+
+const getJakartaDateParts = (date: Date) => {
+  const formatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone: INDONESIA_TIME_ZONE,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  });
+
+  const parts = formatter.formatToParts(date);
+  const get = (type: Intl.DateTimeFormatPartTypes) => Number(parts.find((part) => part.type === type)?.value || '0');
+
+  return {
+    year: get('year'),
+    month: get('month'),
+    day: get('day'),
+    hour: get('hour'),
+    minute: get('minute'),
+    second: get('second'),
+  };
+};
+
+const createJakartaDate = (
+  year: number,
+  month: number,
+  day: number,
+  hour: number,
+  minute: number,
+  second: number = 0
+) => new Date(Date.UTC(year, month - 1, day, hour - INDONESIA_UTC_OFFSET_HOURS, minute, second, 0));
+
 /**
  * Deterministic post-processing for common Indonesian date/time phrases.
- * This fixes LLM timezone/day ambiguity:
+ * This fixes LLM timezone/day ambiguity in Asia/Jakarta:
  * - "besok" = local today + 1 day
  * - "lusa" = local today + 2 days
- * - "jam 10 malam" = 22:00
- * - "jam 8 malam" = 20:00
- * - "jam 3 sore" = 15:00
+ * - "jam 10 malam" = 22:00 WIB
+ * - "jam 8 malam" = 20:00 WIB
+ * - "jam 3 sore" = 15:00 WIB
  */
 const applyIndonesianTimeHints = (input: string, deadline: Date, now: Date): Date => {
   const lower = input.toLowerCase();
-  const adjusted = new Date(deadline);
+  const nowJakarta = getJakartaDateParts(now);
+  const deadlineJakarta = getJakartaDateParts(deadline);
+
+  let base = createJakartaDate(
+    deadlineJakarta.year,
+    deadlineJakarta.month,
+    deadlineJakarta.day,
+    deadlineJakarta.hour,
+    deadlineJakarta.minute,
+    deadlineJakarta.second
+  );
 
   if (/\bbesok\b/.test(lower)) {
-    adjusted.setFullYear(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+    base = createJakartaDate(nowJakarta.year, nowJakarta.month, nowJakarta.day + 1, deadlineJakarta.hour, deadlineJakarta.minute, 0);
   } else if (/\blusa\b/.test(lower)) {
-    adjusted.setFullYear(now.getFullYear(), now.getMonth(), now.getDate() + 2);
+    base = createJakartaDate(nowJakarta.year, nowJakarta.month, nowJakarta.day + 2, deadlineJakarta.hour, deadlineJakarta.minute, 0);
   } else if (/\b(hari ini|today)\b/.test(lower)) {
-    adjusted.setFullYear(now.getFullYear(), now.getMonth(), now.getDate());
+    base = createJakartaDate(nowJakarta.year, nowJakarta.month, nowJakarta.day, deadlineJakarta.hour, deadlineJakarta.minute, 0);
   }
 
-  const jamMatch = lower.match(/\bjam\s+(\d{1,2})(?:(?::|\.)(\d{2}))?\s*(pagi|siang|sore|malam)?\b/);
+  const jamMatch = lower.match(/\b(?:jam|pukul)\s+(\d{1,2})(?:(?::|\.)(\d{2}))?\s*(pagi|siang|sore|malam)?\b/);
   if (jamMatch) {
     let hour = Number(jamMatch[1]);
     const minute = jamMatch[2] ? Number(jamMatch[2]) : 0;
@@ -117,10 +164,11 @@ const applyIndonesianTimeHints = (input: string, deadline: Date, now: Date): Dat
       if (hour === 12) hour = 0;
     }
 
-    adjusted.setHours(hour, minute, 0, 0);
+    const baseJakarta = getJakartaDateParts(base);
+    base = createJakartaDate(baseJakarta.year, baseJakarta.month, baseJakarta.day, hour, minute, 0);
   }
 
-  return adjusted;
+  return base;
 };
 
 export class AiService {
@@ -161,13 +209,15 @@ export class AiService {
               'Rules:',
               '- title: clean task title without date/time/duration/priority/tag tokens.',
               '- deadline: always output absolute ISO-8601 datetime using the provided current datetime as reference.',
+              '- Interpret all Indonesian date/time phrases in timezone Asia/Jakarta (WIB / UTC+7).',
               '- Indonesian "besok" means exactly local current date + 1 day, not +2 days.',
               '- Indonesian "lusa" means exactly local current date + 2 days.',
               '- Indonesian "hari ini" means local current date.',
-              '- Indonesian "jam 8 malam" = 20:00, "jam 10 malam" = 22:00, "jam 12 malam" = 00:00.',
-              '- Indonesian "jam 8 pagi" = 08:00, "jam 10 pagi" = 10:00.',
+              '- Indonesian "jam 8 malam" = 20:00, "jam 9 malam" = 21:00, "jam 10 malam" = 22:00, "jam 12 malam" = 00:00.',
+              '- Indonesian "jam 8 pagi" = 08:00, "jam 9 pagi" = 09:00, "jam 10 pagi" = 10:00.',
               '- Indonesian "jam 12 siang" = 12:00.',
-              '- Indonesian "jam 3 sore" = 15:00, "jam 7 sore" = 19:00.',
+              '- Indonesian "jam 3 sore" = 15:00, "jam 6 sore" = 18:00, "jam 7 sore" = 19:00.',
+              '- If user writes pagi/siang/sore/malam, convert to 24-hour Indonesian local time correctly.',
               '- priority default: MEDIUM.',
               '- estimatedDuration default: 60 minutes if omitted.',
               '- reminderTime default: 60 minutes before deadline if omitted.',
@@ -183,9 +233,10 @@ export class AiService {
             role: 'user',
             content: JSON.stringify({
               currentDateTime: now.toISOString(),
-              localDateString: now.toLocaleDateString('en-CA'),
-              localTimeString: now.toTimeString(),
-              timezoneOffsetMinutes: now.getTimezoneOffset(),
+              localDateString: now.toLocaleDateString('en-CA', { timeZone: INDONESIA_TIME_ZONE }),
+              localTimeString: now.toLocaleTimeString('en-GB', { timeZone: INDONESIA_TIME_ZONE, hour12: false }),
+              timezone: INDONESIA_TIME_ZONE,
+              timezoneOffsetHours: INDONESIA_UTC_OFFSET_HOURS,
               command: input,
             }),
           },
