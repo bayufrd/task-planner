@@ -151,6 +151,11 @@ backend/
 - [x] `DELETE /api/calendar/:id`
 - [x] `POST /api/calendar/:id/refresh` (manual sync action)
 
+### Internal WhatsApp
+
+- [x] `POST /internal/wa/inbound`
+- [x] Dokumentasi detail: [`backend/docs/WHATSAPP_INBOUND.md`](backend/docs/WHATSAPP_INBOUND.md)
+
 ## Task Status Rules
 
 Canonical task statuses:
@@ -195,6 +200,17 @@ Error:
   }
 }
 ```
+
+## Internal WhatsApp Inbound
+
+Ringkasan endpoint [`POST /internal/wa/inbound`](backend/src/app.ts:225):
+
+- menerima payload inbound dari service WhatsApp internal,
+- memproses command registrasi `user_id daftar`,
+- menghubungkan nomor WhatsApp ke user Task Planner bila valid,
+- mengirim balasan WhatsApp untuk skenario sukses dan gagal.
+
+Dokumentasi lengkap payload, response, flow registrasi, contoh cURL, dan skenario error tersedia di [`backend/docs/WHATSAPP_INBOUND.md`](backend/docs/WHATSAPP_INBOUND.md).
 
 ## Setup dan Menjalankan Backend
 

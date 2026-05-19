@@ -37,7 +37,7 @@ const normalizeSafeWhatsappNumber = (value?: string | null): string | null => {
   return `62${digits}`;
 };
 
-const sendWhatsappRegistrationSuccess = async (number: string, name: string): Promise<void> => {
+const sendWhatsappMessage = async (number: string, message: string): Promise<void> => {
   if (!env.WHATSAPP_BOT_URL) {
     return;
   }
@@ -50,13 +50,20 @@ const sendWhatsappRegistrationSuccess = async (number: string, name: string): Pr
     },
     body: JSON.stringify({
       number,
-      message: `Halo ${name}, Selamat anda sudah terdaftar pada Smart Task Planner`,
+      message,
     }),
   });
 
   if (!response.ok) {
-    throw new Error(`Failed to send WhatsApp confirmation: ${response.status} ${response.statusText}`);
+    throw new Error(`Failed to send WhatsApp message: ${response.status} ${response.statusText}`);
   }
+};
+
+const sendWhatsappRegistrationSuccess = async (number: string, name: string): Promise<void> => {
+  await sendWhatsappMessage(
+    number,
+    `Halo ${name}! Nomor WhatsApp Anda sudah berhasil terhubung ke Smart Task Planner by Dastrevas AI.\n\nMulai sekarang Anda bisa kirim perintah dengan awalan *task* untuk mengelola tugas langsung dari WhatsApp.\n\nContoh:\n- task tambah meeting besok jam 10 malam #urgent\n- task tanggal 10 ada meeting jam 9 malam di apartement #kerjaan\n\nAI kami dari dastrevas.com akan membantu membaca pesan Anda dan mengubahnya menjadi task dengan lebih akurat.\n\nSilakan coba sekarang dengan format awalan *task*.`
+  );
 };
 
 const handleWhatsappInbound = async (req: Request, res: Response): Promise<void> => {
@@ -107,19 +114,6 @@ const handleWhatsappInbound = async (req: Request, res: Response): Promise<void>
   let registrationNotification = null;
 
   if (taskPlannerUserId) {
-    const existingWhatsappOwner = await prisma.user.findFirst({
-      where: {
-        whatsappNumber: waNumber,
-        NOT: { id: taskPlannerUserId },
-      },
-      select: { id: true },
-    });
-
-    if (existingWhatsappOwner) {
-      sendError(res, 'CONFLICT', 'WhatsApp number is already registered to another user', 409);
-      return;
-    }
-
     const safeWhatsappNumber = normalizeSafeWhatsappNumber(waNumber);
 
     if (!safeWhatsappNumber) {
@@ -127,12 +121,8 @@ const handleWhatsappInbound = async (req: Request, res: Response): Promise<void>
       return;
     }
 
-    const updatedUser = await prisma.user.update({
+    const existingUser = await prisma.user.findUnique({
       where: { id: taskPlannerUserId },
-      data: {
-        whatsappNumber: safeWhatsappNumber,
-        whatsappChatId: chatId || null,
-      },
       select: {
         id: true,
         name: true,
@@ -143,27 +133,113 @@ const handleWhatsappInbound = async (req: Request, res: Response): Promise<void>
       },
     });
 
-    registration = {
-      linked: true,
-      user: updatedUser,
-    };
+    if (!existingUser) {
+      const notRegisteredMessage =
+        'user id tidak terdaftar pada Task Planner silahkan daftar dengan mengunjungi https://taskplanner.dastrevas.com/auth/signup?callbackUrl=%2Fdashboard';
 
-    try {
-      await sendWhatsappRegistrationSuccess(
-        safeWhatsappNumber,
-        updatedUser.name || req.body?.user?.name || 'User'
-      );
+      try {
+        await sendWhatsappMessage(safeWhatsappNumber, notRegisteredMessage);
+        registrationNotification = {
+          sent: true,
+          number: safeWhatsappNumber,
+          type: 'user-not-found',
+          message: notRegisteredMessage,
+        };
+      } catch (error) {
+        console.error('[WA Registration] Failed to send user-not-found message:', error);
+        registrationNotification = {
+          sent: false,
+          number: safeWhatsappNumber,
+          type: 'user-not-found',
+          message: notRegisteredMessage,
+        };
+      }
 
-      registrationNotification = {
-        sent: true,
-        number: safeWhatsappNumber,
+      registration = {
+        linked: false,
+        reason: 'USER_NOT_FOUND',
+        userId: taskPlannerUserId,
       };
-    } catch (error) {
-      console.error('[WA Registration] Failed to send confirmation message:', error);
-      registrationNotification = {
-        sent: false,
-        number: safeWhatsappNumber,
+    } else if (existingUser.whatsappNumber) {
+      const alreadyRegisteredMessage = `user untuk ${taskPlannerUserId} atas nama ${existingUser.name} sudah terdaftar`;
+
+      try {
+        await sendWhatsappMessage(safeWhatsappNumber, alreadyRegisteredMessage);
+        registrationNotification = {
+          sent: true,
+          number: safeWhatsappNumber,
+          type: 'already-registered',
+          message: alreadyRegisteredMessage,
+        };
+      } catch (error) {
+        console.error('[WA Registration] Failed to send already-registered message:', error);
+        registrationNotification = {
+          sent: false,
+          number: safeWhatsappNumber,
+          type: 'already-registered',
+          message: alreadyRegisteredMessage,
+        };
+      }
+
+      registration = {
+        linked: false,
+        reason: 'WHATSAPP_ALREADY_REGISTERED',
+        user: existingUser,
       };
+    } else {
+      const existingWhatsappOwner = await prisma.user.findFirst({
+        where: {
+          whatsappNumber: safeWhatsappNumber,
+          NOT: { id: taskPlannerUserId },
+        },
+        select: { id: true },
+      });
+
+      if (existingWhatsappOwner) {
+        sendError(res, 'CONFLICT', 'WhatsApp number is already registered to another user', 409);
+        return;
+      }
+
+      const updatedUser = await prisma.user.update({
+        where: { id: taskPlannerUserId },
+        data: {
+          whatsappNumber: safeWhatsappNumber,
+          whatsappChatId: chatId || null,
+        },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          whatsappNumber: true,
+          whatsappChatId: true,
+          updatedAt: true,
+        },
+      });
+
+      registration = {
+        linked: true,
+        user: updatedUser,
+      };
+
+      try {
+        await sendWhatsappRegistrationSuccess(
+          safeWhatsappNumber,
+          updatedUser.name || req.body?.user?.name || 'User'
+        );
+
+        registrationNotification = {
+          sent: true,
+          number: safeWhatsappNumber,
+          type: 'registration-success',
+        };
+      } catch (error) {
+        console.error('[WA Registration] Failed to send confirmation message:', error);
+        registrationNotification = {
+          sent: false,
+          number: safeWhatsappNumber,
+          type: 'registration-success',
+        };
+      }
     }
   }
 
