@@ -26,6 +26,11 @@ export class TaskService {
       },
     });
 
+    await prisma.$executeRawUnsafe(
+      'UPDATE `Task` SET `reminder24hSent` = false, `reminder1hSent` = false WHERE `id` = ?',
+      task.id
+    );
+
     // Create tags if provided
     if (data.tags && data.tags.length > 0) {
       await prisma.taskTag.createMany({
@@ -92,7 +97,13 @@ export class TaskService {
     
     if (data.title !== undefined) updateData.title = data.title;
     if (data.description !== undefined) updateData.description = data.description;
-    if (data.deadline !== undefined) updateData.deadline = new Date(data.deadline);
+    if (data.deadline !== undefined) {
+      updateData.deadline = new Date(data.deadline);
+      updateData.reminder24hSent = false;
+      updateData.reminder1hSent = false;
+      updateData.reminderDeadlineSent = false;
+      updateData.skippedNotificationSent = false;
+    }
     if (data.priority !== undefined) updateData.priority = data.priority;
     if (data.estimatedDuration !== undefined) updateData.estimatedDuration = data.estimatedDuration;
     if (data.reminderTime !== undefined) updateData.reminderTime = data.reminderTime;
@@ -319,32 +330,45 @@ export class TaskService {
     const minimumToleranceMs = 60 * 60 * 1000;
     const minimumOverdueDeadline = new Date(now.getTime() - minimumToleranceMs);
 
-    const candidates = await prisma.task.findMany({
-      where: {
-        status: 'PENDING',
-        deletedAt: null,
-        deadline: {
-          lte: minimumOverdueDeadline,
-        },
-      },
-      select: {
-        id: true,
-        deadline: true,
-        estimatedDuration: true,
-      },
+    const candidates = await prisma.$queryRawUnsafe<Array<{
+      id: string;
+      title: string;
+      deadline: Date;
+      estimatedDuration: number | null;
+      priority: string;
+      skippedNotificationSent: boolean;
+      userName: string | null;
+      whatsappNumber: string | null;
+    }>>(
+      `
+        SELECT
+          t.id,
+          t.title,
+          t.deadline,
+          t.estimatedDuration,
+          t.priority,
+          t.skippedNotificationSent,
+          u.name AS userName,
+          u.whatsappNumber AS whatsappNumber
+        FROM Task t
+        LEFT JOIN User u ON u.id = t.userId
+        WHERE t.status = 'PENDING'
+          AND t.deletedAt IS NULL
+          AND t.deadline <= ?
+      `,
+      minimumOverdueDeadline
+    );
+
+    const overdueTasks = candidates.filter((task) => {
+      const toleranceMinutes = Math.max(task.estimatedDuration || 60, 60);
+      const skippedAt = new Date(task.deadline).getTime() + toleranceMinutes * 60 * 1000;
+      return skippedAt <= now.getTime();
     });
 
-    const overdueTaskIds = candidates
-      .filter((task) => {
-        const toleranceMinutes = Math.max(task.estimatedDuration || 60, 60);
-        const skippedAt = task.deadline.getTime() + toleranceMinutes * 60 * 1000;
-
-        return skippedAt <= now.getTime();
-      })
-      .map((task) => task.id);
+    const overdueTaskIds = overdueTasks.map((task) => task.id);
 
     if (overdueTaskIds.length === 0) {
-      return { skipped: 0 };
+      return { skipped: 0, skippedNotifications: [] as Array<{ taskId: string; number: string; message: string }> };
     }
 
     const result = await prisma.task.updateMany({
@@ -357,7 +381,159 @@ export class TaskService {
       },
     });
 
-    return { skipped: result.count };
+    const skippedNotifications = overdueTasks
+      .filter((task) => !task.skippedNotificationSent && task.whatsappNumber)
+      .map((task) => {
+        const toleranceMinutes = Math.max(task.estimatedDuration || 60, 60);
+        return {
+          taskId: task.id,
+          number: String(task.whatsappNumber).trim(),
+          message: [
+            `⛔ Task otomatis menjadi SKIPPED${task.userName ? `, ${task.userName}` : ''}`,
+            `Task: ${task.title}`,
+            `Deadline: ${new Date(task.deadline).toLocaleString('id-ID', { dateStyle: 'full', timeStyle: 'short', timeZone: 'Asia/Jakarta' })} WIB`,
+            `Batas toleransi selesai: ${toleranceMinutes} menit setelah deadline.`,
+            'Task ini sudah melewati batas toleransi dan statusnya diubah menjadi SKIPPED.',
+          ].join('\n'),
+        };
+      });
+
+    return { skipped: result.count, skippedNotifications };
+  }
+
+  async processWhatsappDeadlineReminders() {
+    const now = new Date();
+    const oneHourMs = 60 * 60 * 1000;
+    const twentyFourHoursMs = 24 * oneHourMs;
+    const windowMs = 5 * 60 * 1000;
+
+    const candidates = await prisma.$queryRawUnsafe<Array<{
+      id: string;
+      title: string;
+      deadline: Date;
+      priority: string;
+      estimatedDuration: number | null;
+      reminder24hSent: boolean;
+      reminder1hSent: boolean;
+      reminderDeadlineSent: boolean;
+      userId: string;
+      userName: string | null;
+      whatsappNumber: string | null;
+    }>>(
+      `
+        SELECT
+          t.id,
+          t.title,
+          t.deadline,
+          t.priority,
+          t.estimatedDuration,
+          t.reminder24hSent,
+          t.reminder1hSent,
+          t.reminderDeadlineSent,
+          t.userId,
+          u.name AS userName,
+          u.whatsappNumber AS whatsappNumber
+        FROM Task t
+        INNER JOIN User u ON u.id = t.userId
+        WHERE t.status = 'PENDING'
+          AND t.deletedAt IS NULL
+          AND t.deadline > ?
+          AND t.deadline <= ?
+          AND u.whatsappNumber IS NOT NULL
+        ORDER BY t.deadline ASC
+      `,
+      now,
+      new Date(now.getTime() + twentyFourHoursMs + windowMs)
+    );
+
+    const reminders: Array<{
+      taskId: string;
+      type: '24h' | '1h' | 'deadline';
+      number: string;
+      message: string;
+    }> = [];
+
+    for (const task of candidates) {
+      const whatsappNumber = task.whatsappNumber?.trim();
+      if (!whatsappNumber) continue;
+
+      const deadline = new Date(task.deadline);
+      const remainingMs = deadline.getTime() - now.getTime();
+      const userName = task.userName ? `, ${task.userName}` : '';
+      const deadlineLabel = deadline.toLocaleString('id-ID', {
+        dateStyle: 'full',
+        timeStyle: 'short',
+        timeZone: 'Asia/Jakarta',
+      });
+
+      if (!task.reminder24hSent && remainingMs <= twentyFourHoursMs && remainingMs > twentyFourHoursMs - windowMs) {
+        reminders.push({
+          taskId: task.id,
+          type: '24h',
+          number: whatsappNumber,
+          message: [
+            `⏰ Pengingat Task 24 Jam${userName}`,
+            `Task: ${task.title}`,
+            `Deadline: ${deadlineLabel} WIB`,
+            `Sisa waktu: sekitar 24 jam lagi.`,
+            `Prioritas: ${task.priority}`,
+            'Segera siapkan task ini agar tidak terlewat.',
+          ].join('\n'),
+        });
+      }
+
+      if (!task.reminder1hSent && remainingMs <= oneHourMs && remainingMs > oneHourMs - windowMs) {
+        reminders.push({
+          taskId: task.id,
+          type: '1h',
+          number: whatsappNumber,
+          message: [
+            `🚨 Pengingat Task 1 Jam${userName}`,
+            `Task: ${task.title}`,
+            `Deadline: ${deadlineLabel} WIB`,
+            `Sisa waktu: sekitar 1 jam lagi.`,
+            `Prioritas: ${task.priority}`,
+            'Harap segera diselesaikan atau dijadwalkan ulang jika perlu.',
+          ].join('\n'),
+        });
+      }
+
+      if (!task.reminderDeadlineSent && remainingMs <= windowMs && remainingMs >= 0) {
+        const toleranceMinutes = Math.max(task.estimatedDuration || 60, 60);
+        reminders.push({
+          taskId: task.id,
+          type: 'deadline',
+          number: whatsappNumber,
+          message: [
+            `⏳ Deadline task sudah tiba${userName}`,
+            `Task: ${task.title}`,
+            `Deadline: ${deadlineLabel} WIB`,
+            `Jika belum selesai, balas dengan format seperti: selesai ${task.title}`,
+            `Jika tidak diubah menjadi DONE dalam ${toleranceMinutes} menit lagi, task ini akan otomatis menjadi SKIPPED.`,
+          ].join('\n'),
+        });
+      }
+    }
+
+    return reminders;
+  }
+
+  async markWhatsappReminderSent(taskId: string, type: '24h' | '1h' | 'deadline') {
+    await prisma.$executeRawUnsafe(
+      type === '24h'
+        ? 'UPDATE `Task` SET `reminder24hSent` = true WHERE `id` = ?'
+        : type === '1h'
+          ? 'UPDATE `Task` SET `reminder1hSent` = true WHERE `id` = ?'
+          : 'UPDATE `Task` SET `reminderDeadlineSent` = true WHERE `id` = ?',
+      taskId
+    );
+  }
+
+  async markSkippedNotificationSent(taskId: string) {
+    await prisma.$executeRawUnsafe(
+      'UPDATE `Task` SET `skippedNotificationSent` = true WHERE `id` = ?',
+      taskId
+    );
   }
 
   async calculateTaskPriority(userId: string, taskId: string) {

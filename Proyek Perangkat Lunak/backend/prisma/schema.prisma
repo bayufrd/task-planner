@@ -92,6 +92,10 @@ model Task {
   // Reminder settings
   reminderTime          Int         @default(60) // minutes before deadline
   reminderSent          Boolean     @default(false)
+  reminder24hSent       Boolean     @default(false)
+  reminder1hSent        Boolean     @default(false)
+  reminderDeadlineSent  Boolean     @default(false)
+  skippedNotificationSent Boolean   @default(false)
   
   // Google Calendar
   googleCalendarEventId String?

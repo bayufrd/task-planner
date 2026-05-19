@@ -4,7 +4,7 @@ Dokumentasi ini menjelaskan endpoint internal [`POST /internal/wa/inbound`](../s
 
 Endpoint ini adalah **entrypoint tunggal** untuk semua command WhatsApp yang sudah lebih dulu difilter oleh penyedia bot WhatsApp. Backend tidak perlu memikirkan filtering chat non-task di layer ini. Backend cukup membaca field `command`, mengenali intent, lalu meneruskan ke flow yang sesuai.
 
-Saat ini endpoint ini sudah menangani registrasi/linking nomor WhatsApp ke user Task Planner melalui pattern `user_id daftar`, create task berbasis AI dari command `task ...`, melihat daftar task aktif, melihat task berdasarkan tanggal sederhana, menandai task selesai berdasarkan pencocokan judul, dan overview/ringkasan singkat. Flow edit task masih menjadi tahap lanjutan.
+Saat ini endpoint ini sudah menangani registrasi/linking nomor WhatsApp ke user Task Planner melalui pattern `user_id daftar`, AI-first resolver untuk create/edit/delete/complete/list/overview, create task berbasis AI dari command `task ...`, melihat daftar task aktif, melihat task berdasarkan tanggal sederhana, menandai task selesai berdasarkan pencocokan judul + tanggal, serta reminder deadline WhatsApp personal untuk task `PENDING`. Flow ini juga sudah memakai parsing waktu Indonesia/Jakarta untuk frasa seperti `jam 9 malam`, `jam 9 pagi`, dan `jam 6 sore`.
 
 ## Tujuan Endpoint
 
@@ -23,14 +23,21 @@ Endpoint [`POST /internal/wa/inbound`](../src/app.ts:225) digunakan untuk:
 
 Implementasi utama berada di file berikut:
 
-- [`handleWhatsappInbound()`](../src/app.ts:231)
-- [`sendWhatsappMessage()`](../src/app.ts:47)
-- [`sendWhatsappRegistrationSuccess()`](../src/app.ts:69)
-- [`detectWhatsappIntent()`](../src/app.ts:111)
-- [`buildListMessage()`](../src/app.ts:170)
-- [`buildOverviewMessage()`](../src/app.ts:90)
-- [`handleTaskCompletion()`](../src/app.ts:196)
-- route registration di [`createApp()`](../src/app.ts:578)
+- [`handleWhatsappInbound()`](../src/modules/whatsappInbound/whatsapp-inbound.routes.ts:451)
+- [`sendWhatsappMessage()`](../src/modules/whatsappInbound/whatsapp-inbound.routes.ts:38)
+- [`sendWhatsappRegistrationSuccess()`](../src/modules/whatsappInbound/whatsapp-inbound.routes.ts:101)
+- [`detectWhatsappIntent()`](../src/modules/whatsappInbound/whatsapp-inbound.routes.ts:238)
+- [`findBestTaskMatch()`](../src/modules/whatsappInbound/whatsapp-inbound.routes.ts:326)
+- [`buildListMessage()`](../src/modules/whatsappInbound/whatsapp-inbound.routes.ts:301)
+- [`buildOverviewMessage()`](../src/modules/whatsappInbound/whatsapp-inbound.routes.ts:217)
+- [`handleTaskCompletion()`](../src/modules/whatsappInbound/whatsapp-inbound.routes.ts:393)
+- [`AiService.parseTaskCommand()`](../src/modules/ai/ai.service.ts:175)
+- [`AiService.resolveWhatsappAction()`](../src/modules/ai/ai.service.ts:283)
+- [`applyIndonesianTimeHints()`](../src/modules/ai/ai.service.ts:128)
+- [`TaskService.processWhatsappDeadlineReminders()`](../src/modules/tasks/task.service.ts:404)
+- [`TaskService.autoSkipOverdueTasks()`](../src/modules/tasks/task.service.ts:328)
+- [`TaskAutoSkipScheduler.run()`](../src/modules/tasks/task.auto-skip.scheduler.ts:46)
+- route registration di [`createApp()`](../src/app.ts:14)
 
 ## Security
 
@@ -465,6 +472,30 @@ Implementasi ada di [`handleWhatsappInbound()`](../src/app.ts:119).
 
 Selain flow registrasi, tujuan utama endpoint ini adalah menjadi pintu masuk command WhatsApp berbasis AI.
 
+### Status implementasi saat ini
+
+Saat ini backend sudah mengimplementasikan:
+
+- validasi auth internal,
+- parsing payload inbound,
+- resolusi nomor WhatsApp,
+- flow registrasi `user_id daftar`,
+- lookup user berdasarkan `whatsappNumber`,
+- AI-first action resolver untuk `CREATE_TASK`, `UPDATE_TASK`, `DELETE_TASK`, `COMPLETE_TASK`, `LIST_TASKS`, `LIST_BY_DATE`, `OVERVIEW`, dan `HELP`,
+- fallback rule-based intent ringan bila resolver AI gagal,
+- create task via AI parser untuk command natural bahasa Indonesia/Inggris,
+- parsing waktu Indonesia/Jakarta untuk frasa `jam ... pagi/siang/sore/malam`,
+- list task aktif,
+- list task berdasarkan tanggal sederhana (`hari ini`, `besok`, `lusa`, `tanggal N`),
+- complete/delete/update task berdasarkan pencocokan title + date hint,
+- overview/ringkasan singkat,
+- pengiriman balasan WhatsApp untuk setiap operasi,
+- menu bantuan command untuk user publik dan user terdaftar,
+- auto-help setelah registrasi berhasil,
+- normalized response payload.
+
+Di luar inbound command, backend juga sudah memiliki scheduler reminder WhatsApp personal untuk task `PENDING` yang memiliki nomor WhatsApp user terdaftar. Reminder ini berjalan setiap 1 menit dan mengirim notifikasi pada H-24 jam, H-1 jam, tepat saat deadline, dan setelah task otomatis berubah menjadi `SKIPPED`.
+
 ### Prinsip arsitektur
 
 - provider bot WhatsApp sudah memfilter chat yang relevan,
@@ -809,27 +840,48 @@ Fokus Anda cukup baik minggu ini, tetapi masih ada beberapa task tertunda. Prior
 - cukup angka utama + insight AI singkat,
 - tetap konsisten dengan data backend yang dipakai frontend.
 
-### Status implementasi saat ini
+### Parsing waktu Indonesia/Jakarta
 
-Saat ini backend sudah mengimplementasikan:
+Parser AI task sekarang memakai normalisasi waktu Indonesia/Jakarta di [`applyIndonesianTimeHints()`](../src/modules/ai/ai.service.ts:128). Tujuannya agar frasa natural seperti berikut tidak bergeser ke timezone server:
 
-- validasi auth internal,
-- parsing payload inbound,
-- resolusi nomor WhatsApp,
-- flow registrasi `user_id daftar`,
-- lookup user berdasarkan `whatsappNumber`,
-- deteksi intent WhatsApp internal,
-- create task via AI parser untuk command `task ...`,
-- list task aktif,
-- list task berdasarkan tanggal sederhana (`hari ini`, `besok`, `lusa`, `tanggal N`),
-- complete task berdasarkan pencocokan judul,
-- overview/ringkasan singkat,
-- pengiriman balasan WhatsApp untuk setiap operasi,
-- menu bantuan command untuk user publik dan user terdaftar,
-- auto-help setelah registrasi berhasil,
-- normalized response payload.
+- `jam 9 malam` → `21:00 WIB`
+- `jam 9 pagi` → `09:00 WIB`
+- `jam 12 malam` → `00:00 WIB`
+- `jam 6 sore` → `18:00 WIB`
 
-Flow edit task internal khusus WhatsApp **belum** diimplementasikan dan masih menjadi tahap berikutnya.
+Helper [`getJakartaDateParts()`](../src/modules/ai/ai.service.ts:85) dan [`createJakartaDate()`](../src/modules/ai/ai.service.ts:110) dipakai untuk memastikan input Indonesia dibentuk sebagai waktu `Asia/Jakarta`, bukan waktu lokal server yang bisa berbeda.
+
+### Reminder WhatsApp personal berbasis scheduler
+
+Reminder deadline personal tidak diproses di endpoint inbound, tetapi oleh scheduler backend yang otomatis dijalankan saat server start di [`startServer()`](../src/server.ts:8).
+
+Komponen utamanya:
+
+- interval scheduler: [`AUTO_SKIP_INTERVAL_MS`](../src/modules/tasks/task.auto-skip.scheduler.ts:4)
+- loop utama reminder + auto-skip: [`TaskAutoSkipScheduler.run()`](../src/modules/tasks/task.auto-skip.scheduler.ts:46)
+- sender outbound personal: [`sendWhatsappMessage()`](../src/modules/tasks/task.auto-skip.scheduler.ts:27)
+- query candidate reminder: [`TaskService.processWhatsappDeadlineReminders()`](../src/modules/tasks/task.service.ts:404)
+- auto-skip overdue: [`TaskService.autoSkipOverdueTasks()`](../src/modules/tasks/task.service.ts:328)
+- dedup flag update: [`TaskService.markWhatsappReminderSent()`](../src/modules/tasks/task.service.ts:521) dan [`TaskService.markSkippedNotificationSent()`](../src/modules/tasks/task.service.ts:532)
+
+Perilaku reminder yang aktif saat ini:
+
+- hanya untuk task dengan status `PENDING`,
+- hanya untuk user yang memiliki `whatsappNumber`,
+- scheduler berjalan setiap **1 menit**,
+- kirim reminder personal saat sisa deadline **24 jam**,
+- kirim reminder personal saat sisa deadline **1 jam**,
+- kirim reminder personal **tepat pada deadline**,
+- pada pesan deadline, user diperingatkan bahwa task akan otomatis menjadi `SKIPPED` jika belum ditandai selesai,
+- tolerance auto-skip mengikuti `estimatedDuration` task dengan minimum/default `60` menit,
+- setelah task benar-benar auto-`SKIPPED`, backend mengirim notifikasi personal lagi jika nomor WhatsApp tersedia.
+
+Dedup reminder disimpan pada field schema task di [`schema.prisma`](../prisma/schema.prisma):
+
+- `reminder24hSent`
+- `reminder1hSent`
+- `reminderDeadlineSent`
+- `skippedNotificationSent`
 
 ## Non-Registration Command Saat Ini
 
@@ -976,23 +1028,29 @@ curl -X POST http://localhost:8000/internal/wa/inbound \
 
 - `task bantuan` → kirim daftar command dan contoh penggunaan
 - `task tambah meeting besok jam 10 malam #urgent` → create task via AI parser internal
+- `task edit meeting besok jadi jam 9 malam` → update task via AI-first resolver + pencocokan task terbaik
+- `task hapus meeting client besok` → soft delete task via AI-first resolver + pencocokan task terbaik
 - `task lihat jadwal` → list task aktif
 - `task lihat jadwal besok` → list task by date
-- `task selesai meeting client` → tandai DONE berdasarkan judul yang match
+- `task selesai meeting client` → tandai DONE berdasarkan judul/date hint yang match
 - `task overview` → kirim ringkasan task user
 - nomor belum terdaftar → kirim bantuan publik + link daftar web + cara link `user_id daftar`
 - registrasi berhasil → kirim pesan sukses + auto tampilkan bantuan command
+- reminder personal H-24, H-1, tepat deadline, dan notifikasi auto-`SKIPPED`
 
 ### Catatan arsitektur endpoint internal
 
-Flow WhatsApp ini **tidak** memanggil endpoint web-auth biasa seperti [`/api/tasks`](../src/modules/tasks/task.routes.ts) melalui HTTP internal. Endpoint [`POST /internal/wa/inbound`](../src/app.ts:578) langsung menggunakan service internal backend:
+Flow WhatsApp ini **tidak** memanggil endpoint web-auth biasa seperti [`/api/tasks`](../src/modules/tasks/task.routes.ts) melalui HTTP internal. Endpoint [`POST /internal/wa/inbound`](../src/modules/whatsappInbound/whatsapp-inbound.routes.ts:451) langsung menggunakan service internal backend:
 
-- [`AiService.parseTaskCommand()`](../src/modules/ai/ai.service.ts:117)
+- [`AiService.parseTaskCommand()`](../src/modules/ai/ai.service.ts:175)
+- [`AiService.resolveWhatsappAction()`](../src/modules/ai/ai.service.ts:283)
 - [`TaskService.createTask()`](../src/modules/tasks/task.service.ts:10)
-- [`TaskService.getTasks()`](../src/modules/tasks/task.service.ts:46)
-- [`TaskService.updateTaskStatus()`](../src/modules/tasks/task.service.ts:137)
-- [`TaskService.getTaskStats()`](../src/modules/tasks/task.service.ts:176)
-- [`TaskService.getDailyTaskStats()`](../src/modules/tasks/task.service.ts:186)
+- [`TaskService.getTasks()`](../src/modules/tasks/task.service.ts:51)
+- [`TaskService.updateTask()`](../src/modules/tasks/task.service.ts:93)
+- [`TaskService.updateTaskStatus()`](../src/modules/tasks/task.service.ts:148)
+- [`TaskService.deleteTask()`](../src/modules/tasks/task.service.ts:171)
+- [`TaskService.getTaskStats()`](../src/modules/tasks/task.service.ts:187)
+- [`TaskService.getDailyTaskStats()`](../src/modules/tasks/task.service.ts:197)
 
 Dengan pola ini, WhatsApp AI punya akses internal tanpa login session user web, tetapi tetap aman karena konteks user selalu diambil dari nomor WhatsApp yang sudah terdaftar.
 
@@ -1000,25 +1058,27 @@ Dengan pola ini, WhatsApp AI punya akses internal tanpa login session user web, 
 
 Arah implementasi yang sekarang berlaku:
 
-- [`POST /internal/wa/inbound`](../src/app.ts:578) adalah pintu masuk semua command task dari WhatsApp,
+- [`POST /internal/wa/inbound`](../src/modules/whatsappInbound/whatsapp-inbound.routes.ts:451) adalah pintu masuk semua command task dari WhatsApp,
 - filtering chat non-task sudah menjadi tanggung jawab provider bot WhatsApp,
 - backend fokus pada pembacaan `command`, pemetaan nomor WA ke user, dan routing intent,
 - flow `user_id daftar` tetap menjadi prerequisite untuk linking identitas user,
 - flow AI WhatsApp sudah memakai service internal backend, bukan endpoint web auth biasa,
-- setelah setiap operasi, backend mencoba mengirim balasan ke endpoint WhatsApp reply melalui [`sendWhatsappMessage()`](../src/app.ts:47),
-- edit/update task detail masih belum aktif dan menjadi tahap lanjutan.
+- resolver utama sekarang adalah [`AiService.resolveWhatsappAction()`](../src/modules/ai/ai.service.ts:283) dengan fallback ringan ke [`detectWhatsappIntent()`](../src/modules/whatsappInbound/whatsapp-inbound.routes.ts:238),
+- parser task natural sekarang menjaga konteks waktu Indonesia/Jakarta melalui [`applyIndonesianTimeHints()`](../src/modules/ai/ai.service.ts:128),
+- setelah setiap operasi, backend mencoba mengirim balasan ke endpoint WhatsApp reply melalui [`sendWhatsappMessage()`](../src/modules/whatsappInbound/whatsapp-inbound.routes.ts:38),
+- scheduler reminder personal berjalan paralel di background melalui [`TaskAutoSkipScheduler.start()`](../src/modules/tasks/task.auto-skip.scheduler.ts:11).
 
-Dengan arah ini, AI WhatsApp sekarang sudah dapat menentukan apakah sebuah command harus menuju create, complete, overview, atau list, lalu menyusun payload backend yang sesuai tanpa keluar dari domain Smart Task Planner berbasis AI dari dastrevas.com.
+Dengan arah ini, AI WhatsApp sekarang sudah dapat menentukan apakah sebuah command harus menuju create, update, delete, complete, overview, atau list, lalu menyusun payload backend yang sesuai tanpa keluar dari domain Smart Task Planner berbasis AI dari dastrevas.com.
 
 ## Rekomendasi Tahap Berikutnya
 
 Tahap teknis berikutnya yang direkomendasikan:
 
-- pindahkan logic WhatsApp dari [`backend/src/app.ts`](../src/app.ts) ke modul khusus, misalnya `backend/src/modules/whatsapp/`,
-- tambahkan intent `UPDATE_TASK`,
+- tambahkan test otomatis/service-level untuk AI resolver WhatsApp dan scheduler reminder,
 - tambahkan strategi disambiguasi yang lebih kuat berbasis `id`, `title`, deadline, atau top-N candidate,
 - tambahkan formatter output yang lebih kaya untuk overview dan list,
-- tambahkan test otomatis/service-level untuk flow WhatsApp AI.
+- jalankan migration atau [`prisma db push`](../README.md:271) untuk field dedup reminder terbaru,
+- regenerate Prisma client agar field reminder tidak lagi perlu raw SQL workaround.
 
 ## Rekomendasi Testing
 
@@ -1036,13 +1096,18 @@ Checklist manual/QC yang disarankan:
 - [ ] test `task help` atau command unknown dari user terdaftar → harus menampilkan bantuan command
 - [ ] test registrasi berhasil → harus kirim pesan sukses + bantuan command
 - [ ] test `task tambah meeting besok jam 10 malam #urgent` → harus diparse ke create task dan task tersimpan
+- [ ] test `task edit meeting besok jadi jam 9 malam` → harus route ke update task
+- [ ] test `task hapus meeting client besok` → harus route ke delete task
 - [ ] test `task lihat jadwal` → harus menampilkan task aktif user terkait
 - [ ] test `task lihat jadwal besok` → harus memfilter berdasarkan tanggal besok
 - [ ] test `task lihat jadwal tanggal 10` → harus route ke list by date
 - [ ] test `task selesai meeting client` → harus route ke complete task
 - [ ] test `task selesai` tanpa judul → harus minta judul task
-- [ ] test title ambigu untuk done → harus minta user lebih spesifik
+- [ ] test title ambigu untuk done/update/delete → harus minta user lebih spesifik
 - [ ] test `task overview` → harus mengembalikan ringkasan task user
+- [ ] test frasa `jam 9 malam`, `jam 9 pagi`, `jam 6 sore` → harus tersimpan sebagai WIB yang benar
+- [ ] test scheduler reminder H-24, H-1, tepat deadline, dan auto-`SKIPPED`
+- [ ] test user tanpa `whatsappNumber` → reminder personal tidak dikirim
 - [ ] verifikasi isi `operation` dan `whatsappReply` pada setiap skenario
 - [ ] verifikasi pesan WhatsApp benar-benar terkirim dari service bot
 - [ ] jalankan build backend setelah perubahan
