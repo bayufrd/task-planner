@@ -491,6 +491,7 @@ task ...
 Contoh:
 
 ```text
+task bantuan
 task tambah meeting besok jam 10 malam #urgent
 task tanggal 10 ada meeting jam 9 malam di apartement #kerjaan
 task edit meeting besok jadi jam 9 malam
@@ -498,6 +499,29 @@ task selesai kan task meeting client
 task overview hari ini
 task lihat daftar task saya
 ```
+
+### Bantuan command ke user
+
+Backend sekarang menyediakan pesan bantuan yang bisa dibalaskan ke user WhatsApp.
+
+Kondisi pemakaiannya:
+
+- sesudah registrasi berhasil,
+- ketika nomor WA belum terdaftar,
+- ketika user mengirim `task bantuan`, `task help`, `task menu`, atau command yang belum dikenali.
+
+Isi bantuan publik mencakup:
+
+- cara link akun dengan `user_id daftar`,
+- contoh command create task,
+- link daftar web: `https://taskplanner.dastrevas.com/auth/signup?callbackUrl=%2Fdashboard`.
+
+Jika user sudah terdaftar, bantuan juga mencakup:
+
+- `task lihat jadwal`,
+- `task lihat jadwal besok`,
+- `task selesai meeting client`,
+- `task overview`.
 
 ### Katalog command WhatsApp yang direncanakan
 
@@ -801,6 +825,8 @@ Saat ini backend sudah mengimplementasikan:
 - complete task berdasarkan pencocokan judul,
 - overview/ringkasan singkat,
 - pengiriman balasan WhatsApp untuk setiap operasi,
+- menu bantuan command untuk user publik dan user terdaftar,
+- auto-help setelah registrasi berhasil,
 - normalized response payload.
 
 Flow edit task internal khusus WhatsApp **belum** diimplementasikan dan masih menjadi tahap berikutnya.
@@ -811,9 +837,10 @@ Jika command **bukan** format `user_id daftar`, maka endpoint saat ini akan:
 
 - menormalisasi nomor WA,
 - mencari user berdasarkan `whatsappNumber`,
-- menolak command jika nomor belum terdaftar,
+- mengirim bantuan publik jika nomor belum terdaftar,
 - mendeteksi intent internal,
 - menjalankan operasi internal sesuai intent,
+- mengirim bantuan command jika user meminta `task bantuan` atau command belum dikenali,
 - mengirim balasan ke endpoint WhatsApp reply,
 - mengembalikan payload normalized dengan `intent`, `operation`, dan `whatsappReply`.
 
@@ -947,11 +974,14 @@ curl -X POST http://localhost:8000/internal/wa/inbound \
 
 ### Fitur internal WhatsApp yang sudah aktif
 
+- `task bantuan` → kirim daftar command dan contoh penggunaan
 - `task tambah meeting besok jam 10 malam #urgent` → create task via AI parser internal
 - `task lihat jadwal` → list task aktif
 - `task lihat jadwal besok` → list task by date
 - `task selesai meeting client` → tandai DONE berdasarkan judul yang match
 - `task overview` → kirim ringkasan task user
+- nomor belum terdaftar → kirim bantuan publik + link daftar web + cara link `user_id daftar`
+- registrasi berhasil → kirim pesan sukses + auto tampilkan bantuan command
 
 ### Catatan arsitektur endpoint internal
 
@@ -1001,7 +1031,10 @@ Checklist manual/QC yang disarankan:
 - [ ] test `user_id daftar` dengan user tidak ditemukan → harus kirim pesan signup
 - [ ] test `user_id daftar` dengan user yang sudah punya nomor → harus kirim pesan sudah terdaftar
 - [ ] test nomor WA yang sudah dipakai user lain → harus `409`
-- [ ] test command non-registrasi dari nomor belum terdaftar → harus kirim balasan minta link akun
+- [ ] test command non-registrasi dari nomor belum terdaftar → harus kirim bantuan publik + link daftar web
+- [ ] test `task bantuan` dari user terdaftar → harus menampilkan daftar command
+- [ ] test `task help` atau command unknown dari user terdaftar → harus menampilkan bantuan command
+- [ ] test registrasi berhasil → harus kirim pesan sukses + bantuan command
 - [ ] test `task tambah meeting besok jam 10 malam #urgent` → harus diparse ke create task dan task tersimpan
 - [ ] test `task lihat jadwal` → harus menampilkan task aktif user terkait
 - [ ] test `task lihat jadwal besok` → harus memfilter berdasarkan tanggal besok

@@ -66,11 +66,50 @@ const sendWhatsappMessage = async (number: string, message: string): Promise<voi
   }
 };
 
+const buildWhatsappHelpMessage = (isRegistered: boolean): string => {
+  const publicHelp = [
+    'Bantuan command Smart Task Planner via WhatsApp:',
+    '- daftar akun WA: user_id daftar',
+    '- lihat bantuan: task bantuan',
+    '- contoh tambah task: task tambah meeting besok jam 10 malam #urgent',
+    '- contoh tambah task lain: task tanggal 10 ada meeting jam 9 malam di apartement #kerjaan',
+    '- daftar web: https://taskplanner.dastrevas.com/auth/signup?callbackUrl=%2Fdashboard',
+  ];
+
+  if (!isRegistered) {
+    return [
+      ...publicHelp,
+      '',
+      'Nomor Anda belum terhubung. Silakan daftar akun di web terlebih dahulu, lalu hubungkan WhatsApp dengan format: user_id daftar',
+    ].join('\n');
+  }
+
+  return [
+    ...publicHelp,
+    '- lihat task aktif: task lihat jadwal',
+    '- lihat task besok: task lihat jadwal besok',
+    '- selesaikan task: task selesai meeting client',
+    '- overview: task overview',
+  ].join('\n');
+};
+
 const sendWhatsappRegistrationSuccess = async (number: string, name: string): Promise<void> => {
-  await sendWhatsappMessage(
-    number,
-    `Halo ${name}! Nomor WhatsApp Anda sudah berhasil terhubung ke Smart Task Planner by Dastrevas AI.\n\nMulai sekarang Anda bisa kirim perintah dengan awalan *task* untuk mengelola tugas langsung dari WhatsApp.\n\nContoh:\n- task tambah meeting besok jam 10 malam #urgent\n- task tanggal 10 ada meeting jam 9 malam di apartement #kerjaan\n\nAI kami dari dastrevas.com akan membantu membaca pesan Anda dan mengubahnya menjadi task dengan lebih akurat.\n\nSilakan coba sekarang dengan format awalan *task*.`
-  );
+  const successMessage = [
+    `Halo ${name}! Nomor WhatsApp Anda sudah berhasil terhubung ke Smart Task Planner by Dastrevas AI.`,
+    '',
+    'Mulai sekarang Anda bisa kirim perintah dengan awalan *task* untuk mengelola tugas langsung dari WhatsApp.',
+    '',
+    'Contoh cepat:',
+    '- task tambah meeting besok jam 10 malam #urgent',
+    '- task tanggal 10 ada meeting jam 9 malam di apartement #kerjaan',
+    '',
+    'AI kami dari dastrevas.com akan membantu membaca pesan Anda dan mengubahnya menjadi task dengan lebih akurat.',
+    '',
+    'Berikut bantuan command yang bisa Anda gunakan:',
+    buildWhatsappHelpMessage(true),
+  ].join('\n');
+
+  await sendWhatsappMessage(number, successMessage);
 };
 
 const formatTaskLine = (task: {
@@ -112,6 +151,7 @@ const detectWhatsappIntent = (command: string): WhatsappIntent => {
   const normalized = command.trim().toLowerCase();
 
   if (/^(\S+)\s+daftar$/i.test(command)) return 'REGISTER';
+  if (/^task\s+(bantuan|help|menu|command|commands)/i.test(normalized)) return 'UNKNOWN';
   if (/^task\s+(overview|ringkasan|summary)/i.test(normalized)) return 'OVERVIEW';
   if (/^task\s+(lihat|list|daftar|jadwal|agenda).*(tanggal|besok|lusa|hari ini|today)/i.test(normalized)) return 'LIST_BY_DATE';
   if (/^task\s+(lihat|list|daftar|jadwal|agenda)/i.test(normalized)) return 'LIST_TASKS';
@@ -426,7 +466,8 @@ const handleWhatsappInbound = async (req: Request, res: Response): Promise<void>
     });
 
     if (!linkedUser) {
-      const unregisteredMessage = 'Nomor WhatsApp ini belum terhubung ke Task Planner. Kirim format `user_id daftar` terlebih dahulu untuk menghubungkan akun Anda.';
+      const helpMessage = buildWhatsappHelpMessage(false);
+      const unregisteredMessage = `Nomor WhatsApp ini belum terhubung ke Task Planner.\n\n${helpMessage}`;
 
       try {
         await sendWhatsappMessage(safeWhatsappNumber, unregisteredMessage);
@@ -491,12 +532,12 @@ const handleWhatsappInbound = async (req: Request, res: Response): Promise<void>
           task: createdTask,
         };
       } else {
-        replyMessage = 'Command belum dikenali. Gunakan awalan `task` seperti `task tambah meeting besok jam 10 malam #urgent`, `task lihat jadwal besok`, `task selesai meeting client`, atau `task overview`.';
+        replyMessage = buildWhatsappHelpMessage(true);
         operation = {
           type: 'UNKNOWN',
-          success: false,
+          success: true,
           userId: linkedUser.id,
-          reason: 'UNKNOWN_COMMAND',
+          reason: 'HELP_MENU',
         };
       }
 
