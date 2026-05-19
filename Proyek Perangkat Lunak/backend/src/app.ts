@@ -46,8 +46,15 @@ const normalizeSafeWhatsappNumber = (value?: string | null): string | null => {
 
 const sendWhatsappMessage = async (number: string, message: string): Promise<void> => {
   if (!env.WHATSAPP_BOT_URL) {
+    console.log('[WA Outbound] Skipped because WHATSAPP_BOT_URL is empty');
     return;
   }
+
+  console.log('[WA Outbound] Sending message', {
+    number,
+    preview: message.slice(0, 200),
+    endpoint: `${env.WHATSAPP_BOT_URL}/api/whatsapp/send-personal`,
+  });
 
   const response = await fetch(`${env.WHATSAPP_BOT_URL}/api/whatsapp/send-personal`, {
     method: 'POST',
@@ -59,6 +66,13 @@ const sendWhatsappMessage = async (number: string, message: string): Promise<voi
       number,
       message,
     }),
+  });
+
+  console.log('[WA Outbound] Response received', {
+    number,
+    status: response.status,
+    statusText: response.statusText,
+    ok: response.ok,
   });
 
   if (!response.ok) {
@@ -269,6 +283,16 @@ const handleTaskCompletion = async (userId: string, command: string, name?: stri
 };
 
 const handleWhatsappInbound = async (req: Request, res: Response): Promise<void> => {
+  console.log('[WA Inbound] Request received', {
+    source: typeof req.body?.source === 'string' ? req.body.source.trim() : '',
+    service: typeof req.body?.service === 'string' ? req.body.service.trim() : '',
+    command: typeof req.body?.command === 'string' ? req.body.command.trim() : '',
+    rawMessage: typeof req.body?.rawMessage === 'string' ? req.body.rawMessage.trim() : '',
+    user: req.body?.user || null,
+    message: req.body?.message || null,
+    context: req.body?.context || null,
+  });
+
   const bearerToken = req.headers.authorization?.startsWith('Bearer ')
     ? req.headers.authorization.substring(7).trim()
     : '';
@@ -280,6 +304,10 @@ const handleWhatsappInbound = async (req: Request, res: Response): Promise<void>
   }
 
   if (bearerToken !== env.TOKEN_WHATSAPP || serviceSecret !== env.TOKEN_WHATSAPP) {
+    console.log('[WA Inbound] Unauthorized request', {
+      hasBearer: Boolean(bearerToken),
+      hasServiceSecret: Boolean(serviceSecret),
+    });
     sendError(res, 'UNAUTHORIZED', 'Invalid service secret', 401);
     return;
   }
@@ -299,11 +327,13 @@ const handleWhatsappInbound = async (req: Request, res: Response): Promise<void>
     extractWaNumber(remoteJid);
 
   if (!command) {
+    console.log('[WA Inbound] Validation failed: command is required');
     sendError(res, 'VALIDATION_ERROR', 'command is required', 400);
     return;
   }
 
   if (!waNumber) {
+    console.log('[WA Inbound] Validation failed: WA number unresolved');
     sendError(res, 'VALIDATION_ERROR', 'Unable to resolve WhatsApp number from payload', 400);
     return;
   }
@@ -312,6 +342,15 @@ const handleWhatsappInbound = async (req: Request, res: Response): Promise<void>
   const taskPlannerUserId = commandMatch?.[1] || null;
   const intent = detectWhatsappIntent(command);
   const registrationCommand = intent === 'REGISTER';
+
+  console.log('[WA Inbound] Command parsed', {
+    waNumber,
+    normalizedWaNumber: normalizeSafeWhatsappNumber(waNumber),
+    command,
+    taskPlannerUserId,
+    intent,
+    registrationCommand,
+  });
 
   let registration = null;
   let registrationNotification = null;
@@ -326,6 +365,12 @@ const handleWhatsappInbound = async (req: Request, res: Response): Promise<void>
       return;
     }
 
+    console.log('[WA Registration] Processing registration', {
+      taskPlannerUserId,
+      safeWhatsappNumber,
+      chatId,
+    });
+
     const existingUser = await prisma.user.findUnique({
       where: { id: taskPlannerUserId },
       select: {
@@ -339,6 +384,10 @@ const handleWhatsappInbound = async (req: Request, res: Response): Promise<void>
     });
 
     if (!existingUser) {
+      console.log('[WA Registration] User not found', {
+        taskPlannerUserId,
+        safeWhatsappNumber,
+      });
       const notRegisteredMessage =
         'user id tidak terdaftar pada Task Planner silahkan daftar dengan mengunjungi https://taskplanner.dastrevas.com/auth/signup?callbackUrl=%2Fdashboard';
 
@@ -366,6 +415,10 @@ const handleWhatsappInbound = async (req: Request, res: Response): Promise<void>
         userId: taskPlannerUserId,
       };
     } else if (existingUser.whatsappNumber) {
+      console.log('[WA Registration] User already has WhatsApp number', {
+        taskPlannerUserId,
+        existingWhatsappNumber: existingUser.whatsappNumber,
+      });
       const alreadyRegisteredMessage = `user untuk ${taskPlannerUserId} atas nama ${existingUser.name} sudah terdaftar`;
 
       try {
@@ -401,6 +454,11 @@ const handleWhatsappInbound = async (req: Request, res: Response): Promise<void>
       });
 
       if (existingWhatsappOwner) {
+        console.log('[WA Registration] Conflict: WhatsApp number already owned by another user', {
+          taskPlannerUserId,
+          safeWhatsappNumber,
+          ownerId: existingWhatsappOwner.id,
+        });
         sendError(res, 'CONFLICT', 'WhatsApp number is already registered to another user', 409);
         return;
       }
@@ -419,6 +477,12 @@ const handleWhatsappInbound = async (req: Request, res: Response): Promise<void>
           whatsappChatId: true,
           updatedAt: true,
         },
+      });
+
+      console.log('[WA Registration] Registration linked successfully', {
+        taskPlannerUserId,
+        safeWhatsappNumber,
+        linkedUserId: updatedUser.id,
       });
 
       registration = {
@@ -449,6 +513,11 @@ const handleWhatsappInbound = async (req: Request, res: Response): Promise<void>
   }
 
   if (!registrationCommand) {
+    console.log('[WA Command] Processing non-registration command', {
+      command,
+      intent,
+      waNumber,
+    });
     const safeWhatsappNumber = normalizeSafeWhatsappNumber(waNumber);
 
     if (!safeWhatsappNumber) {
@@ -466,6 +535,10 @@ const handleWhatsappInbound = async (req: Request, res: Response): Promise<void>
     });
 
     if (!linkedUser) {
+      console.log('[WA Command] Number is not linked to any user', {
+        safeWhatsappNumber,
+        command,
+      });
       const helpMessage = buildWhatsappHelpMessage(false);
       const unregisteredMessage = `Nomor WhatsApp ini belum terhubung ke Task Planner.\n\n${helpMessage}`;
 
@@ -493,9 +566,20 @@ const handleWhatsappInbound = async (req: Request, res: Response): Promise<void>
         reason: 'WHATSAPP_NUMBER_NOT_REGISTERED',
       };
     } else {
+      console.log('[WA Command] Linked user found', {
+        userId: linkedUser.id,
+        userName: linkedUser.name,
+        intent,
+      });
+
       let replyMessage = '';
 
       if (intent === 'LIST_TASKS' || intent === 'LIST_BY_DATE') {
+        console.log('[WA Command] Executing list flow', {
+          userId: linkedUser.id,
+          intent,
+          command,
+        });
         replyMessage = await buildListMessage(linkedUser.id, command, linkedUser.name);
         operation = {
           type: intent,
@@ -503,6 +587,10 @@ const handleWhatsappInbound = async (req: Request, res: Response): Promise<void>
           userId: linkedUser.id,
         };
       } else if (intent === 'OVERVIEW') {
+        console.log('[WA Command] Executing overview flow', {
+          userId: linkedUser.id,
+          command,
+        });
         replyMessage = await buildOverviewMessage(linkedUser.id, linkedUser.name);
         operation = {
           type: 'OVERVIEW',
@@ -510,6 +598,10 @@ const handleWhatsappInbound = async (req: Request, res: Response): Promise<void>
           userId: linkedUser.id,
         };
       } else if (intent === 'COMPLETE_TASK') {
+        console.log('[WA Command] Executing complete flow', {
+          userId: linkedUser.id,
+          command,
+        });
         const completionResult = await handleTaskCompletion(linkedUser.id, command, linkedUser.name);
         replyMessage = completionResult.reply;
         operation = {
@@ -518,6 +610,12 @@ const handleWhatsappInbound = async (req: Request, res: Response): Promise<void>
         };
       } else if (intent === 'CREATE_TASK') {
         const taskCommand = command.replace(/^task\s+/i, '').trim();
+
+        console.log('[WA Command] Executing create flow', {
+          userId: linkedUser.id,
+          command,
+          taskCommand,
+        });
         const parsedTask = await aiService.parseTaskCommand(taskCommand);
         const createdTask = await taskService.createTask(linkedUser.id, parsedTask);
         replyMessage = [
@@ -532,6 +630,11 @@ const handleWhatsappInbound = async (req: Request, res: Response): Promise<void>
           task: createdTask,
         };
       } else {
+        console.log('[WA Command] Falling back to help flow', {
+          userId: linkedUser.id,
+          command,
+          intent,
+        });
         replyMessage = buildWhatsappHelpMessage(true);
         operation = {
           type: 'UNKNOWN',
@@ -540,6 +643,12 @@ const handleWhatsappInbound = async (req: Request, res: Response): Promise<void>
           reason: 'HELP_MENU',
         };
       }
+
+      console.log('[WA Command] Reply prepared', {
+        userId: linkedUser.id,
+        intent,
+        preview: replyMessage.slice(0, 200),
+      });
 
       try {
         await sendWhatsappMessage(safeWhatsappNumber, replyMessage);
@@ -593,6 +702,15 @@ const handleWhatsappInbound = async (req: Request, res: Response): Promise<void>
     operation,
     whatsappReply,
   };
+
+  console.log('[WA Inbound] Returning success response', {
+    command,
+    intent,
+    registrationCommand,
+    hasRegistration: Boolean(registration),
+    hasOperation: Boolean(operation),
+    whatsappReplySent: whatsappReply?.sent ?? registrationNotification?.sent ?? null,
+  });
 
   sendSuccess(
     res,
