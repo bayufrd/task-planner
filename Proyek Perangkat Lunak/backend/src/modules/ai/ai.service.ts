@@ -23,6 +23,12 @@ export interface ResolvedWhatsappAction {
   replyStyle?: 'SHORT' | 'NORMAL' | 'FRIENDLY';
 }
 
+export interface ResolvedWhatsappPlan {
+  confidence: number;
+  replyStyle: 'SHORT' | 'NORMAL' | 'FRIENDLY';
+  actions: ResolvedWhatsappAction[];
+}
+
 interface NineRouterChatResponse {
   choices?: Array<{
     message?: {
@@ -280,10 +286,54 @@ export class AiService {
     };
   }
 
-  async resolveWhatsappAction(input: string): Promise<ResolvedWhatsappAction> {
+  async resolveWhatsappPlan(input: string): Promise<ResolvedWhatsappPlan> {
     if (!env.NINE_ROUTER_API || !env.NINE_ROUTER_API_KEY) {
       throw new Error('9Router is not configured');
     }
+
+    const allowedActions: ResolvedWhatsappAction['action'][] = [
+      'REGISTER',
+      'CREATE_TASK',
+      'UPDATE_TASK',
+      'DELETE_TASK',
+      'COMPLETE_TASK',
+      'LIST_TASKS',
+      'LIST_BY_DATE',
+      'OVERVIEW',
+      'HELP',
+    ];
+
+    const normalizeAction = (raw?: Partial<ResolvedWhatsappAction>): ResolvedWhatsappAction => {
+      const action = allowedActions.includes(raw?.action as ResolvedWhatsappAction['action'])
+        ? (raw?.action as ResolvedWhatsappAction['action'])
+        : 'HELP';
+
+      const confidence = typeof raw?.confidence === 'number' && !Number.isNaN(raw.confidence)
+        ? Math.max(0, Math.min(1, raw.confidence))
+        : 0.5;
+
+      const updates = raw?.updates
+        ? {
+            title: typeof raw.updates.title === 'string' ? raw.updates.title.trim() : undefined,
+            description: typeof raw.updates.description === 'string' ? raw.updates.description.trim() : undefined,
+            deadline: typeof raw.updates.deadline === 'string' ? raw.updates.deadline : undefined,
+            priority: normalizePriority(raw.updates.priority),
+            estimatedDuration: normalizeDuration(raw.updates.estimatedDuration),
+            tags: normalizeTags(raw.updates.tags),
+            reminderTime: normalizeReminderTime(raw.updates.reminderTime),
+          }
+        : undefined;
+
+      return {
+        action,
+        confidence,
+        targetText: typeof raw?.targetText === 'string' ? raw.targetText.trim() : undefined,
+        dateHint: typeof raw?.dateHint === 'string' ? raw.dateHint.trim() : undefined,
+        status: raw?.status === 'DONE' || raw?.status === 'PENDING' || raw?.status === 'SKIPPED' ? raw.status : undefined,
+        updates,
+        replyStyle: raw?.replyStyle === 'SHORT' || raw?.replyStyle === 'FRIENDLY' || raw?.replyStyle === 'NORMAL' ? raw.replyStyle : 'NORMAL',
+      };
+    };
 
     const response = await fetch(env.NINE_ROUTER_API, {
       method: 'POST',
@@ -299,10 +349,10 @@ export class AiService {
           {
             role: 'system',
             content: [
-              'You are a deterministic WhatsApp action resolver for Smart Task Planner.',
+              'You are a deterministic WhatsApp multi-action resolver for Smart Task Planner.',
               'Return ONLY valid JSON. No markdown, no explanation.',
               'The incoming command is already normalized by the WhatsApp bot and usually DOES NOT contain the prefix "task".',
-              'Infer the user intent and extract only the fields needed for backend execution.',
+              'Infer the user intent and split the request into one or more backend actions when needed.',
               'Allowed actions:',
               '- REGISTER',
               '- CREATE_TASK',
@@ -315,23 +365,33 @@ export class AiService {
               '- HELP',
               'Output schema:',
               '{',
-              '  "action": "REGISTER" | "CREATE_TASK" | "UPDATE_TASK" | "DELETE_TASK" | "COMPLETE_TASK" | "LIST_TASKS" | "LIST_BY_DATE" | "OVERVIEW" | "HELP",',
               '  "confidence": number,',
-              '  "targetText": string,',
-              '  "dateHint": string,',
-              '  "status": "PENDING" | "DONE" | "SKIPPED",',
-              '  "updates": {',
-              '    "title": string,',
-              '    "description": string,',
-              '    "deadline": ISO-8601 string,',
-              '    "priority": "HIGH" | "MEDIUM" | "LOW",',
-              '    "estimatedDuration": number,',
-              '    "tags": string[],',
-              '    "reminderTime": number',
-              '  },',
-              '  "replyStyle": "SHORT" | "NORMAL" | "FRIENDLY"',
+              '  "replyStyle": "SHORT" | "NORMAL" | "FRIENDLY",',
+              '  "actions": [',
+              '    {',
+              '      "action": "REGISTER" | "CREATE_TASK" | "UPDATE_TASK" | "DELETE_TASK" | "COMPLETE_TASK" | "LIST_TASKS" | "LIST_BY_DATE" | "OVERVIEW" | "HELP",',
+              '      "confidence": number,',
+              '      "targetText": string,',
+              '      "dateHint": string,',
+              '      "status": "PENDING" | "DONE" | "SKIPPED",',
+              '      "updates": {',
+              '        "title": string,',
+              '        "description": string,',
+              '        "deadline": ISO-8601 string,',
+              '        "priority": "HIGH" | "MEDIUM" | "LOW",',
+              '        "estimatedDuration": number,',
+              '        "tags": string[],',
+              '        "reminderTime": number',
+              '      },',
+              '      "replyStyle": "SHORT" | "NORMAL" | "FRIENDLY"',
+              '    }',
+              '  ]',
               '}',
               'Rules:',
+              '- Output at least one action.',
+              '- Split commands into multiple actions when the user clearly asks multiple operations or multiple task targets.',
+              '- Prefer one task target per action. Example: "hapus meeting A dan meeting B" => two DELETE_TASK actions.',
+              '- If user mixes actions, preserve order. Example: "buat task A lalu hapus task B" => CREATE_TASK then DELETE_TASK.',
               '- REGISTER only for pattern like "<userId> daftar".',
               '- CREATE_TASK for new task requests.',
               '- COMPLETE_TASK when user means finish/selesai/tandai selesai a task.',
@@ -341,11 +401,12 @@ export class AiService {
               '- LIST_TASKS for general list/schedule queries without a clear date filter.',
               '- OVERVIEW for summary/ringkasan/overview.',
               '- HELP for bantuan/help/menu/unclear instructions.',
-              '- targetText should contain the task phrase being referred to for update/delete/complete.',
+              '- targetText should contain only the task phrase for that one action.',
               '- dateHint should preserve natural date hints like "hari ini", "besok", "20 mei 2026", "jam 9" when relevant.',
               '- status should be DONE for COMPLETE_TASK, SKIPPED only if user explicitly means skip.',
               '- For CREATE_TASK and UPDATE_TASK, fill updates with structured task info when possible.',
-              '- If unsure, choose the most likely action, set confidence below 0.7, and keep extraction conservative.',
+              '- Do not merge distinct task targets into one action if they can be separated.',
+              '- If the command is ambiguous, keep actions conservative and lower confidence.',
             ].join('\n'),
           },
           {
@@ -368,47 +429,44 @@ export class AiService {
       throw new Error('9Router response did not include message content');
     }
 
-    const parsed = getJsonFromText(content) as Partial<ResolvedWhatsappAction>;
-    const allowedActions: ResolvedWhatsappAction['action'][] = [
-      'REGISTER',
-      'CREATE_TASK',
-      'UPDATE_TASK',
-      'DELETE_TASK',
-      'COMPLETE_TASK',
-      'LIST_TASKS',
-      'LIST_BY_DATE',
-      'OVERVIEW',
-      'HELP',
-    ];
+    const parsed = getJsonFromText(content) as Partial<ResolvedWhatsappPlan> & {
+      actions?: Array<Partial<ResolvedWhatsappAction>>;
+      action?: ResolvedWhatsappAction['action'];
+      targetText?: string;
+      dateHint?: string;
+      status?: 'PENDING' | 'DONE' | 'SKIPPED';
+      updates?: Partial<ParsedTaskCommand>;
+    };
 
-    const action = allowedActions.includes(parsed.action as ResolvedWhatsappAction['action'])
-      ? (parsed.action as ResolvedWhatsappAction['action'])
-      : 'HELP';
+    const rawActions = Array.isArray(parsed.actions) && parsed.actions.length > 0
+      ? parsed.actions
+      : [{
+          action: parsed.action,
+          confidence: parsed.confidence,
+          targetText: parsed.targetText,
+          dateHint: parsed.dateHint,
+          status: parsed.status,
+          updates: parsed.updates,
+          replyStyle: parsed.replyStyle,
+        }];
 
-    const confidence = typeof parsed.confidence === 'number' && !Number.isNaN(parsed.confidence)
-      ? Math.max(0, Math.min(1, parsed.confidence))
-      : 0.5;
-
-    const updates = parsed.updates
-      ? {
-          title: typeof parsed.updates.title === 'string' ? parsed.updates.title.trim() : undefined,
-          description: typeof parsed.updates.description === 'string' ? parsed.updates.description.trim() : undefined,
-          deadline: typeof parsed.updates.deadline === 'string' ? parsed.updates.deadline : undefined,
-          priority: normalizePriority(parsed.updates.priority),
-          estimatedDuration: normalizeDuration(parsed.updates.estimatedDuration),
-          tags: normalizeTags(parsed.updates.tags),
-          reminderTime: normalizeReminderTime(parsed.updates.reminderTime),
-        }
-      : undefined;
+    const actions = rawActions.map((item) => normalizeAction(item)).filter((item) => Boolean(item.action));
 
     return {
-      action,
-      confidence,
-      targetText: typeof parsed.targetText === 'string' ? parsed.targetText.trim() : undefined,
-      dateHint: typeof parsed.dateHint === 'string' ? parsed.dateHint.trim() : undefined,
-      status: parsed.status === 'DONE' || parsed.status === 'PENDING' || parsed.status === 'SKIPPED' ? parsed.status : undefined,
-      updates,
+      confidence: typeof parsed.confidence === 'number' && !Number.isNaN(parsed.confidence)
+        ? Math.max(0, Math.min(1, parsed.confidence))
+        : actions[0]?.confidence ?? 0.5,
       replyStyle: parsed.replyStyle === 'SHORT' || parsed.replyStyle === 'FRIENDLY' || parsed.replyStyle === 'NORMAL' ? parsed.replyStyle : 'NORMAL',
+      actions: actions.length > 0 ? actions : [{ action: 'HELP', confidence: 0.3, replyStyle: 'NORMAL' }],
+    };
+  }
+
+  async resolveWhatsappAction(input: string): Promise<ResolvedWhatsappAction> {
+    const plan = await this.resolveWhatsappPlan(input);
+    return plan.actions[0] || {
+      action: 'HELP',
+      confidence: plan.confidence,
+      replyStyle: plan.replyStyle,
     };
   }
 
@@ -578,10 +636,8 @@ export class AiService {
 
   // Invalidate cache when tasks change
   async invalidateCache(userId: string): Promise<void> {
-    await prisma.overviewAnalysisCache.delete({
+    await prisma.overviewAnalysisCache.deleteMany({
       where: { userId },
-    }).catch(() => {
-      // Ignore if not found
     });
   }
 }

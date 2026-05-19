@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import { env } from '../../config/env';
 import { prisma } from '../../lib/prisma';
 import { sendError, sendSuccess } from '../../lib/response';
-import { AiService, type ResolvedWhatsappAction } from '../ai/ai.service';
+import { AiService, type ResolvedWhatsappAction, type ResolvedWhatsappPlan } from '../ai/ai.service';
 import { TaskService } from '../tasks/task.service';
 
 const router = Router();
@@ -179,6 +179,9 @@ const extractDateTokens = (value: string): string[] => {
   const tanggalMatches = normalized.match(/\btanggal\s+\d{1,2}\b/gi) || [];
   tanggalMatches.forEach((match) => tokens.add(match.trim()));
 
+  const timeMatches = normalized.match(/\b(?:jam|pukul)\s+\d{1,2}(?:(?:\.|:)\d{2})?(?:\s*(?:pagi|siang|sore|malam))?\b/gi) || [];
+  timeMatches.forEach((match) => tokens.add(match.trim()));
+
   return Array.from(tokens);
 };
 
@@ -213,6 +216,7 @@ const taskMatchesDateTokens = (task: { deadline: Date }, tokens: string[]): bool
     );
   });
 };
+
 
 const buildOverviewMessage = async (userId: string, name?: string | null) => {
   const stats = await taskService.getTaskStats(userId);
@@ -739,216 +743,214 @@ const handleWhatsappInbound = async (req: Request, res: Response): Promise<void>
       });
 
       let replyMessage = '';
-      let resolvedAction: ResolvedWhatsappAction | null = null;
+      let resolvedPlan: ResolvedWhatsappPlan | null = null;
 
       try {
-        resolvedAction = await aiService.resolveWhatsappAction(command);
+        resolvedPlan = await aiService.resolveWhatsappPlan(command);
       } catch (error) {
-        console.error('[WA AI] Failed to resolve action, fallback to rule-based intent:', error);
+        console.error('[WA AI] Failed to resolve action plan, fallback to rule-based intent:', error);
       }
 
-      const action = resolvedAction?.action || intent;
+      const fallbackAction: ResolvedWhatsappAction = {
+        action: intent === 'UNKNOWN' ? 'HELP' : intent,
+        confidence: 0.4,
+        replyStyle: 'NORMAL',
+      };
+      const actions = resolvedPlan?.actions?.length ? resolvedPlan.actions : [fallbackAction];
+      const replies: string[] = [];
+      const operationResults: Array<Record<string, unknown>> = [];
 
-      console.log('[WA Command] Resolved action', {
+      console.log('[WA Command] Resolved action plan', {
         userId: linkedUser.id,
         command,
         fallbackIntent: intent,
-        action,
-        confidence: resolvedAction?.confidence ?? null,
-        targetText: resolvedAction?.targetText ?? null,
-        dateHint: resolvedAction?.dateHint ?? null,
+        planConfidence: resolvedPlan?.confidence ?? null,
+        actionCount: actions.length,
+        actions: actions.map((item) => ({
+          action: item.action,
+          confidence: item.confidence,
+          targetText: item.targetText ?? null,
+          dateHint: item.dateHint ?? null,
+        })),
       });
 
-      if (action === 'LIST_TASKS' || action === 'LIST_BY_DATE') {
-        console.log('[WA Command] Executing list flow', {
-          userId: linkedUser.id,
-          action,
-          command,
-        });
-        const listCommand = [resolvedAction?.targetText, resolvedAction?.dateHint].filter(Boolean).join(' ').trim() || command;
-        replyMessage = await buildListMessage(linkedUser.id, listCommand, linkedUser.name);
-        operation = {
+      for (const resolvedAction of actions) {
+        const action = resolvedAction.action || fallbackAction.action;
+        let actionReply = '';
+        let actionOperation: Record<string, unknown> = {
           type: action,
-          success: true,
+          success: false,
           userId: linkedUser.id,
           resolvedAction,
         };
-      } else if (action === 'OVERVIEW') {
-        console.log('[WA Command] Executing overview flow', {
-          userId: linkedUser.id,
-          command,
-        });
-        replyMessage = await buildOverviewMessage(linkedUser.id, linkedUser.name);
-        operation = {
-          type: 'OVERVIEW',
-          success: true,
-          userId: linkedUser.id,
-          resolvedAction,
-        };
-      } else if (action === 'COMPLETE_TASK') {
-        console.log('[WA Command] Executing complete flow', {
-          userId: linkedUser.id,
-          command,
-          resolvedAction,
-        });
 
-        if (resolvedAction?.targetText || resolvedAction?.dateHint) {
+        if (action === 'LIST_TASKS' || action === 'LIST_BY_DATE') {
+          const listCommand = [resolvedAction.targetText, resolvedAction.dateHint].filter(Boolean).join(' ').trim() || command;
+          actionReply = await buildListMessage(linkedUser.id, listCommand, linkedUser.name);
+          actionOperation = {
+            type: action,
+            success: true,
+            userId: linkedUser.id,
+            resolvedAction,
+          };
+        } else if (action === 'OVERVIEW') {
+          actionReply = await buildOverviewMessage(linkedUser.id, linkedUser.name);
+          actionOperation = {
+            type: 'OVERVIEW',
+            success: true,
+            userId: linkedUser.id,
+            resolvedAction,
+          };
+        } else if (action === 'COMPLETE_TASK') {
+          if (resolvedAction.targetText || resolvedAction.dateHint) {
+            const match = await findBestTaskMatch(linkedUser.id, resolvedAction.targetText, resolvedAction.dateHint);
+
+            if (!match.bestMatch) {
+              actionReply = buildTaskNotFoundMessage('diselesaikan', resolvedAction.targetText, resolvedAction.dateHint);
+              actionOperation = {
+                type: 'COMPLETE_TASK',
+                success: false,
+                userId: linkedUser.id,
+                resolvedAction,
+                reason: 'TASK_NOT_FOUND',
+              };
+            } else {
+              const updatedTask = await taskService.updateTaskStatus(linkedUser.id, match.bestMatch.id, { status: 'DONE' });
+              actionReply = [
+                `✅ Task berhasil diselesaikan${linkedUser.name ? ` untuk ${linkedUser.name}` : ''}:`,
+                formatTaskSuccessLine(updatedTask),
+              ].join('\n');
+              actionOperation = {
+                type: 'COMPLETE_TASK',
+                success: true,
+                userId: linkedUser.id,
+                resolvedAction,
+                task: updatedTask,
+              };
+            }
+          } else {
+            const completionResult = await handleTaskCompletion(linkedUser.id, command, linkedUser.name);
+            actionReply = completionResult.reply;
+            actionOperation = {
+              ...completionResult.operation,
+              userId: linkedUser.id,
+              resolvedAction,
+            };
+          }
+        } else if (action === 'DELETE_TASK') {
           const match = await findBestTaskMatch(linkedUser.id, resolvedAction.targetText, resolvedAction.dateHint);
 
           if (!match.bestMatch) {
-            replyMessage = buildTaskNotFoundMessage('diselesaikan', resolvedAction.targetText, resolvedAction.dateHint);
-            operation = {
-              type: 'COMPLETE_TASK',
+            actionReply = buildTaskNotFoundMessage('dihapus', resolvedAction.targetText, resolvedAction.dateHint);
+            actionOperation = {
+              type: 'DELETE_TASK',
               success: false,
               userId: linkedUser.id,
               resolvedAction,
               reason: 'TASK_NOT_FOUND',
             };
           } else {
-            const updatedTask = await taskService.updateTaskStatus(linkedUser.id, match.bestMatch.id, { status: 'DONE' });
-            replyMessage = [
-              `✅ Task berhasil diselesaikan${linkedUser.name ? ` untuk ${linkedUser.name}` : ''}:`,
+            await taskService.deleteTask(linkedUser.id, match.bestMatch.id);
+            actionReply = [
+              `🗑️ Task berhasil dihapus${linkedUser.name ? ` untuk ${linkedUser.name}` : ''}:`,
+              formatTaskSuccessLine(match.bestMatch),
+            ].join('\n');
+            actionOperation = {
+              type: 'DELETE_TASK',
+              success: true,
+              userId: linkedUser.id,
+              resolvedAction,
+              task: match.bestMatch,
+            };
+          }
+        } else if (action === 'UPDATE_TASK') {
+          const match = await findBestTaskMatch(linkedUser.id, resolvedAction.targetText, resolvedAction.dateHint);
+          const updateInput = sanitizeTaskUpdateInput(resolvedAction.updates);
+
+          if (!match.bestMatch) {
+            actionReply = buildTaskNotFoundMessage('diedit', resolvedAction.targetText, resolvedAction.dateHint);
+            actionOperation = {
+              type: 'UPDATE_TASK',
+              success: false,
+              userId: linkedUser.id,
+              resolvedAction,
+              reason: 'TASK_NOT_FOUND',
+            };
+          } else if (Object.keys(updateInput).length === 0) {
+            actionReply = '⚠️ AI belum menemukan perubahan task yang jelas. Coba tulis misalnya: ubah meeting besok jam 9 jadi jam 10 pagi.';
+            actionOperation = {
+              type: 'UPDATE_TASK',
+              success: false,
+              userId: linkedUser.id,
+              resolvedAction,
+              reason: 'EMPTY_UPDATE',
+            };
+          } else {
+            const updatedTask = await taskService.updateTask(linkedUser.id, match.bestMatch.id, updateInput as any);
+            actionReply = [
+              `✏️ Task berhasil diperbarui${linkedUser.name ? ` untuk ${linkedUser.name}` : ''}:`,
               formatTaskSuccessLine(updatedTask),
             ].join('\n');
-            operation = {
-              type: 'COMPLETE_TASK',
+            actionOperation = {
+              type: 'UPDATE_TASK',
               success: true,
               userId: linkedUser.id,
               resolvedAction,
               task: updatedTask,
+              updates: updateInput,
             };
           }
-        } else {
-          const completionResult = await handleTaskCompletion(linkedUser.id, command, linkedUser.name);
-          replyMessage = completionResult.reply;
-          operation = {
-            ...completionResult.operation,
-            userId: linkedUser.id,
-            resolvedAction,
-          };
-        }
-      } else if (action === 'DELETE_TASK') {
-        console.log('[WA Command] Executing delete flow', {
-          userId: linkedUser.id,
-          command,
-          resolvedAction,
-        });
-        const match = await findBestTaskMatch(linkedUser.id, resolvedAction?.targetText, resolvedAction?.dateHint);
-
-        if (!match.bestMatch) {
-          replyMessage = buildTaskNotFoundMessage('dihapus', resolvedAction?.targetText, resolvedAction?.dateHint);
-          operation = {
-            type: 'DELETE_TASK',
-            success: false,
-            userId: linkedUser.id,
-            resolvedAction,
-            reason: 'TASK_NOT_FOUND',
-          };
-        } else {
-          await taskService.deleteTask(linkedUser.id, match.bestMatch.id);
-          replyMessage = [
-            `🗑️ Task berhasil dihapus${linkedUser.name ? ` untuk ${linkedUser.name}` : ''}:`,
-            formatTaskSuccessLine(match.bestMatch),
+        } else if (action === 'CREATE_TASK') {
+          const taskCommand = normalizeCommandText(command);
+          const parsedTask = resolvedAction.updates?.title
+            ? {
+                title: resolvedAction.updates.title,
+                description: resolvedAction.updates.description || '',
+                deadline: resolvedAction.updates.deadline || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+                priority: resolvedAction.updates.priority || 'MEDIUM',
+                estimatedDuration: resolvedAction.updates.estimatedDuration || 60,
+                tags: resolvedAction.updates.tags || [],
+                reminderTime: resolvedAction.updates.reminderTime || 60,
+              }
+            : await aiService.parseTaskCommand(taskCommand);
+          const createdTask = await taskService.createTask(linkedUser.id, parsedTask);
+          actionReply = [
+            `✅ Task berhasil dibuat${linkedUser.name ? ` untuk ${linkedUser.name}` : ''}:`,
+            formatTaskSuccessLine(createdTask),
           ].join('\n');
-          operation = {
-            type: 'DELETE_TASK',
+          actionOperation = {
+            type: 'CREATE_TASK',
             success: true,
             userId: linkedUser.id,
             resolvedAction,
-            task: match.bestMatch,
-          };
-        }
-      } else if (action === 'UPDATE_TASK') {
-        console.log('[WA Command] Executing update flow', {
-          userId: linkedUser.id,
-          command,
-          resolvedAction,
-        });
-        const match = await findBestTaskMatch(linkedUser.id, resolvedAction?.targetText, resolvedAction?.dateHint);
-        const updateInput = sanitizeTaskUpdateInput(resolvedAction?.updates);
-
-        if (!match.bestMatch) {
-          replyMessage = buildTaskNotFoundMessage('diedit', resolvedAction?.targetText, resolvedAction?.dateHint);
-          operation = {
-            type: 'UPDATE_TASK',
-            success: false,
-            userId: linkedUser.id,
-            resolvedAction,
-            reason: 'TASK_NOT_FOUND',
-          };
-        } else if (Object.keys(updateInput).length === 0) {
-          replyMessage = '⚠️ AI belum menemukan perubahan task yang jelas. Coba tulis misalnya: ubah meeting besok jam 9 jadi jam 10 pagi.';
-          operation = {
-            type: 'UPDATE_TASK',
-            success: false,
-            userId: linkedUser.id,
-            resolvedAction,
-            reason: 'EMPTY_UPDATE',
+            parsedTask,
+            task: createdTask,
           };
         } else {
-          const updatedTask = await taskService.updateTask(linkedUser.id, match.bestMatch.id, updateInput as any);
-          replyMessage = [
-            `✏️ Task berhasil diperbarui${linkedUser.name ? ` untuk ${linkedUser.name}` : ''}:`,
-            formatTaskSuccessLine(updatedTask),
-          ].join('\n');
-          operation = {
-            type: 'UPDATE_TASK',
+          actionReply = buildWhatsappHelpMessage(true);
+          actionOperation = {
+            type: action === 'HELP' ? 'HELP' : 'UNKNOWN',
             success: true,
             userId: linkedUser.id,
             resolvedAction,
-            task: updatedTask,
-            updates: updateInput,
+            reason: 'HELP_MENU',
           };
         }
-      } else if (action === 'CREATE_TASK') {
-        const taskCommand = normalizeCommandText(command);
 
-        console.log('[WA Command] Executing create flow', {
-          userId: linkedUser.id,
-          command,
-          taskCommand,
-          resolvedAction,
-        });
-        const parsedTask = resolvedAction?.updates?.title
-          ? {
-              title: resolvedAction.updates.title,
-              description: resolvedAction.updates.description || '',
-              deadline: resolvedAction.updates.deadline || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-              priority: resolvedAction.updates.priority || 'MEDIUM',
-              estimatedDuration: resolvedAction.updates.estimatedDuration || 60,
-              tags: resolvedAction.updates.tags || [],
-              reminderTime: resolvedAction.updates.reminderTime || 60,
-            }
-          : await aiService.parseTaskCommand(taskCommand);
-        const createdTask = await taskService.createTask(linkedUser.id, parsedTask);
-        replyMessage = [
-          `✅ Task berhasil dibuat${linkedUser.name ? ` untuk ${linkedUser.name}` : ''}:`,
-          formatTaskSuccessLine(createdTask),
-        ].join('\n');
-        operation = {
-          type: 'CREATE_TASK',
-          success: true,
-          userId: linkedUser.id,
-          resolvedAction,
-          parsedTask,
-          task: createdTask,
-        };
-      } else {
-        console.log('[WA Command] Falling back to help flow', {
-          userId: linkedUser.id,
-          command,
-          action,
-          resolvedAction,
-        });
-        replyMessage = buildWhatsappHelpMessage(true);
-        operation = {
-          type: action === 'HELP' ? 'HELP' : 'UNKNOWN',
-          success: true,
-          userId: linkedUser.id,
-          resolvedAction,
-          reason: 'HELP_MENU',
-        };
+        replies.push(actionReply);
+        operationResults.push(actionOperation);
       }
+
+      replyMessage = replies.filter(Boolean).join('\n\n');
+      operation = {
+        type: operationResults.length > 1 ? 'MULTI_ACTION' : String(operationResults[0]?.type || fallbackAction.action),
+        success: operationResults.every((item) => item.success !== false),
+        partialSuccess: operationResults.some((item) => item.success === false) && operationResults.some((item) => item.success === true),
+        userId: linkedUser.id,
+        resolvedPlan,
+        operations: operationResults,
+        actionCount: operationResults.length,
+      };
 
       console.log('[WA Command] Reply prepared', {
         userId: linkedUser.id,
@@ -963,7 +965,7 @@ const handleWhatsappInbound = async (req: Request, res: Response): Promise<void>
           sent: true,
           number: safeWhatsappNumber,
           message: replyMessage,
-          type: String((operation && 'type' in operation ? operation.type : action) || intent).toLowerCase(),
+          type: String((operation && 'type' in operation ? operation.type : fallbackAction.action) || intent).toLowerCase(),
         };
       } catch (error) {
         console.error('[WA AI] Failed to send WhatsApp reply:', error);
@@ -971,7 +973,7 @@ const handleWhatsappInbound = async (req: Request, res: Response): Promise<void>
           sent: false,
           number: safeWhatsappNumber,
           message: replyMessage,
-          type: String((operation && 'type' in operation ? operation.type : action) || intent).toLowerCase(),
+          type: String((operation && 'type' in operation ? operation.type : fallbackAction.action) || intent).toLowerCase(),
         };
       }
     }

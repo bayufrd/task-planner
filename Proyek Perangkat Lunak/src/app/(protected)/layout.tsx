@@ -10,7 +10,7 @@ import CommandPalette from '@/components/command/CommandPalette'
 import { useTheme } from '@/components/providers/ThemeProvider'
 import { useCommandPalette } from '@/components/providers/CommandPaletteProvider'
 import { useLanguage } from '@/components/providers/LanguageProvider'
-import { Search, CheckSquare2, LogOut, UserCircle, LayoutDashboard, User, Moon, Sun, Globe, PieChart } from 'lucide-react'
+import { Search, CheckSquare2, LogOut, UserCircle, LayoutDashboard, User, Moon, Sun, Globe, PieChart, MessageCircle } from 'lucide-react'
 import { signOut } from 'next-auth/react'
 import { getAuthCookie, removeAuthCookie } from '@/lib/auth/cookies'
 import { syncNextAuthToExpress } from '@/lib/auth/sync'
@@ -231,6 +231,16 @@ export default function ProtectedLayout({
                 >
                   <PieChart className="w-4 h-4 flex-shrink-0" strokeWidth={2} />
                   <span>Overview</span>
+                </Link>
+
+                {/* Connect WhatsApp Link */}
+                <Link
+                  href="/connectwhatsapp"
+                  onClick={() => setIsProfileOpen(false)}
+                  className="w-full flex items-center justify-center gap-3 px-3 py-3 rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white text-sm font-semibold shadow-lg shadow-green-500/25 transition-all duration-200 hover:scale-[1.01] hover:shadow-xl hover:shadow-green-500/30"
+                >
+                  <MessageCircle className="w-4 h-4 flex-shrink-0" strokeWidth={2} />
+                  <span>Connect WhatsApp</span>
                 </Link>
 
                 {/* Language Toggle */}

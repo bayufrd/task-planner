@@ -481,15 +481,17 @@ Saat ini backend sudah mengimplementasikan:
 - resolusi nomor WhatsApp,
 - flow registrasi `user_id daftar`,
 - lookup user berdasarkan `whatsappNumber`,
-- AI-first action resolver untuk `CREATE_TASK`, `UPDATE_TASK`, `DELETE_TASK`, `COMPLETE_TASK`, `LIST_TASKS`, `LIST_BY_DATE`, `OVERVIEW`, dan `HELP`,
-- fallback rule-based intent ringan bila resolver AI gagal,
+- AI-first multi-action resolver berbasis plan untuk `CREATE_TASK`, `UPDATE_TASK`, `DELETE_TASK`, `COMPLETE_TASK`, `LIST_TASKS`, `LIST_BY_DATE`, `OVERVIEW`, dan `HELP`,
+- fallback ke intent ringan bila resolver AI gagal total,
+- eksekusi berurutan untuk banyak aksi dalam satu chat,
+- dukungan banyak target task dalam satu command tanpa splitter rule-based sebagai jalur utama,
 - create task via AI parser untuk command natural bahasa Indonesia/Inggris,
 - parsing waktu Indonesia/Jakarta untuk frasa `jam ... pagi/siang/sore/malam`,
 - list task aktif,
 - list task berdasarkan tanggal sederhana (`hari ini`, `besok`, `lusa`, `tanggal N`),
 - complete/delete/update task berdasarkan pencocokan title + date hint,
 - overview/ringkasan singkat,
-- pengiriman balasan WhatsApp untuk setiap operasi,
+- agregasi balasan WhatsApp untuk hasil multi-aksi,
 - menu bantuan command untuk user publik dan user terdaftar,
 - auto-help setelah registrasi berhasil,
 - normalized response payload.
@@ -501,8 +503,9 @@ Di luar inbound command, backend juga sudah memiliki scheduler reminder WhatsApp
 - provider bot WhatsApp sudah memfilter chat yang relevan,
 - backend menerima payload lewat [`POST /internal/wa/inbound`](../src/app.ts:225),
 - backend membaca field `command`,
-- backend mengidentifikasi intent,
-- backend menyusun payload ke endpoint/service internal yang sesuai,
+- AI menyusun `plan.actions[]` dari satu chat,
+- setiap item plan dieksekusi berurutan oleh backend ke service internal yang sesuai,
+- jika satu aksi gagal, aksi lain tetap bisa dilanjutkan dan hasilnya diringkas ke user,
 - AI yang sudah dibekali knowledge tidak boleh “lari” dari domain Task Planner.
 
 ### Peran nomor WhatsApp
@@ -587,10 +590,46 @@ AI WhatsApp sebaiknya bekerja mirip dengan flow AI Command Palette, tetapi denga
 
 - memahami kalimat natural bahasa Indonesia/Inggris,
 - tetap terbatas pada domain Task Planner,
-- menentukan intent yang benar,
+- menentukan satu atau banyak aksi yang benar dari satu chat,
+- memecah target task menjadi aksi terpisah saat memang berbeda,
 - menyusun payload endpoint yang sesuai,
 - memilih endpoint internal/backend yang tepat,
 - menghasilkan respons balasan yang ringkas dan membantu.
+
+### Format plan AI yang diimplementasikan
+
+Resolver AI sekarang tidak lagi berhenti pada satu intent tunggal. Backend meminta AI mengembalikan plan terstruktur dengan bentuk:
+
+```json
+{
+  "confidence": 0.92,
+  "replyStyle": "NORMAL",
+  "actions": [
+    {
+      "action": "DELETE_TASK",
+      "confidence": 0.93,
+      "targetText": "meeting selesai",
+      "dateHint": "besok",
+      "replyStyle": "NORMAL"
+    },
+    {
+      "action": "DELETE_TASK",
+      "confidence": 0.91,
+      "targetText": "meeting yang jam 22.00",
+      "dateHint": "besok",
+      "replyStyle": "NORMAL"
+    }
+  ]
+}
+```
+
+Prinsip utamanya:
+
+- satu chat boleh menghasilkan banyak aksi,
+- satu task target idealnya menjadi satu action,
+- urutan action harus mengikuti urutan permintaan user,
+- backend tetap menjadi executor final,
+- jika AI gagal total, backend fallback ke satu intent ringan agar tidak memblokir user sepenuhnya.
 
 ### Arah routing intent ke backend
 
@@ -607,15 +646,18 @@ Implementasi routing ini bisa dibuat terpisah dari flow registrasi agar rule Wha
 
 ### Requirement AI agar tetap satu arah
 
-Agar konsisten, AI WhatsApp nantinya perlu punya rule seperti ini:
+Agar konsisten, AI WhatsApp perlu punya rule seperti ini:
 
-- jika ada kata `tambah`, arahkan ke intent create,
-- jika ada kata `edit`, arahkan ke intent update,
+- jika ada kata `tambah`, arahkan ke action create,
+- jika ada kata `edit`, arahkan ke action update,
 - jika ada kata `selesai`, `done`, atau `beres`, arahkan ke complete,
 - jika ada kata `overview`, arahkan ke summary,
 - jika ada kata `lihat`, `daftar`, atau `list` dalam konteks task, arahkan ke list task,
 - jika ada kata `tanggal`, `hari ini`, `besok`, `minggu ini`, arahkan ke list/filter jadwal,
-- jika format `user_id daftar`, prioritaskan sebagai flow registrasi, bukan list.
+- jika format `user_id daftar`, prioritaskan sebagai flow registrasi, bukan list,
+- jika user menyebut dua task berbeda, keluarkan dua action terpisah,
+- jika user mencampur create/update/delete/list dalam satu chat, pertahankan urutan action sesuai kalimat user,
+- jangan menggabungkan banyak target berbeda ke satu `targetText` bila masih bisa dipisah aman.
 
 ## Spesifikasi Per Perintah WhatsApp
 
