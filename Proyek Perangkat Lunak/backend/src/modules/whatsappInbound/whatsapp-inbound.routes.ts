@@ -2,14 +2,14 @@ import { Router, Request, Response } from 'express';
 import { env } from '../../config/env';
 import { prisma } from '../../lib/prisma';
 import { sendError, sendSuccess } from '../../lib/response';
-import { AiService } from '../ai/ai.service';
+import { AiService, type ResolvedWhatsappAction } from '../ai/ai.service';
 import { TaskService } from '../tasks/task.service';
 
 const router = Router();
 const aiService = new AiService();
 const taskService = new TaskService();
 
-type WhatsappIntent = 'REGISTER' | 'CREATE_TASK' | 'LIST_TASKS' | 'LIST_BY_DATE' | 'COMPLETE_TASK' | 'OVERVIEW' | 'UNKNOWN';
+type WhatsappIntent = 'REGISTER' | 'CREATE_TASK' | 'UPDATE_TASK' | 'DELETE_TASK' | 'LIST_TASKS' | 'LIST_BY_DATE' | 'COMPLETE_TASK' | 'OVERVIEW' | 'HELP' | 'UNKNOWN';
 
 const extractWaNumber = (value?: string | null): string | null => {
   if (!value) return null;
@@ -128,7 +128,90 @@ const formatTaskLine = (task: {
     timeStyle: 'short',
   });
 
-  return `- ${task.title} | ${formattedDate} | ${task.priority} | ${task.status}`;
+  return `• ${task.title} | ${formattedDate} | ${task.priority} | ${task.status}`;
+};
+
+const formatTaskSuccessLine = (task: {
+  title: string;
+  deadline: Date;
+  priority: string;
+  status: string;
+}) => {
+  const formattedDate = task.deadline.toLocaleString('id-ID', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  });
+
+  return [
+    `📝 ${task.title}`,
+    `🕒 ${formattedDate}`,
+    `⚡ ${task.priority}`,
+    `📌 ${task.status}`,
+  ].join('\n');
+};
+
+const normalizeCommandText = (command: string) =>
+  command
+    .trim()
+    .replace(/^task\s+/i, '')
+    .trim();
+
+const normalizeComparableText = (value: string) =>
+  value
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/gi, ' ')
+    .replace(/\b(tanggal|jam|pukul|hari|ini|besok|lusa|done|selesai|complete|task)\b/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+const extractDateTokens = (value: string): string[] => {
+  const normalized = value.toLowerCase();
+  const tokens = new Set<string>();
+  const monthPattern = '(januari|februari|maret|april|mei|juni|juli|agustus|september|oktober|november|desember|jan|feb|mar|apr|mei|jun|jul|agu|ags|sep|okt|nov|des)';
+
+  if (normalized.includes('hari ini')) tokens.add('hari ini');
+  if (normalized.includes('besok')) tokens.add('besok');
+  if (normalized.includes('lusa')) tokens.add('lusa');
+
+  const dayMonthMatches = normalized.match(new RegExp(`\\b\\d{1,2}\\s+${monthPattern}(?:\\s+\\d{4})?\\b`, 'gi')) || [];
+  dayMonthMatches.forEach((match) => tokens.add(match.trim()));
+
+  const tanggalMatches = normalized.match(/\btanggal\s+\d{1,2}\b/gi) || [];
+  tanggalMatches.forEach((match) => tokens.add(match.trim()));
+
+  return Array.from(tokens);
+};
+
+const taskMatchesDateTokens = (task: { deadline: Date }, tokens: string[]): boolean => {
+  if (tokens.length === 0) return true;
+
+  const deadline = new Date(task.deadline);
+  const day = deadline.getDate();
+  const year = deadline.getFullYear();
+  const monthLong = deadline.toLocaleString('id-ID', { month: 'long' }).toLowerCase();
+  const monthShort = deadline.toLocaleString('id-ID', { month: 'short' }).toLowerCase().replace('.', '');
+  const baseToday = new Date();
+  baseToday.setHours(0, 0, 0, 0);
+  const taskDay = new Date(deadline);
+  taskDay.setHours(0, 0, 0, 0);
+  const diffDays = Math.round((taskDay.getTime() - baseToday.getTime()) / (24 * 60 * 60 * 1000));
+
+  return tokens.every((token) => {
+    if (token === 'hari ini') return diffDays === 0;
+    if (token === 'besok') return diffDays === 1;
+    if (token === 'lusa') return diffDays === 2;
+    if (/^tanggal\s+\d{1,2}$/i.test(token)) {
+      return day === Number(token.replace(/\D/g, ''));
+    }
+
+    const compact = token.replace(/\s+/g, ' ').trim();
+    return (
+      compact.includes(`${day} ${monthLong}`) ||
+      compact.includes(`${day} ${monthShort}`) ||
+      compact.includes(`${day} ${monthLong} ${year}`) ||
+      compact.includes(`${day} ${monthShort} ${year}`)
+    );
+  });
 };
 
 const buildOverviewMessage = async (userId: string, name?: string | null) => {
@@ -141,14 +224,14 @@ const buildOverviewMessage = async (userId: string, name?: string | null) => {
   const insight = analysis?.insights?.[0] || 'Tetap konsisten menyelesaikan task prioritas tertinggi terlebih dahulu.';
 
   return [
-    `Ringkasan tugas${name ? ` untuk ${name}` : ''}:`,
-    `- Total: ${total}`,
-    `- Pending: ${stats.pending}`,
-    `- Done: ${stats.done}`,
-    `- Skipped: ${stats.skipped}`,
-    `- Completion rate: ${completionRate}%`,
-    `- Skip rate: ${skipRate}%`,
-    `- Insight AI: ${insight}`,
+    `📊 Ringkasan tugas${name ? ` untuk ${name}` : ''}`,
+    `• Total: ${total}`,
+    `• Pending: ${stats.pending}`,
+    `• Done: ${stats.done}`,
+    `• Skipped: ${stats.skipped}`,
+    `• Completion rate: ${completionRate}%`,
+    `• Skip rate: ${skipRate}%`,
+    `🤖 Insight AI: ${insight}`,
   ].join('\n');
 };
 
@@ -157,11 +240,13 @@ const detectWhatsappIntent = (command: string): WhatsappIntent => {
   const normalizedWithoutPrefix = normalized.replace(/^task\s+/i, '').trim();
 
   if (/^(\S+)\s+daftar$/i.test(command)) return 'REGISTER';
-  if (/^(bantuan|help|menu|command|commands)$/i.test(normalizedWithoutPrefix)) return 'UNKNOWN';
+  if (/^(bantuan|help|menu|command|commands)$/i.test(normalizedWithoutPrefix)) return 'HELP';
   if (/^(overview|ringkasan|summary)$/i.test(normalizedWithoutPrefix)) return 'OVERVIEW';
   if (/^(lihat|list|daftar|jadwal|agenda).*(tanggal|besok|lusa|hari ini|today)/i.test(normalizedWithoutPrefix)) return 'LIST_BY_DATE';
   if (/^(lihat|list|daftar|jadwal|agenda)/i.test(normalizedWithoutPrefix)) return 'LIST_TASKS';
   if (/^(selesai|done|complete|tandai selesai)/i.test(normalizedWithoutPrefix)) return 'COMPLETE_TASK';
+  if (/^(hapus|delete|remove)/i.test(normalizedWithoutPrefix)) return 'DELETE_TASK';
+  if (/^(edit|ubah|update|reschedule)/i.test(normalizedWithoutPrefix)) return 'UPDATE_TASK';
   if (normalizedWithoutPrefix.length > 0) return 'CREATE_TASK';
 
   return 'UNKNOWN';
@@ -222,46 +307,135 @@ const buildListMessage = async (userId: string, command: string, name?: string |
 
   if (filteredTasks.length === 0) {
     return dateFilter
-      ? `Tidak ada task untuk ${dateFilter.label}${name ? `, ${name}` : ''}.`
-      : `Tidak ada task aktif${name ? ` untuk ${name}` : ''}.`;
+      ? `📭 Tidak ada task untuk ${dateFilter.label}${name ? `, ${name}` : ''}.`
+      : `📭 Tidak ada task aktif${name ? ` untuk ${name}` : ''}.`;
   }
 
   const header = dateFilter
-    ? `Daftar task ${dateFilter.label}${name ? ` untuk ${name}` : ''}:`
-    : `Daftar task aktif${name ? ` untuk ${name}` : ''}:`;
+    ? `📅 Daftar task ${dateFilter.label}${name ? ` untuk ${name}` : ''}:`
+    : `📋 Daftar task aktif${name ? ` untuk ${name}` : ''}:`;
 
   return [header, ...filteredTasks.slice(0, 10).map(formatTaskLine)].join('\n');
 };
 
 const extractCompletionTitle = (command: string) =>
-  command
-    .replace(/^task\s+/i, '')
+  normalizeCommandText(command)
     .replace(/^(selesai|done|complete|tandai selesai)\s*/i, '')
     .trim();
+
+const findBestTaskMatch = async (
+  userId: string,
+  targetText?: string,
+  dateHint?: string
+) => {
+  const tasks = await taskService.getTasks(userId, 'PENDING');
+  const combined = [targetText, dateHint].filter(Boolean).join(' ').trim();
+  const normalizedCombined = normalizeComparableText(combined);
+  const dateTokens = extractDateTokens(combined);
+
+  const scored = tasks
+    .map((task) => {
+      const comparableTitle = normalizeComparableText(task.title);
+      let score = 0;
+
+      if (normalizedCombined) {
+        if (comparableTitle === normalizedCombined) score += 100;
+        else if (comparableTitle.includes(normalizedCombined)) score += 80;
+        else if (normalizedCombined.includes(comparableTitle)) score += 60;
+
+        const words = normalizedCombined.split(' ').filter(Boolean);
+        score += words.filter((word) => comparableTitle.includes(word)).length * 10;
+      }
+
+      if (taskMatchesDateTokens(task, dateTokens)) {
+        score += dateTokens.length > 0 ? 30 : 0;
+      } else if (dateTokens.length > 0) {
+        score -= 20;
+      }
+
+      return { task, score };
+    })
+    .filter((item) => item.score > 0)
+    .sort((a, b) => b.score - a.score || new Date(a.task.deadline).getTime() - new Date(b.task.deadline).getTime());
+
+  return {
+    tasks,
+    bestMatch: scored[0]?.task || null,
+    alternatives: scored.slice(0, 5).map((item) => item.task),
+  };
+};
+
+const buildTaskNotFoundMessage = (actionLabel: string, targetText?: string, dateHint?: string) => {
+  const clues = [targetText, dateHint].filter(Boolean).join(' ').trim();
+  return [
+    `⚠️ Task untuk ${actionLabel} tidak ditemukan.`,
+    clues ? `🔎 Pencarian: ${clues}` : '🔎 AI belum menemukan task yang dimaksud.',
+    'Coba tulis lebih spesifik, misalnya: selesai meeting client besok jam 9',
+  ].join('\n');
+};
+
+const sanitizeTaskUpdateInput = (updates?: ResolvedWhatsappAction['updates']) => {
+  if (!updates) return {};
+
+  return Object.fromEntries(
+    Object.entries({
+      title: updates.title?.trim() || undefined,
+      description: typeof updates.description === 'string' ? updates.description.trim() : undefined,
+      deadline: updates.deadline || undefined,
+      priority: updates.priority,
+      estimatedDuration: typeof updates.estimatedDuration === 'number' ? updates.estimatedDuration : undefined,
+      reminderTime: typeof updates.reminderTime === 'number' ? updates.reminderTime : undefined,
+      tags: Array.isArray(updates.tags) ? updates.tags : undefined,
+    }).filter(([, value]) => value !== undefined)
+  );
+};
 
 const handleTaskCompletion = async (userId: string, command: string, name?: string | null) => {
   const rawTitle = extractCompletionTitle(command);
   if (!rawTitle) {
     return {
-      reply: 'Format selesai belum lengkap. Contoh: task selesai meeting client',
+      reply: '⚠️ Format selesai belum lengkap. Contoh: selesai meeting client',
       operation: { success: false, type: 'COMPLETE_TASK', reason: 'MISSING_TITLE' },
     };
   }
 
   const tasks = await taskService.getTasks(userId);
-  const normalizedTitle = rawTitle.toLowerCase();
-  const matchedTasks = tasks.filter((task) => task.title.toLowerCase().includes(normalizedTitle));
+  const comparableTitle = normalizeComparableText(rawTitle);
+  const dateTokens = extractDateTokens(rawTitle);
+
+  const scoredMatches = tasks
+    .map((task) => {
+      const taskComparableTitle = normalizeComparableText(task.title);
+      const titleMatch =
+        taskComparableTitle.includes(comparableTitle) ||
+        comparableTitle.includes(taskComparableTitle) ||
+        comparableTitle.split(' ').every((part) => part && taskComparableTitle.includes(part));
+      const dateMatch = taskMatchesDateTokens(task, dateTokens);
+      const score = (titleMatch ? 2 : 0) + (dateMatch ? 1 : 0);
+
+      return {
+        task,
+        titleMatch,
+        dateMatch,
+        score,
+      };
+    })
+    .filter((item) => item.titleMatch)
+    .sort((a, b) => b.score - a.score || a.task.deadline.getTime() - b.task.deadline.getTime());
+
+  const exactDateMatches = scoredMatches.filter((item) => item.dateMatch);
+  const matchedTasks = (exactDateMatches.length > 0 ? exactDateMatches : scoredMatches).map((item) => item.task);
 
   if (matchedTasks.length === 0) {
     return {
-      reply: `Task dengan kata kunci "${rawTitle}" tidak ditemukan.`,
+      reply: [`❌ Task dengan kata kunci "${rawTitle}" tidak ditemukan.`, 'Coba gunakan judul yang lebih dekat dengan nama task.'].join('\n'),
       operation: { success: false, type: 'COMPLETE_TASK', reason: 'TASK_NOT_FOUND', keyword: rawTitle },
     };
   }
 
   if (matchedTasks.length > 1) {
     return {
-      reply: ['Saya menemukan lebih dari satu task. Mohon lebih spesifik:', ...matchedTasks.slice(0, 5).map(formatTaskLine)].join('\n'),
+      reply: ['🤔 Saya menemukan lebih dari satu task. Mohon lebih spesifik ya:', ...matchedTasks.slice(0, 5).map(formatTaskLine)].join('\n'),
       operation: { success: false, type: 'COMPLETE_TASK', reason: 'AMBIGUOUS_TASK', keyword: rawTitle, matches: matchedTasks.slice(0, 5) },
     };
   }
@@ -269,7 +443,7 @@ const handleTaskCompletion = async (userId: string, command: string, name?: stri
   const updatedTask = await taskService.updateTaskStatus(userId, matchedTasks[0].id, { status: 'DONE' });
 
   return {
-    reply: `Task selesai ditandai DONE${name ? ` untuk ${name}` : ''}:\n${formatTaskLine(updatedTask)}`,
+    reply: [`✅ Task berhasil ditandai selesai${name ? ` untuk ${name}` : ''}:`, formatTaskSuccessLine(updatedTask)].join('\n'),
     operation: { success: true, type: 'COMPLETE_TASK', task: updatedTask },
   };
 };
@@ -565,20 +739,41 @@ const handleWhatsappInbound = async (req: Request, res: Response): Promise<void>
       });
 
       let replyMessage = '';
+      let resolvedAction: ResolvedWhatsappAction | null = null;
 
-      if (intent === 'LIST_TASKS' || intent === 'LIST_BY_DATE') {
+      try {
+        resolvedAction = await aiService.resolveWhatsappAction(command);
+      } catch (error) {
+        console.error('[WA AI] Failed to resolve action, fallback to rule-based intent:', error);
+      }
+
+      const action = resolvedAction?.action || intent;
+
+      console.log('[WA Command] Resolved action', {
+        userId: linkedUser.id,
+        command,
+        fallbackIntent: intent,
+        action,
+        confidence: resolvedAction?.confidence ?? null,
+        targetText: resolvedAction?.targetText ?? null,
+        dateHint: resolvedAction?.dateHint ?? null,
+      });
+
+      if (action === 'LIST_TASKS' || action === 'LIST_BY_DATE') {
         console.log('[WA Command] Executing list flow', {
           userId: linkedUser.id,
-          intent,
+          action,
           command,
         });
-        replyMessage = await buildListMessage(linkedUser.id, command, linkedUser.name);
+        const listCommand = [resolvedAction?.targetText, resolvedAction?.dateHint].filter(Boolean).join(' ').trim() || command;
+        replyMessage = await buildListMessage(linkedUser.id, listCommand, linkedUser.name);
         operation = {
-          type: intent,
+          type: action,
           success: true,
           userId: linkedUser.id,
+          resolvedAction,
         };
-      } else if (intent === 'OVERVIEW') {
+      } else if (action === 'OVERVIEW') {
         console.log('[WA Command] Executing overview flow', {
           userId: linkedUser.id,
           command,
@@ -588,36 +783,153 @@ const handleWhatsappInbound = async (req: Request, res: Response): Promise<void>
           type: 'OVERVIEW',
           success: true,
           userId: linkedUser.id,
+          resolvedAction,
         };
-      } else if (intent === 'COMPLETE_TASK') {
+      } else if (action === 'COMPLETE_TASK') {
         console.log('[WA Command] Executing complete flow', {
           userId: linkedUser.id,
           command,
+          resolvedAction,
         });
-        const completionResult = await handleTaskCompletion(linkedUser.id, command, linkedUser.name);
-        replyMessage = completionResult.reply;
-        operation = {
-          ...completionResult.operation,
+
+        if (resolvedAction?.targetText || resolvedAction?.dateHint) {
+          const match = await findBestTaskMatch(linkedUser.id, resolvedAction.targetText, resolvedAction.dateHint);
+
+          if (!match.bestMatch) {
+            replyMessage = buildTaskNotFoundMessage('diselesaikan', resolvedAction.targetText, resolvedAction.dateHint);
+            operation = {
+              type: 'COMPLETE_TASK',
+              success: false,
+              userId: linkedUser.id,
+              resolvedAction,
+              reason: 'TASK_NOT_FOUND',
+            };
+          } else {
+            const updatedTask = await taskService.updateTaskStatus(linkedUser.id, match.bestMatch.id, { status: 'DONE' });
+            replyMessage = [
+              `✅ Task berhasil diselesaikan${linkedUser.name ? ` untuk ${linkedUser.name}` : ''}:`,
+              formatTaskSuccessLine(updatedTask),
+            ].join('\n');
+            operation = {
+              type: 'COMPLETE_TASK',
+              success: true,
+              userId: linkedUser.id,
+              resolvedAction,
+              task: updatedTask,
+            };
+          }
+        } else {
+          const completionResult = await handleTaskCompletion(linkedUser.id, command, linkedUser.name);
+          replyMessage = completionResult.reply;
+          operation = {
+            ...completionResult.operation,
+            userId: linkedUser.id,
+            resolvedAction,
+          };
+        }
+      } else if (action === 'DELETE_TASK') {
+        console.log('[WA Command] Executing delete flow', {
           userId: linkedUser.id,
-        };
-      } else if (intent === 'CREATE_TASK') {
-        const taskCommand = command.replace(/^task\s+/i, '').trim();
+          command,
+          resolvedAction,
+        });
+        const match = await findBestTaskMatch(linkedUser.id, resolvedAction?.targetText, resolvedAction?.dateHint);
+
+        if (!match.bestMatch) {
+          replyMessage = buildTaskNotFoundMessage('dihapus', resolvedAction?.targetText, resolvedAction?.dateHint);
+          operation = {
+            type: 'DELETE_TASK',
+            success: false,
+            userId: linkedUser.id,
+            resolvedAction,
+            reason: 'TASK_NOT_FOUND',
+          };
+        } else {
+          await taskService.deleteTask(linkedUser.id, match.bestMatch.id);
+          replyMessage = [
+            `🗑️ Task berhasil dihapus${linkedUser.name ? ` untuk ${linkedUser.name}` : ''}:`,
+            formatTaskSuccessLine(match.bestMatch),
+          ].join('\n');
+          operation = {
+            type: 'DELETE_TASK',
+            success: true,
+            userId: linkedUser.id,
+            resolvedAction,
+            task: match.bestMatch,
+          };
+        }
+      } else if (action === 'UPDATE_TASK') {
+        console.log('[WA Command] Executing update flow', {
+          userId: linkedUser.id,
+          command,
+          resolvedAction,
+        });
+        const match = await findBestTaskMatch(linkedUser.id, resolvedAction?.targetText, resolvedAction?.dateHint);
+        const updateInput = sanitizeTaskUpdateInput(resolvedAction?.updates);
+
+        if (!match.bestMatch) {
+          replyMessage = buildTaskNotFoundMessage('diedit', resolvedAction?.targetText, resolvedAction?.dateHint);
+          operation = {
+            type: 'UPDATE_TASK',
+            success: false,
+            userId: linkedUser.id,
+            resolvedAction,
+            reason: 'TASK_NOT_FOUND',
+          };
+        } else if (Object.keys(updateInput).length === 0) {
+          replyMessage = '⚠️ AI belum menemukan perubahan task yang jelas. Coba tulis misalnya: ubah meeting besok jam 9 jadi jam 10 pagi.';
+          operation = {
+            type: 'UPDATE_TASK',
+            success: false,
+            userId: linkedUser.id,
+            resolvedAction,
+            reason: 'EMPTY_UPDATE',
+          };
+        } else {
+          const updatedTask = await taskService.updateTask(linkedUser.id, match.bestMatch.id, updateInput as any);
+          replyMessage = [
+            `✏️ Task berhasil diperbarui${linkedUser.name ? ` untuk ${linkedUser.name}` : ''}:`,
+            formatTaskSuccessLine(updatedTask),
+          ].join('\n');
+          operation = {
+            type: 'UPDATE_TASK',
+            success: true,
+            userId: linkedUser.id,
+            resolvedAction,
+            task: updatedTask,
+            updates: updateInput,
+          };
+        }
+      } else if (action === 'CREATE_TASK') {
+        const taskCommand = normalizeCommandText(command);
 
         console.log('[WA Command] Executing create flow', {
           userId: linkedUser.id,
           command,
           taskCommand,
+          resolvedAction,
         });
-        const parsedTask = await aiService.parseTaskCommand(taskCommand);
+        const parsedTask = resolvedAction?.updates?.title
+          ? {
+              title: resolvedAction.updates.title,
+              description: resolvedAction.updates.description || '',
+              deadline: resolvedAction.updates.deadline || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+              priority: resolvedAction.updates.priority || 'MEDIUM',
+              estimatedDuration: resolvedAction.updates.estimatedDuration || 60,
+              tags: resolvedAction.updates.tags || [],
+              reminderTime: resolvedAction.updates.reminderTime || 60,
+            }
+          : await aiService.parseTaskCommand(taskCommand);
         const createdTask = await taskService.createTask(linkedUser.id, parsedTask);
         replyMessage = [
-          `Task berhasil dibuat${linkedUser.name ? ` untuk ${linkedUser.name}` : ''}:`,
-          formatTaskLine(createdTask),
+          `✅ Task berhasil dibuat${linkedUser.name ? ` untuk ${linkedUser.name}` : ''}:`,
+          formatTaskSuccessLine(createdTask),
         ].join('\n');
         operation = {
           type: 'CREATE_TASK',
           success: true,
           userId: linkedUser.id,
+          resolvedAction,
           parsedTask,
           task: createdTask,
         };
@@ -625,13 +937,15 @@ const handleWhatsappInbound = async (req: Request, res: Response): Promise<void>
         console.log('[WA Command] Falling back to help flow', {
           userId: linkedUser.id,
           command,
-          intent,
+          action,
+          resolvedAction,
         });
         replyMessage = buildWhatsappHelpMessage(true);
         operation = {
-          type: 'UNKNOWN',
+          type: action === 'HELP' ? 'HELP' : 'UNKNOWN',
           success: true,
           userId: linkedUser.id,
+          resolvedAction,
           reason: 'HELP_MENU',
         };
       }
@@ -639,6 +953,7 @@ const handleWhatsappInbound = async (req: Request, res: Response): Promise<void>
       console.log('[WA Command] Reply prepared', {
         userId: linkedUser.id,
         intent,
+        operationType: operation && 'type' in operation ? operation.type : null,
         preview: replyMessage.slice(0, 200),
       });
 
@@ -648,7 +963,7 @@ const handleWhatsappInbound = async (req: Request, res: Response): Promise<void>
           sent: true,
           number: safeWhatsappNumber,
           message: replyMessage,
-          type: intent.toLowerCase(),
+          type: String((operation && 'type' in operation ? operation.type : action) || intent).toLowerCase(),
         };
       } catch (error) {
         console.error('[WA AI] Failed to send WhatsApp reply:', error);
@@ -656,7 +971,7 @@ const handleWhatsappInbound = async (req: Request, res: Response): Promise<void>
           sent: false,
           number: safeWhatsappNumber,
           message: replyMessage,
-          type: intent.toLowerCase(),
+          type: String((operation && 'type' in operation ? operation.type : action) || intent).toLowerCase(),
         };
       }
     }

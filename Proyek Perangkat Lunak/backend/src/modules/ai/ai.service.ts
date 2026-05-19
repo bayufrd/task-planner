@@ -13,6 +13,16 @@ export interface ParsedTaskCommand {
   reminderTime: number;
 }
 
+export interface ResolvedWhatsappAction {
+  action: 'REGISTER' | 'CREATE_TASK' | 'UPDATE_TASK' | 'DELETE_TASK' | 'COMPLETE_TASK' | 'LIST_TASKS' | 'LIST_BY_DATE' | 'OVERVIEW' | 'HELP';
+  confidence: number;
+  targetText?: string;
+  dateHint?: string;
+  status?: 'PENDING' | 'DONE' | 'SKIPPED';
+  updates?: Partial<ParsedTaskCommand>;
+  replyStyle?: 'SHORT' | 'NORMAL' | 'FRIENDLY';
+}
+
 interface NineRouterChatResponse {
   choices?: Array<{
     message?: {
@@ -216,6 +226,138 @@ export class AiService {
       estimatedDuration: normalizeDuration(parsed.estimatedDuration),
       tags: normalizeTags(parsed.tags),
       reminderTime: normalizeReminderTime(parsed.reminderTime),
+    };
+  }
+
+  async resolveWhatsappAction(input: string): Promise<ResolvedWhatsappAction> {
+    if (!env.NINE_ROUTER_API || !env.NINE_ROUTER_API_KEY) {
+      throw new Error('9Router is not configured');
+    }
+
+    const response = await fetch(env.NINE_ROUTER_API, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${env.NINE_ROUTER_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: env.NINE_ROUTER_MODEL || DEFAULT_MODEL,
+        stream: false,
+        temperature: 0,
+        messages: [
+          {
+            role: 'system',
+            content: [
+              'You are a deterministic WhatsApp action resolver for Smart Task Planner.',
+              'Return ONLY valid JSON. No markdown, no explanation.',
+              'The incoming command is already normalized by the WhatsApp bot and usually DOES NOT contain the prefix "task".',
+              'Infer the user intent and extract only the fields needed for backend execution.',
+              'Allowed actions:',
+              '- REGISTER',
+              '- CREATE_TASK',
+              '- UPDATE_TASK',
+              '- DELETE_TASK',
+              '- COMPLETE_TASK',
+              '- LIST_TASKS',
+              '- LIST_BY_DATE',
+              '- OVERVIEW',
+              '- HELP',
+              'Output schema:',
+              '{',
+              '  "action": "REGISTER" | "CREATE_TASK" | "UPDATE_TASK" | "DELETE_TASK" | "COMPLETE_TASK" | "LIST_TASKS" | "LIST_BY_DATE" | "OVERVIEW" | "HELP",',
+              '  "confidence": number,',
+              '  "targetText": string,',
+              '  "dateHint": string,',
+              '  "status": "PENDING" | "DONE" | "SKIPPED",',
+              '  "updates": {',
+              '    "title": string,',
+              '    "description": string,',
+              '    "deadline": ISO-8601 string,',
+              '    "priority": "HIGH" | "MEDIUM" | "LOW",',
+              '    "estimatedDuration": number,',
+              '    "tags": string[],',
+              '    "reminderTime": number',
+              '  },',
+              '  "replyStyle": "SHORT" | "NORMAL" | "FRIENDLY"',
+              '}',
+              'Rules:',
+              '- REGISTER only for pattern like "<userId> daftar".',
+              '- CREATE_TASK for new task requests.',
+              '- COMPLETE_TASK when user means finish/selesai/tandai selesai a task.',
+              '- DELETE_TASK when user means hapus/delete/remove a task.',
+              '- UPDATE_TASK when user means edit/ubah/update/reschedule a task.',
+              '- LIST_BY_DATE when user asks schedule/tasks for hari ini/besok/lusa/tanggal tertentu.',
+              '- LIST_TASKS for general list/schedule queries without a clear date filter.',
+              '- OVERVIEW for summary/ringkasan/overview.',
+              '- HELP for bantuan/help/menu/unclear instructions.',
+              '- targetText should contain the task phrase being referred to for update/delete/complete.',
+              '- dateHint should preserve natural date hints like "hari ini", "besok", "20 mei 2026", "jam 9" when relevant.',
+              '- status should be DONE for COMPLETE_TASK, SKIPPED only if user explicitly means skip.',
+              '- For CREATE_TASK and UPDATE_TASK, fill updates with structured task info when possible.',
+              '- If unsure, choose the most likely action, set confidence below 0.7, and keep extraction conservative.',
+            ].join('\n'),
+          },
+          {
+            role: 'user',
+            content: JSON.stringify({ command: input }),
+          },
+        ],
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => '');
+      throw new Error(`9Router request failed: ${response.status} ${errorText}`);
+    }
+
+    const result = (await response.json()) as NineRouterChatResponse;
+    const content = result.choices?.[0]?.message?.content;
+
+    if (!content) {
+      throw new Error('9Router response did not include message content');
+    }
+
+    const parsed = getJsonFromText(content) as Partial<ResolvedWhatsappAction>;
+    const allowedActions: ResolvedWhatsappAction['action'][] = [
+      'REGISTER',
+      'CREATE_TASK',
+      'UPDATE_TASK',
+      'DELETE_TASK',
+      'COMPLETE_TASK',
+      'LIST_TASKS',
+      'LIST_BY_DATE',
+      'OVERVIEW',
+      'HELP',
+    ];
+
+    const action = allowedActions.includes(parsed.action as ResolvedWhatsappAction['action'])
+      ? (parsed.action as ResolvedWhatsappAction['action'])
+      : 'HELP';
+
+    const confidence = typeof parsed.confidence === 'number' && !Number.isNaN(parsed.confidence)
+      ? Math.max(0, Math.min(1, parsed.confidence))
+      : 0.5;
+
+    const updates = parsed.updates
+      ? {
+          title: typeof parsed.updates.title === 'string' ? parsed.updates.title.trim() : undefined,
+          description: typeof parsed.updates.description === 'string' ? parsed.updates.description.trim() : undefined,
+          deadline: typeof parsed.updates.deadline === 'string' ? parsed.updates.deadline : undefined,
+          priority: normalizePriority(parsed.updates.priority),
+          estimatedDuration: normalizeDuration(parsed.updates.estimatedDuration),
+          tags: normalizeTags(parsed.updates.tags),
+          reminderTime: normalizeReminderTime(parsed.updates.reminderTime),
+        }
+      : undefined;
+
+    return {
+      action,
+      confidence,
+      targetText: typeof parsed.targetText === 'string' ? parsed.targetText.trim() : undefined,
+      dateHint: typeof parsed.dateHint === 'string' ? parsed.dateHint.trim() : undefined,
+      status: parsed.status === 'DONE' || parsed.status === 'PENDING' || parsed.status === 'SKIPPED' ? parsed.status : undefined,
+      updates,
+      replyStyle: parsed.replyStyle === 'SHORT' || parsed.replyStyle === 'FRIENDLY' || parsed.replyStyle === 'NORMAL' ? parsed.replyStyle : 'NORMAL',
     };
   }
 
