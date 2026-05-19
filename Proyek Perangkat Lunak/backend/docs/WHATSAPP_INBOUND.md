@@ -2,17 +2,20 @@
 
 Dokumentasi ini menjelaskan endpoint internal [`POST /internal/wa/inbound`](../src/app.ts:225) pada backend Smart Task Planner.
 
-Endpoint ini dipakai untuk menerima payload inbound dari service WhatsApp internal, memproses command pendaftaran WhatsApp ke user Task Planner, dan menyiapkan payload normalized untuk integrasi lanjutan.
+Endpoint ini adalah **entrypoint tunggal** untuk semua command WhatsApp yang sudah lebih dulu difilter oleh penyedia bot WhatsApp. Backend tidak perlu memikirkan filtering chat non-task di layer ini. Backend cukup membaca field `command`, mengenali intent, lalu meneruskan ke flow yang sesuai.
+
+Saat ini flow yang sudah diimplementasikan penuh adalah registrasi/linking nomor WhatsApp ke user Task Planner melalui pattern `user_id daftar`. Ke depan, endpoint ini juga menjadi pintu masuk untuk command AI seperti tambah task, edit task, done task, overview, dan daftar task.
 
 ## Tujuan Endpoint
 
 Endpoint [`POST /internal/wa/inbound`](../src/app.ts:225) digunakan untuk:
 
-- menerima webhook/payload inbound dari bot WhatsApp internal,
+- menerima semua payload chat task dari bot WhatsApp internal,
 - memvalidasi otorisasi internal service,
-- membaca command WhatsApp,
+- membaca `command` sebagai sumber utama instruksi user,
 - mendeteksi command registrasi dengan format `user_id daftar`,
-- menghubungkan nomor WhatsApp ke user Task Planner jika valid,
+- menjadikan nomor WhatsApp sebagai identitas penghubung ke `user_id` Task Planner,
+- menjadi gateway untuk intent AI WhatsApp seperti tambah task, edit, done, overview, dan list task,
 - mengirim pesan balasan WhatsApp sesuai kondisi sukses/gagal,
 - mengembalikan payload normalized untuk logging atau integrasi service lain.
 
@@ -176,6 +179,21 @@ Jika backend tidak bisa menemukan nomor dari payload, endpoint mengembalikan:
 ```
 
 Validasi ada di [`handleWhatsappInbound()`](../src/app.ts:104).
+
+## Pola Umum Command WhatsApp
+
+Secara konsep, backend membaca semua instruksi dari field `command`.
+
+Ada 2 kelompok besar command:
+
+1. **Command registrasi/linking**
+   - format khusus: `user_id daftar`
+   - tujuan: menghubungkan nomor WhatsApp ke user Task Planner.
+2. **Command operasional task berbasis AI**
+   - format awalan: `task ...`
+   - tujuan: membuat, mengedit, menyelesaikan, melihat overview, dan melihat daftar task.
+
+Karena provider bot sudah memfilter chat yang relevan, backend fokus pada parsing `command` dan routing intent.
 
 ## Format Command Registrasi
 
@@ -439,9 +457,106 @@ Jika nomor ditemukan tetapi gagal dinormalisasi, endpoint mengembalikan:
 
 Implementasi ada di [`handleWhatsappInbound()`](../src/app.ts:119).
 
-## Non-Registration Command
+## Command Task Berbasis AI
 
-Jika command **bukan** format `user_id daftar`, maka:
+Selain flow registrasi, tujuan utama endpoint ini adalah menjadi pintu masuk command WhatsApp berbasis AI.
+
+### Prinsip arsitektur
+
+- provider bot WhatsApp sudah memfilter chat yang relevan,
+- backend menerima payload lewat [`POST /internal/wa/inbound`](../src/app.ts:225),
+- backend membaca field `command`,
+- backend mengidentifikasi intent,
+- backend menyusun payload ke endpoint/service internal yang sesuai,
+- AI yang sudah dibekali knowledge tidak boleh “lari” dari domain Task Planner.
+
+### Peran nomor WhatsApp
+
+Nomor WhatsApp yang sudah linked melalui flow `user_id daftar` menjadi kunci untuk menentukan task milik user mana yang akan diproses.
+
+Artinya, sebelum command seperti tambah/edit/done/list dijalankan penuh, backend idealnya harus bisa memetakan nomor WhatsApp pengirim ke `user_id` yang valid.
+
+### Prefix command yang diharapkan
+
+Untuk operasional task, prefix yang direkomendasikan adalah:
+
+```text
+task ...
+```
+
+Contoh:
+
+```text
+task tambah meeting besok jam 10 malam #urgent
+task tanggal 10 ada meeting jam 9 malam di apartement #kerjaan
+task edit meeting besok jadi jam 9 malam
+task selesai kan task meeting client
+task overview hari ini
+task lihat daftar task saya
+```
+
+### Intent yang direncanakan
+
+Dokumen ini menyamakan arah implementasi bahwa AI WhatsApp akan mengubah command menjadi intent terstruktur berikut:
+
+| Intent | Contoh command | Arah aksi |
+|---|---|---|
+| `REGISTER_WHATSAPP` | `clx123abc daftar` | link nomor WA ke user |
+| `CREATE_TASK` | `task tambah meeting besok jam 10 malam #urgent` | buat task baru |
+| `UPDATE_TASK` | `task edit meeting besok jadi jam 9 malam` | ubah task yang cocok |
+| `COMPLETE_TASK` | `task selesai kan task meeting client` | tandai task `DONE` |
+| `LIST_TASKS` | `task lihat daftar task saya` | tampilkan task aktif / terfilter |
+| `OVERVIEW_TASKS` | `task overview hari ini` | tampilkan ringkasan/summary |
+
+### Goal AI WhatsApp
+
+AI WhatsApp sebaiknya bekerja mirip dengan flow AI Command Palette, tetapi dengan rule yang disesuaikan untuk media chat WhatsApp:
+
+- memahami kalimat natural bahasa Indonesia/Inggris,
+- tetap terbatas pada domain Task Planner,
+- menentukan intent yang benar,
+- menyusun payload endpoint yang sesuai,
+- memilih endpoint internal/backend yang tepat,
+- menghasilkan respons balasan yang ringkas dan membantu.
+
+### Arah routing intent ke backend
+
+Arah integrasi yang disarankan:
+
+- `CREATE_TASK` → gunakan flow setara [`POST /api/tasks`](../README.md)
+- `UPDATE_TASK` → gunakan flow setara update task existing
+- `COMPLETE_TASK` → gunakan flow setara update status task menjadi `DONE`
+- `LIST_TASKS` → gunakan flow get tasks milik user
+- `OVERVIEW_TASKS` → gunakan flow statistik/ringkasan task user
+
+Implementasi routing ini bisa dibuat terpisah dari flow registrasi agar rule WhatsApp lebih jelas dan tidak bercampur dengan parser command palette web.
+
+### Requirement AI agar tetap satu arah
+
+Agar konsisten, AI WhatsApp nantinya perlu punya rule seperti ini:
+
+- jika ada kata `tambah`, arahkan ke intent create,
+- jika ada kata `edit`, arahkan ke intent update,
+- jika ada kata `selesai`, `done`, atau `beres`, arahkan ke complete,
+- jika ada kata `overview`, arahkan ke summary,
+- jika ada kata `lihat`, `daftar`, atau `list` dalam konteks task, arahkan ke list task,
+- jika format `user_id daftar`, prioritaskan sebagai flow registrasi, bukan list.
+
+### Status implementasi saat ini
+
+Saat ini backend baru mengimplementasikan penuh:
+
+- validasi auth internal,
+- parsing payload inbound,
+- resolusi nomor WhatsApp,
+- flow registrasi `user_id daftar`,
+- normalized response payload.
+
+Flow AI untuk create/update/done/list/overview **belum** diimplementasikan di handler ini, tetapi endpoint ini memang didesain sebagai pintu masuknya.
+
+## Non-Registration Command Saat Ini
+
+Jika command **bukan** format `user_id daftar`, maka pada implementasi saat ini:
 
 - `registrationCommand` = `false`,
 - `taskPlannerUserId` = `null`,
@@ -453,6 +568,8 @@ Endpoint tetap mengembalikan payload normalized dengan message:
 ```text
 WhatsApp inbound payload captured
 ```
+
+Ini berarti command task seperti `task tambah ...` saat ini sudah bisa ditangkap payload-nya, tetapi belum diproses ke intent task final di handler sekarang.
 
 ## Struktur Response Normalized
 
@@ -573,16 +690,26 @@ curl -X POST http://localhost:8000/internal/wa/inbound \
 
 ## Catatan Integrasi Lanjutan
 
-Saat ini endpoint [`POST /internal/wa/inbound`](../src/app.ts:225) sudah mengenali dan memproses flow registrasi `user_id daftar`.
+Arah implementasi yang disepakati dari dokumentasi ini:
 
-Untuk command lain seperti:
+- [`POST /internal/wa/inbound`](../src/app.ts:225) adalah pintu masuk semua command task dari WhatsApp,
+- filtering chat non-task sudah menjadi tanggung jawab provider bot WhatsApp,
+- backend fokus pada pembacaan `command`, pemetaan nomor WA ke user, dan routing intent,
+- flow `user_id daftar` tetap menjadi prerequisite untuk linking identitas user,
+- flow AI berikutnya perlu dibuat khusus untuk WhatsApp agar rules-nya jelas, meski knowledge domain-nya bisa tetap sama dengan AI Command Palette.
 
-- `task tambah meeting besok jam 10 malam #urgent`
-- `task tanggal 10 ada meeting jam 9 malam di apartement #kerjaan`
+Dengan arah ini, AI WhatsApp diharapkan dapat menentukan apakah sebuah command harus menuju create, update, complete, overview, atau list, lalu menyusun payload backend yang sesuai tanpa keluar dari domain Smart Task Planner berbasis AI dari dastrevas.com.
 
-payload sudah diterima dan dinormalisasi, tetapi eksekusi AI parsing task WhatsApp lanjutan perlu dihubungkan ke modul AI/task berikutnya.
+## Rekomendasi Tahap Berikutnya
 
-Ini cocok dengan positioning Smart Task Planner sebagai task planner berbasis AI dari dastrevas.com.
+Setelah dokumentasi ini disepakati, implementasi teknis yang direkomendasikan adalah membuat modul/service AI WhatsApp terpisah, misalnya:
+
+- parser intent WhatsApp,
+- resolver user dari nomor WA,
+- router intent ke service task,
+- formatter response WhatsApp.
+
+Pemisahan ini akan memudahkan karena rule WhatsApp berbeda dari UI web command palette, walaupun keduanya tetap bisa berbagi knowledge domain Task Planner yang sama.
 
 ## Rekomendasi Testing
 
