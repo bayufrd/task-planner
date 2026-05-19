@@ -508,6 +508,8 @@ const handleWhatsappInbound = async (req: Request, res: Response): Promise<void>
     return;
   }
 
+  const normalizedWaNumber = normalizeSafeWhatsappNumber(waNumber);
+
   const commandMatch = command.match(/^(\S+)\s+daftar$/i);
   const taskPlannerUserId = commandMatch?.[1] || null;
   const intent = detectWhatsappIntent(command);
@@ -515,7 +517,7 @@ const handleWhatsappInbound = async (req: Request, res: Response): Promise<void>
 
   console.log('[WA Inbound] Command parsed', {
     waNumber,
-    normalizedWaNumber: normalizeSafeWhatsappNumber(waNumber),
+    normalizedWaNumber,
     command,
     taskPlannerUserId,
     intent,
@@ -746,7 +748,10 @@ const handleWhatsappInbound = async (req: Request, res: Response): Promise<void>
       let resolvedPlan: ResolvedWhatsappPlan | null = null;
 
       try {
-        resolvedPlan = await aiService.resolveWhatsappPlan(command);
+        resolvedPlan = await aiService.resolveWhatsappPlan({
+          command,
+          waNumber: normalizedWaNumber || undefined,
+        });
       } catch (error) {
         console.error('[WA AI] Failed to resolve action plan, fallback to rule-based intent:', error);
       }

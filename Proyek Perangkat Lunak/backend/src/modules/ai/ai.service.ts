@@ -23,6 +23,11 @@ export interface ResolvedWhatsappAction {
   replyStyle?: 'SHORT' | 'NORMAL' | 'FRIENDLY';
 }
 
+export interface ResolveWhatsappPlanInput {
+  command: string;
+  waNumber?: string;
+}
+
 export interface ResolvedWhatsappPlan {
   confidence: number;
   replyStyle: 'SHORT' | 'NORMAL' | 'FRIENDLY';
@@ -177,6 +182,15 @@ const applyIndonesianTimeHints = (input: string, deadline: Date, now: Date): Dat
   return base;
 };
 
+const normalizeDeadlineWithCommandHints = (input: string, deadline: string | undefined, now: Date): string | undefined => {
+  if (typeof deadline !== 'string') return undefined;
+
+  const parsedDeadline = new Date(deadline);
+  if (Number.isNaN(parsedDeadline.getTime())) return undefined;
+
+  return applyIndonesianTimeHints(input, parsedDeadline, now).toISOString();
+};
+
 export class AiService {
   async parseTaskCommand(input: string): Promise<ParsedTaskCommand> {
     if (!env.NINE_ROUTER_API || !env.NINE_ROUTER_API_KEY) {
@@ -286,10 +300,16 @@ export class AiService {
     };
   }
 
-  async resolveWhatsappPlan(input: string): Promise<ResolvedWhatsappPlan> {
+  async resolveWhatsappPlan(input: string | ResolveWhatsappPlanInput): Promise<ResolvedWhatsappPlan> {
     if (!env.NINE_ROUTER_API || !env.NINE_ROUTER_API_KEY) {
       throw new Error('9Router is not configured');
     }
+
+    const payload = typeof input === 'string'
+      ? { command: input }
+      : { command: input.command, waNumber: input.waNumber };
+
+    const now = new Date();
 
     const allowedActions: ResolvedWhatsappAction['action'][] = [
       'REGISTER',
@@ -316,7 +336,13 @@ export class AiService {
         ? {
             title: typeof raw.updates.title === 'string' ? raw.updates.title.trim() : undefined,
             description: typeof raw.updates.description === 'string' ? raw.updates.description.trim() : undefined,
-            deadline: typeof raw.updates.deadline === 'string' ? raw.updates.deadline : undefined,
+            deadline: normalizeDeadlineWithCommandHints(
+              [payload.command, raw?.dateHint, raw?.targetText, typeof raw.updates.title === 'string' ? raw.updates.title : undefined]
+                .filter(Boolean)
+                .join(' '),
+              raw.updates.deadline,
+              now
+            ),
             priority: normalizePriority(raw.updates.priority),
             estimatedDuration: normalizeDuration(raw.updates.estimatedDuration),
             tags: normalizeTags(raw.updates.tags),
@@ -411,7 +437,7 @@ export class AiService {
           },
           {
             role: 'user',
-            content: JSON.stringify({ command: input }),
+            content: JSON.stringify(payload),
           },
         ],
       }),
@@ -461,7 +487,7 @@ export class AiService {
     };
   }
 
-  async resolveWhatsappAction(input: string): Promise<ResolvedWhatsappAction> {
+  async resolveWhatsappAction(input: string | ResolveWhatsappPlanInput): Promise<ResolvedWhatsappAction> {
     const plan = await this.resolveWhatsappPlan(input);
     return plan.actions[0] || {
       action: 'HELP',
