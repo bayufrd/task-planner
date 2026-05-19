@@ -4,7 +4,7 @@ Dokumentasi ini menjelaskan endpoint internal [`POST /internal/wa/inbound`](../s
 
 Endpoint ini adalah **entrypoint tunggal** untuk semua command WhatsApp yang sudah lebih dulu difilter oleh penyedia bot WhatsApp. Backend tidak perlu memikirkan filtering chat non-task di layer ini. Backend cukup membaca field `command`, mengenali intent, lalu meneruskan ke flow yang sesuai.
 
-Saat ini flow yang sudah diimplementasikan penuh adalah registrasi/linking nomor WhatsApp ke user Task Planner melalui pattern `user_id daftar`. Ke depan, endpoint ini juga menjadi pintu masuk untuk command AI seperti tambah task, edit task, done task, overview, dan daftar task.
+Saat ini endpoint ini sudah menangani registrasi/linking nomor WhatsApp ke user Task Planner melalui pattern `user_id daftar`, create task berbasis AI dari command `task ...`, melihat daftar task aktif, melihat task berdasarkan tanggal sederhana, menandai task selesai berdasarkan pencocokan judul, dan overview/ringkasan singkat. Flow edit task masih menjadi tahap lanjutan.
 
 ## Tujuan Endpoint
 
@@ -23,10 +23,14 @@ Endpoint [`POST /internal/wa/inbound`](../src/app.ts:225) digunakan untuk:
 
 Implementasi utama berada di file berikut:
 
-- [`handleWhatsappInbound()`](../src/app.ts:66)
-- [`sendWhatsappMessage()`](../src/app.ts:40)
-- [`sendWhatsappRegistrationSuccess()`](../src/app.ts:62)
-- route registration di [`createApp()`](../src/app.ts:225)
+- [`handleWhatsappInbound()`](../src/app.ts:231)
+- [`sendWhatsappMessage()`](../src/app.ts:47)
+- [`sendWhatsappRegistrationSuccess()`](../src/app.ts:69)
+- [`detectWhatsappIntent()`](../src/app.ts:111)
+- [`buildListMessage()`](../src/app.ts:170)
+- [`buildOverviewMessage()`](../src/app.ts:90)
+- [`handleTaskCompletion()`](../src/app.ts:196)
+- route registration di [`createApp()`](../src/app.ts:578)
 
 ## Security
 
@@ -41,7 +45,7 @@ Authorization: Bearer <TOKEN_WHATSAPP>
 x-service-secret: <TOKEN_WHATSAPP>
 ```
 
-Validasi dilakukan di [`handleWhatsappInbound()`](../src/app.ts:67) sampai [`handleWhatsappInbound()`](../src/app.ts:79).
+Validasi dilakukan di [`handleWhatsappInbound()`](../src/app.ts:232) sampai [`handleWhatsappInbound()`](../src/app.ts:243).
 
 ### Aturan Auth
 
@@ -73,7 +77,7 @@ Field yang saat ini dibaca oleh backend:
 - `context.pushName`
 - `context.senderIsAdmin`
 
-Parsing dilakukan di [`handleWhatsappInbound()`](../src/app.ts:85).
+Parsing dilakukan di [`handleWhatsappInbound()`](../src/app.ts:247).
 
 ### Body Minimum
 
@@ -119,17 +123,17 @@ Parsing dilakukan di [`handleWhatsappInbound()`](../src/app.ts:85).
 
 ## Resolusi Nomor WhatsApp
 
-Backend akan mencoba mengambil nomor WhatsApp dari beberapa field secara berurutan di [`handleWhatsappInbound()`](../src/app.ts:93):
+Backend akan mencoba mengambil nomor WhatsApp dari beberapa field secara berurutan di [`handleWhatsappInbound()`](../src/app.ts:255):
 
-1. [`user.waNumber`](../src/app.ts:94)
-2. [`user.participant`](../src/app.ts:95)
-3. [`user.chatId`](../src/app.ts:96)
-4. [`context.remoteJid`](../src/app.ts:97)
+1. [`user.waNumber`](../src/app.ts:256)
+2. [`user.participant`](../src/app.ts:257)
+3. [`user.chatId`](../src/app.ts:258)
+4. [`context.remoteJid`](../src/app.ts:259)
 
 Nomor lalu dinormalisasi oleh:
 
-- [`extractWaNumber()`](../src/app.ts:16)
-- [`normalizeSafeWhatsappNumber()`](../src/app.ts:22)
+- [`extractWaNumber()`](../src/app.ts:23)
+- [`normalizeSafeWhatsappNumber()`](../src/app.ts:29)
 
 ### Normalisasi Nomor
 
@@ -162,7 +166,7 @@ Jika `command` kosong atau tidak dikirim, endpoint mengembalikan:
 }
 ```
 
-Validasi ada di [`handleWhatsappInbound()`](../src/app.ts:99).
+Validasi ada di [`handleWhatsappInbound()`](../src/app.ts:261).
 
 ### 2. Nomor WhatsApp harus bisa di-resolve
 
@@ -178,7 +182,7 @@ Jika backend tidak bisa menemukan nomor dari payload, endpoint mengembalikan:
 }
 ```
 
-Validasi ada di [`handleWhatsappInbound()`](../src/app.ts:104).
+Validasi ada di [`handleWhatsappInbound()`](../src/app.ts:266).
 
 ## Pola Umum Command WhatsApp
 
@@ -197,7 +201,7 @@ Karena provider bot sudah memfilter chat yang relevan, backend fokus pada parsin
 
 ## Format Command Registrasi
 
-Command registrasi dikenali dengan regex [`/^(\S+)\s+daftar$/i`](../src/app.ts:109).
+Command registrasi dikenali dengan regex [`/^(\S+)\s+daftar$/i`](../src/app.ts:271).
 
 ### Format
 
@@ -217,7 +221,7 @@ abc-001 daftar
 
 - token pertama akan dianggap sebagai `taskPlannerUserId`,
 - kata `daftar` menjadi trigger registrasi,
-- flag [`registrationCommand`](../src/app.ts:111) akan bernilai `true`.
+- flag `registrationCommand` akan bernilai `true`.
 
 Jika command tidak cocok format di atas, endpoint tetap menerima payload namun tidak menjalankan flow linking user.
 
@@ -495,6 +499,19 @@ task overview hari ini
 task lihat daftar task saya
 ```
 
+### Katalog command WhatsApp yang direncanakan
+
+Saat ini ada **6 command group utama** yang perlu dimiliki oleh AI WhatsApp:
+
+| Grup Command | Intent | Fungsi |
+|---|---|---|
+| Registrasi | `REGISTER_WHATSAPP` | link nomor WA ke `user_id` |
+| Tambah task | `CREATE_TASK` | membuat task baru dari bahasa natural |
+| Edit task | `UPDATE_TASK` | mengubah task yang sudah ada |
+| Selesaikan task | `COMPLETE_TASK` | mengubah status task menjadi `DONE` |
+| Lihat daftar/jadwal task | `LIST_TASKS` | menampilkan daftar task atau task pada tanggal tertentu |
+| Overview/ringkasan | `OVERVIEW_TASKS` | menampilkan summary produktivitas user |
+
 ### Intent yang direncanakan
 
 Dokumen ini menyamakan arah implementasi bahwa AI WhatsApp akan mengubah command menjadi intent terstruktur berikut:
@@ -504,8 +521,9 @@ Dokumen ini menyamakan arah implementasi bahwa AI WhatsApp akan mengubah command
 | `REGISTER_WHATSAPP` | `clx123abc daftar` | link nomor WA ke user |
 | `CREATE_TASK` | `task tambah meeting besok jam 10 malam #urgent` | buat task baru |
 | `UPDATE_TASK` | `task edit meeting besok jadi jam 9 malam` | ubah task yang cocok |
-| `COMPLETE_TASK` | `task selesai kan task meeting client` | tandai task `DONE` |
+| `COMPLETE_TASK` | `task selesai meeting client` | tandai task `DONE` |
 | `LIST_TASKS` | `task lihat daftar task saya` | tampilkan task aktif / terfilter |
+| `LIST_TASKS_BY_DATE` | `task lihat jadwal tanggal 10` | tampilkan task pada tanggal tertentu |
 | `OVERVIEW_TASKS` | `task overview hari ini` | tampilkan ringkasan/summary |
 
 ### Goal AI WhatsApp
@@ -523,10 +541,11 @@ AI WhatsApp sebaiknya bekerja mirip dengan flow AI Command Palette, tetapi denga
 
 Arah integrasi yang disarankan:
 
-- `CREATE_TASK` → gunakan flow setara [`POST /api/tasks`](../README.md)
+- `CREATE_TASK` → gunakan flow setara create task / [`POST /api/tasks`](../README.md)
 - `UPDATE_TASK` → gunakan flow setara update task existing
 - `COMPLETE_TASK` → gunakan flow setara update status task menjadi `DONE`
 - `LIST_TASKS` → gunakan flow get tasks milik user
+- `LIST_TASKS_BY_DATE` → gunakan flow get tasks milik user + filter tanggal/deadline
 - `OVERVIEW_TASKS` → gunakan flow statistik/ringkasan task user
 
 Implementasi routing ini bisa dibuat terpisah dari flow registrasi agar rule WhatsApp lebih jelas dan tidak bercampur dengan parser command palette web.
@@ -540,36 +559,269 @@ Agar konsisten, AI WhatsApp nantinya perlu punya rule seperti ini:
 - jika ada kata `selesai`, `done`, atau `beres`, arahkan ke complete,
 - jika ada kata `overview`, arahkan ke summary,
 - jika ada kata `lihat`, `daftar`, atau `list` dalam konteks task, arahkan ke list task,
+- jika ada kata `tanggal`, `hari ini`, `besok`, `minggu ini`, arahkan ke list/filter jadwal,
 - jika format `user_id daftar`, prioritaskan sebagai flow registrasi, bukan list.
+
+## Spesifikasi Per Perintah WhatsApp
+
+### 1. Registrasi WhatsApp
+
+Format utama:
+
+```text
+user_id daftar
+```
+
+Contoh:
+
+```text
+clx123abc daftar
+```
+
+Tujuan:
+
+- menghubungkan nomor WA pengirim ke `user_id`,
+- menjadi syarat agar perintah task berikutnya bisa dipetakan ke user yang benar.
+
+### 2. Tambah task
+
+Format umum:
+
+```text
+task tambah ...
+```
+
+Contoh:
+
+```text
+task tambah meeting besok jam 10 malam #urgent
+task tanggal 10 ada meeting jam 9 malam di apartement #kerjaan
+```
+
+Hasil yang diharapkan dari AI:
+
+- `title`
+- `description`
+- `deadline`
+- `priority`
+- `estimatedDuration`
+- `tags`
+- `reminderTime`
+
+Prinsipnya sama seperti AI command palette web: AI membaca bahasa natural lalu menyusun payload task create yang valid.
+
+### 3. Edit task
+
+Format umum:
+
+```text
+task edit ...
+```
+
+Contoh:
+
+```text
+task edit meeting besok jadi jam 9 malam
+task ubah task laporan jadi prioritas tinggi
+task ganti deadline presentasi ke tanggal 12 jam 8 pagi
+```
+
+#### Cara menentukan task yang diedit
+
+Secara prioritas, AI/backend sebaiknya mencari task target dengan urutan:
+
+1. **ID task eksplisit** jika suatu saat disediakan di response WhatsApp.
+2. **Pencocokan title paling mirip** pada task aktif user.
+3. **Konteks tanggal/deadline** bila disebutkan user.
+4. **Status aktif** — utamakan `PENDING`, hindari `DONE` kecuali user menyebut histori.
+
+Jika ada lebih dari satu task yang mirip, response sebaiknya tidak langsung update, tetapi meminta klarifikasi singkat.
+
+Contoh klarifikasi:
+
+```text
+Saya menemukan 2 task yang mirip:
+1. Meeting client — besok 10:00
+2. Meeting client — tanggal 10 21:00
+Balas dengan nomor task yang ingin diedit.
+```
+
+### 4. Selesaikan task
+
+Format umum:
+
+```text
+task selesai ...
+```
+
+Contoh:
+
+```text
+task selesai meeting client
+task done laporan bulanan
+task beres presentasi marketing
+```
+
+#### Cara menyelesaikan task
+
+Secara default, task diselesaikan berdasarkan:
+
+1. **ID task** jika tersedia.
+2. **Title task paling cocok** milik user terkait nomor WA tersebut.
+3. **Filter status aktif**: hanya task `PENDING` yang boleh diubah ke `DONE`.
+4. **Konteks waktu/deadline** jika user menyebut tanggal tertentu.
+
+Jika match lebih dari satu, backend/AI sebaiknya meminta klarifikasi, bukan memilih secara acak.
+
+Output akhirnya mengikuti rule backend: status diubah menjadi `DONE`, bukan dihapus.
+
+### 5. Lihat daftar task
+
+Format umum:
+
+```text
+task lihat daftar task saya
+task list task
+task task saya apa saja
+```
+
+Tujuan:
+
+- menampilkan daftar task aktif user,
+- default fokus ke task `PENDING`,
+- dapat dibatasi oleh filter ringan seperti priority atau waktu.
+
+#### Format output WhatsApp yang disarankan
+
+Karena tidak ada card/chart seperti frontend, daftar task sebaiknya berupa list teks ringkas:
+
+```text
+Daftar Task Anda:
+1. Meeting client — besok 10:00 — HIGH
+2. Laporan bulanan — tanggal 10 21:00 — MEDIUM
+3. Follow up vendor — Jumat 14:00 — LOW
+```
+
+### 6. Lihat jadwal / task berdasarkan tanggal
+
+Format umum:
+
+```text
+task lihat jadwal tanggal 10
+task ada apa besok
+task jadwal hari ini
+task task minggu ini
+```
+
+Tujuan:
+
+- menampilkan task pada tanggal atau rentang waktu tertentu,
+- berfungsi sebagai versi WhatsApp dari konteks kalender/timeline frontend,
+- hasil disajikan sebagai list teks, bukan chart.
+
+#### Mapping ke konsep frontend
+
+Di frontend ada komponen timeline/kalender. Di WhatsApp, padanannya adalah daftar task berdasarkan tanggal.
+
+Contoh output:
+
+```text
+Jadwal Anda untuk tanggal 10:
+1. Meeting apartement — 21:00 — #kerjaan
+2. Kirim revisi desain — 14:00 — HIGH
+3. Follow up client — 16:30 — MEDIUM
+```
+
+Jika tidak ada task:
+
+```text
+Tidak ada task terjadwal pada tanggal 10.
+```
+
+### 7. Overview / ringkasan
+
+Format umum:
+
+```text
+task overview
+task overview hari ini
+task ringkasan saya
+task summary minggu ini
+```
+
+#### Mapping ke frontend overview
+
+Di frontend [`overview/page.tsx`](../src/app/(protected)/overview/page.tsx:203), overview memuat:
+
+- total tugas,
+- jumlah selesai,
+- jumlah pending,
+- jumlah skipped,
+- completion rate,
+- skip rate,
+- analisis/insight AI.
+
+Di WhatsApp, chart dan visual level sebaiknya diubah menjadi ringkasan teks.
+
+#### Format output overview WhatsApp yang disarankan
+
+```text
+Overview Task Anda:
+- Total task: 12
+- Pending: 5
+- Done: 6
+- Skipped: 1
+- Completion rate: 50.0%
+- Skip rate: 8.3%
+
+Insight AI:
+Fokus Anda cukup baik minggu ini, tetapi masih ada beberapa task tertunda. Prioritaskan task dengan deadline terdekat hari ini.
+```
+
+#### Catatan output overview
+
+- tidak perlu chart,
+- tidak perlu image/animal badge,
+- cukup angka utama + insight AI singkat,
+- tetap konsisten dengan data backend yang dipakai frontend.
 
 ### Status implementasi saat ini
 
-Saat ini backend baru mengimplementasikan penuh:
+Saat ini backend sudah mengimplementasikan:
 
 - validasi auth internal,
 - parsing payload inbound,
 - resolusi nomor WhatsApp,
 - flow registrasi `user_id daftar`,
+- lookup user berdasarkan `whatsappNumber`,
+- deteksi intent WhatsApp internal,
+- create task via AI parser untuk command `task ...`,
+- list task aktif,
+- list task berdasarkan tanggal sederhana (`hari ini`, `besok`, `lusa`, `tanggal N`),
+- complete task berdasarkan pencocokan judul,
+- overview/ringkasan singkat,
+- pengiriman balasan WhatsApp untuk setiap operasi,
 - normalized response payload.
 
-Flow AI untuk create/update/done/list/overview **belum** diimplementasikan di handler ini, tetapi endpoint ini memang didesain sebagai pintu masuknya.
+Flow edit task internal khusus WhatsApp **belum** diimplementasikan dan masih menjadi tahap berikutnya.
 
 ## Non-Registration Command Saat Ini
 
-Jika command **bukan** format `user_id daftar`, maka pada implementasi saat ini:
+Jika command **bukan** format `user_id daftar`, maka endpoint saat ini akan:
 
-- `registrationCommand` = `false`,
-- `taskPlannerUserId` = `null`,
-- `registration` = `null`,
-- `registrationNotification` = `null`.
+- menormalisasi nomor WA,
+- mencari user berdasarkan `whatsappNumber`,
+- menolak command jika nomor belum terdaftar,
+- mendeteksi intent internal,
+- menjalankan operasi internal sesuai intent,
+- mengirim balasan ke endpoint WhatsApp reply,
+- mengembalikan payload normalized dengan `intent`, `operation`, dan `whatsappReply`.
 
-Endpoint tetap mengembalikan payload normalized dengan message:
+Message HTTP sukses sekarang menggunakan text:
 
 ```text
-WhatsApp inbound payload captured
+WhatsApp inbound command processed
 ```
-
-Ini berarti command task seperti `task tambah ...` saat ini sudah bisa ditangkap payload-nya, tetapi belum diproses ke intent task final di handler sekarang.
 
 ## Struktur Response Normalized
 
@@ -602,9 +854,12 @@ Semua request sukses menggunakan format [`sendSuccess()`](../src/lib/response.ts
 
 - `registrationCommand`: apakah command cocok flow `user_id daftar`
 - `taskPlannerUserId`: hasil parsing token pertama command
+- `intent`: hasil deteksi intent internal WhatsApp
+- `operation`: hasil eksekusi internal untuk create/list/done/overview/unknown
+- `whatsappReply.sent`: apakah pengiriman WhatsApp balasan berhasil
 - `registration.linked`: apakah nomor berhasil dihubungkan ke user
 - `registration.reason`: alasan gagal link jika ada
-- `registrationNotification.sent`: apakah pengiriman WhatsApp balasan berhasil
+- `registrationNotification.sent`: apakah pengiriman WhatsApp balasan registrasi berhasil
 - `registrationNotification.type`: tipe notifikasi (`registration-success`, `user-not-found`, `already-registered`)
 
 ## HTTP Status Summary
@@ -614,7 +869,9 @@ Semua request sukses menggunakan format [`sendSuccess()`](../src/lib/response.ts
 | registrasi berhasil | `201` | nomor tersimpan dan pesan sukses dikirim/dicoba kirim |
 | user id tidak ditemukan | `201` | payload sukses, tetapi registrasi tidak terhubung |
 | user sudah punya nomor | `201` | payload sukses, tetapi registrasi tidak terhubung |
-| command biasa non registrasi | `201` | inbound dicatat sebagai payload biasa |
+| create/list/done/overview berhasil | `201` | operasi internal berhasil dan balasan WA dikirim/dicoba kirim |
+| nomor WA belum terdaftar | `201` | operasi ditolak, user diminta daftar/link terlebih dahulu |
+| command tidak dikenali | `201` | operasi gagal dikenali, tetapi balasan WA tetap dikirim |
 | token salah | `401` | unauthorized |
 | command kosong | `400` | validation error |
 | wa number tidak ditemukan | `400` | validation error |
@@ -688,40 +945,72 @@ curl -X POST http://localhost:8000/internal/wa/inbound \
   }'
 ```
 
+### Fitur internal WhatsApp yang sudah aktif
+
+- `task tambah meeting besok jam 10 malam #urgent` → create task via AI parser internal
+- `task lihat jadwal` → list task aktif
+- `task lihat jadwal besok` → list task by date
+- `task selesai meeting client` → tandai DONE berdasarkan judul yang match
+- `task overview` → kirim ringkasan task user
+
+### Catatan arsitektur endpoint internal
+
+Flow WhatsApp ini **tidak** memanggil endpoint web-auth biasa seperti [`/api/tasks`](../src/modules/tasks/task.routes.ts) melalui HTTP internal. Endpoint [`POST /internal/wa/inbound`](../src/app.ts:578) langsung menggunakan service internal backend:
+
+- [`AiService.parseTaskCommand()`](../src/modules/ai/ai.service.ts:117)
+- [`TaskService.createTask()`](../src/modules/tasks/task.service.ts:10)
+- [`TaskService.getTasks()`](../src/modules/tasks/task.service.ts:46)
+- [`TaskService.updateTaskStatus()`](../src/modules/tasks/task.service.ts:137)
+- [`TaskService.getTaskStats()`](../src/modules/tasks/task.service.ts:176)
+- [`TaskService.getDailyTaskStats()`](../src/modules/tasks/task.service.ts:186)
+
+Dengan pola ini, WhatsApp AI punya akses internal tanpa login session user web, tetapi tetap aman karena konteks user selalu diambil dari nomor WhatsApp yang sudah terdaftar.
+
 ## Catatan Integrasi Lanjutan
 
-Arah implementasi yang disepakati dari dokumentasi ini:
+Arah implementasi yang sekarang berlaku:
 
-- [`POST /internal/wa/inbound`](../src/app.ts:225) adalah pintu masuk semua command task dari WhatsApp,
+- [`POST /internal/wa/inbound`](../src/app.ts:578) adalah pintu masuk semua command task dari WhatsApp,
 - filtering chat non-task sudah menjadi tanggung jawab provider bot WhatsApp,
 - backend fokus pada pembacaan `command`, pemetaan nomor WA ke user, dan routing intent,
 - flow `user_id daftar` tetap menjadi prerequisite untuk linking identitas user,
-- flow AI berikutnya perlu dibuat khusus untuk WhatsApp agar rules-nya jelas, meski knowledge domain-nya bisa tetap sama dengan AI Command Palette.
+- flow AI WhatsApp sudah memakai service internal backend, bukan endpoint web auth biasa,
+- setelah setiap operasi, backend mencoba mengirim balasan ke endpoint WhatsApp reply melalui [`sendWhatsappMessage()`](../src/app.ts:47),
+- edit/update task detail masih belum aktif dan menjadi tahap lanjutan.
 
-Dengan arah ini, AI WhatsApp diharapkan dapat menentukan apakah sebuah command harus menuju create, update, complete, overview, atau list, lalu menyusun payload backend yang sesuai tanpa keluar dari domain Smart Task Planner berbasis AI dari dastrevas.com.
+Dengan arah ini, AI WhatsApp sekarang sudah dapat menentukan apakah sebuah command harus menuju create, complete, overview, atau list, lalu menyusun payload backend yang sesuai tanpa keluar dari domain Smart Task Planner berbasis AI dari dastrevas.com.
 
 ## Rekomendasi Tahap Berikutnya
 
-Setelah dokumentasi ini disepakati, implementasi teknis yang direkomendasikan adalah membuat modul/service AI WhatsApp terpisah, misalnya:
+Tahap teknis berikutnya yang direkomendasikan:
 
-- parser intent WhatsApp,
-- resolver user dari nomor WA,
-- router intent ke service task,
-- formatter response WhatsApp.
-
-Pemisahan ini akan memudahkan karena rule WhatsApp berbeda dari UI web command palette, walaupun keduanya tetap bisa berbagi knowledge domain Task Planner yang sama.
+- pindahkan logic WhatsApp dari [`backend/src/app.ts`](../src/app.ts) ke modul khusus, misalnya `backend/src/modules/whatsapp/`,
+- tambahkan intent `UPDATE_TASK`,
+- tambahkan strategi disambiguasi yang lebih kuat berbasis `id`, `title`, deadline, atau top-N candidate,
+- tambahkan formatter output yang lebih kaya untuk overview dan list,
+- tambahkan test otomatis/service-level untuk flow WhatsApp AI.
 
 ## Rekomendasi Testing
 
-Checklist manual yang disarankan:
+Checklist manual/QC yang disarankan:
 
 - [ ] test request tanpa header auth → harus `401`
 - [ ] test request tanpa `command` → harus `400`
 - [ ] test request tanpa sumber nomor WA → harus `400`
-- [ ] test `user_id daftar` dengan user valid tanpa nomor → harus link berhasil
+- [ ] test `user_id daftar` dengan user valid tanpa nomor → harus link berhasil + kirim pesan sukses
 - [ ] test `user_id daftar` dengan user tidak ditemukan → harus kirim pesan signup
 - [ ] test `user_id daftar` dengan user yang sudah punya nomor → harus kirim pesan sudah terdaftar
 - [ ] test nomor WA yang sudah dipakai user lain → harus `409`
-- [ ] test command non registrasi seperti `task tambah meeting besok jam 10 malam #urgent`
-- [ ] verifikasi isi `registrationNotification` pada setiap skenario
+- [ ] test command non-registrasi dari nomor belum terdaftar → harus kirim balasan minta link akun
+- [ ] test `task tambah meeting besok jam 10 malam #urgent` → harus diparse ke create task dan task tersimpan
+- [ ] test `task lihat jadwal` → harus menampilkan task aktif user terkait
+- [ ] test `task lihat jadwal besok` → harus memfilter berdasarkan tanggal besok
+- [ ] test `task lihat jadwal tanggal 10` → harus route ke list by date
+- [ ] test `task selesai meeting client` → harus route ke complete task
+- [ ] test `task selesai` tanpa judul → harus minta judul task
+- [ ] test title ambigu untuk done → harus minta user lebih spesifik
+- [ ] test `task overview` → harus mengembalikan ringkasan task user
+- [ ] verifikasi isi `operation` dan `whatsappReply` pada setiap skenario
 - [ ] verifikasi pesan WhatsApp benar-benar terkirim dari service bot
+- [ ] jalankan build backend setelah perubahan
+- [ ] jalankan `git status --short` untuk review file berubah

@@ -12,6 +12,13 @@ import reminderRoutes from './modules/reminders/reminder.routes';
 import calendarRoutes from './modules/calendar/calendar.routes';
 import calendarRefreshRoutes from './modules/calendar/calendar.refresh.routes';
 import aiRoutes from './modules/ai/ai.routes';
+import { AiService } from './modules/ai/ai.service';
+import { TaskService } from './modules/tasks/task.service';
+
+const aiService = new AiService();
+const taskService = new TaskService();
+
+type WhatsappIntent = 'REGISTER' | 'CREATE_TASK' | 'LIST_TASKS' | 'LIST_BY_DATE' | 'COMPLETE_TASK' | 'OVERVIEW' | 'UNKNOWN';
 
 const extractWaNumber = (value?: string | null): string | null => {
   if (!value) return null;
@@ -66,6 +73,161 @@ const sendWhatsappRegistrationSuccess = async (number: string, name: string): Pr
   );
 };
 
+const formatTaskLine = (task: {
+  title: string;
+  deadline: Date;
+  priority: string;
+  status: string;
+}) => {
+  const formattedDate = task.deadline.toLocaleString('id-ID', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  });
+
+  return `- ${task.title} | ${formattedDate} | ${task.priority} | ${task.status}`;
+};
+
+const buildOverviewMessage = async (userId: string, name?: string | null) => {
+  const stats = await taskService.getTaskStats(userId);
+  const dailyData = await taskService.getDailyTaskStats(userId, 7);
+  const analysis = await aiService.analyzeOverview(userId, stats, dailyData).catch(() => null);
+  const total = stats.pending + stats.done + stats.skipped;
+  const completionRate = total > 0 ? Math.round((stats.done / total) * 100) : 0;
+  const skipRate = total > 0 ? Math.round((stats.skipped / total) * 100) : 0;
+  const insight = analysis?.insights?.[0] || 'Tetap konsisten menyelesaikan task prioritas tertinggi terlebih dahulu.';
+
+  return [
+    `Ringkasan tugas${name ? ` untuk ${name}` : ''}:`,
+    `- Total: ${total}`,
+    `- Pending: ${stats.pending}`,
+    `- Done: ${stats.done}`,
+    `- Skipped: ${stats.skipped}`,
+    `- Completion rate: ${completionRate}%`,
+    `- Skip rate: ${skipRate}%`,
+    `- Insight AI: ${insight}`,
+  ].join('\n');
+};
+
+const detectWhatsappIntent = (command: string): WhatsappIntent => {
+  const normalized = command.trim().toLowerCase();
+
+  if (/^(\S+)\s+daftar$/i.test(command)) return 'REGISTER';
+  if (/^task\s+(overview|ringkasan|summary)/i.test(normalized)) return 'OVERVIEW';
+  if (/^task\s+(lihat|list|daftar|jadwal|agenda).*(tanggal|besok|lusa|hari ini|today)/i.test(normalized)) return 'LIST_BY_DATE';
+  if (/^task\s+(lihat|list|daftar|jadwal|agenda)/i.test(normalized)) return 'LIST_TASKS';
+  if (/^task\s+(selesai|done|complete|tandai selesai)/i.test(normalized)) return 'COMPLETE_TASK';
+  if (/^task\s+/i.test(normalized)) return 'CREATE_TASK';
+
+  return 'UNKNOWN';
+};
+
+const resolveDateFilter = (command: string): { start: Date; end: Date; label: string } | null => {
+  const lower = command.toLowerCase();
+  const now = new Date();
+  const base = new Date(now);
+  base.setHours(0, 0, 0, 0);
+
+  if (lower.includes('hari ini') || lower.includes('today')) {
+    const end = new Date(base);
+    end.setHours(23, 59, 59, 999);
+    return { start: base, end, label: 'hari ini' };
+  }
+
+  if (lower.includes('besok')) {
+    const start = new Date(base);
+    start.setDate(start.getDate() + 1);
+    const end = new Date(start);
+    end.setHours(23, 59, 59, 999);
+    return { start, end, label: 'besok' };
+  }
+
+  if (lower.includes('lusa')) {
+    const start = new Date(base);
+    start.setDate(start.getDate() + 2);
+    const end = new Date(start);
+    end.setHours(23, 59, 59, 999);
+    return { start, end, label: 'lusa' };
+  }
+
+  const tanggalMatch = lower.match(/tanggal\s+(\d{1,2})/i);
+  if (tanggalMatch) {
+    const day = Number(tanggalMatch[1]);
+    if (day >= 1 && day <= 31) {
+      const start = new Date(base.getFullYear(), base.getMonth(), day, 0, 0, 0, 0);
+      if (start.getDate() !== day) return null;
+      if (start < base) {
+        start.setMonth(start.getMonth() + 1);
+      }
+      const end = new Date(start);
+      end.setHours(23, 59, 59, 999);
+      return { start, end, label: `tanggal ${day}` };
+    }
+  }
+
+  return null;
+};
+
+const buildListMessage = async (userId: string, command: string, name?: string | null) => {
+  const dateFilter = resolveDateFilter(command);
+  const tasks = await taskService.getTasks(userId);
+  const filteredTasks = dateFilter
+    ? tasks.filter((task) => task.deadline >= dateFilter.start && task.deadline <= dateFilter.end)
+    : tasks;
+
+  if (filteredTasks.length === 0) {
+    return dateFilter
+      ? `Tidak ada task untuk ${dateFilter.label}${name ? `, ${name}` : ''}.`
+      : `Tidak ada task aktif${name ? ` untuk ${name}` : ''}.`;
+  }
+
+  const header = dateFilter
+    ? `Daftar task ${dateFilter.label}${name ? ` untuk ${name}` : ''}:`
+    : `Daftar task aktif${name ? ` untuk ${name}` : ''}:`;
+
+  return [header, ...filteredTasks.slice(0, 10).map(formatTaskLine)].join('\n');
+};
+
+const extractCompletionTitle = (command: string) =>
+  command
+    .replace(/^task\s+/i, '')
+    .replace(/^(selesai|done|complete|tandai selesai)\s*/i, '')
+    .trim();
+
+const handleTaskCompletion = async (userId: string, command: string, name?: string | null) => {
+  const rawTitle = extractCompletionTitle(command);
+  if (!rawTitle) {
+    return {
+      reply: 'Format selesai belum lengkap. Contoh: task selesai meeting client',
+      operation: { success: false, type: 'COMPLETE_TASK', reason: 'MISSING_TITLE' },
+    };
+  }
+
+  const tasks = await taskService.getTasks(userId);
+  const normalizedTitle = rawTitle.toLowerCase();
+  const matchedTasks = tasks.filter((task) => task.title.toLowerCase().includes(normalizedTitle));
+
+  if (matchedTasks.length === 0) {
+    return {
+      reply: `Task dengan kata kunci "${rawTitle}" tidak ditemukan.`,
+      operation: { success: false, type: 'COMPLETE_TASK', reason: 'TASK_NOT_FOUND', keyword: rawTitle },
+    };
+  }
+
+  if (matchedTasks.length > 1) {
+    return {
+      reply: ['Saya menemukan lebih dari satu task. Mohon lebih spesifik:', ...matchedTasks.slice(0, 5).map(formatTaskLine)].join('\n'),
+      operation: { success: false, type: 'COMPLETE_TASK', reason: 'AMBIGUOUS_TASK', keyword: rawTitle, matches: matchedTasks.slice(0, 5) },
+    };
+  }
+
+  const updatedTask = await taskService.updateTaskStatus(userId, matchedTasks[0].id, { status: 'DONE' });
+
+  return {
+    reply: `Task selesai ditandai DONE${name ? ` untuk ${name}` : ''}:\n${formatTaskLine(updatedTask)}`,
+    operation: { success: true, type: 'COMPLETE_TASK', task: updatedTask },
+  };
+};
+
 const handleWhatsappInbound = async (req: Request, res: Response): Promise<void> => {
   const bearerToken = req.headers.authorization?.startsWith('Bearer ')
     ? req.headers.authorization.substring(7).trim()
@@ -108,10 +270,13 @@ const handleWhatsappInbound = async (req: Request, res: Response): Promise<void>
 
   const commandMatch = command.match(/^(\S+)\s+daftar$/i);
   const taskPlannerUserId = commandMatch?.[1] || null;
-  const registrationCommand = Boolean(taskPlannerUserId);
+  const intent = detectWhatsappIntent(command);
+  const registrationCommand = intent === 'REGISTER';
 
   let registration = null;
   let registrationNotification = null;
+  let whatsappReply: null | { sent: boolean; number: string; message: string; type: string } = null;
+  let operation: Record<string, unknown> | null = null;
 
   if (taskPlannerUserId) {
     const safeWhatsappNumber = normalizeSafeWhatsappNumber(waNumber);
@@ -243,6 +408,118 @@ const handleWhatsappInbound = async (req: Request, res: Response): Promise<void>
     }
   }
 
+  if (!registrationCommand) {
+    const safeWhatsappNumber = normalizeSafeWhatsappNumber(waNumber);
+
+    if (!safeWhatsappNumber) {
+      sendError(res, 'VALIDATION_ERROR', 'Unable to normalize WhatsApp number', 400);
+      return;
+    }
+
+    const linkedUser = await prisma.user.findFirst({
+      where: { whatsappNumber: safeWhatsappNumber },
+      select: {
+        id: true,
+        name: true,
+        whatsappNumber: true,
+      },
+    });
+
+    if (!linkedUser) {
+      const unregisteredMessage = 'Nomor WhatsApp ini belum terhubung ke Task Planner. Kirim format `user_id daftar` terlebih dahulu untuk menghubungkan akun Anda.';
+
+      try {
+        await sendWhatsappMessage(safeWhatsappNumber, unregisteredMessage);
+        whatsappReply = {
+          sent: true,
+          number: safeWhatsappNumber,
+          message: unregisteredMessage,
+          type: 'number-not-registered',
+        };
+      } catch (error) {
+        console.error('[WA AI] Failed to send unregistered-number message:', error);
+        whatsappReply = {
+          sent: false,
+          number: safeWhatsappNumber,
+          message: unregisteredMessage,
+          type: 'number-not-registered',
+        };
+      }
+
+      operation = {
+        type: intent,
+        success: false,
+        reason: 'WHATSAPP_NUMBER_NOT_REGISTERED',
+      };
+    } else {
+      let replyMessage = '';
+
+      if (intent === 'LIST_TASKS' || intent === 'LIST_BY_DATE') {
+        replyMessage = await buildListMessage(linkedUser.id, command, linkedUser.name);
+        operation = {
+          type: intent,
+          success: true,
+          userId: linkedUser.id,
+        };
+      } else if (intent === 'OVERVIEW') {
+        replyMessage = await buildOverviewMessage(linkedUser.id, linkedUser.name);
+        operation = {
+          type: 'OVERVIEW',
+          success: true,
+          userId: linkedUser.id,
+        };
+      } else if (intent === 'COMPLETE_TASK') {
+        const completionResult = await handleTaskCompletion(linkedUser.id, command, linkedUser.name);
+        replyMessage = completionResult.reply;
+        operation = {
+          ...completionResult.operation,
+          userId: linkedUser.id,
+        };
+      } else if (intent === 'CREATE_TASK') {
+        const taskCommand = command.replace(/^task\s+/i, '').trim();
+        const parsedTask = await aiService.parseTaskCommand(taskCommand);
+        const createdTask = await taskService.createTask(linkedUser.id, parsedTask);
+        replyMessage = [
+          `Task berhasil dibuat${linkedUser.name ? ` untuk ${linkedUser.name}` : ''}:`,
+          formatTaskLine(createdTask),
+        ].join('\n');
+        operation = {
+          type: 'CREATE_TASK',
+          success: true,
+          userId: linkedUser.id,
+          parsedTask,
+          task: createdTask,
+        };
+      } else {
+        replyMessage = 'Command belum dikenali. Gunakan awalan `task` seperti `task tambah meeting besok jam 10 malam #urgent`, `task lihat jadwal besok`, `task selesai meeting client`, atau `task overview`.';
+        operation = {
+          type: 'UNKNOWN',
+          success: false,
+          userId: linkedUser.id,
+          reason: 'UNKNOWN_COMMAND',
+        };
+      }
+
+      try {
+        await sendWhatsappMessage(safeWhatsappNumber, replyMessage);
+        whatsappReply = {
+          sent: true,
+          number: safeWhatsappNumber,
+          message: replyMessage,
+          type: intent.toLowerCase(),
+        };
+      } catch (error) {
+        console.error('[WA AI] Failed to send WhatsApp reply:', error);
+        whatsappReply = {
+          sent: false,
+          number: safeWhatsappNumber,
+          message: replyMessage,
+          type: intent.toLowerCase(),
+        };
+      }
+    }
+  }
+
   const normalizedPayload = {
     source,
     service,
@@ -271,12 +548,15 @@ const handleWhatsappInbound = async (req: Request, res: Response): Promise<void>
     receivedAt: new Date().toISOString(),
     registration,
     registrationNotification,
+    intent,
+    operation,
+    whatsappReply,
   };
 
   sendSuccess(
     res,
     normalizedPayload,
-    registrationCommand ? 'WhatsApp registration captured and saved' : 'WhatsApp inbound payload captured',
+    registrationCommand ? 'WhatsApp registration captured and saved' : 'WhatsApp inbound command processed',
     201
   );
 };
