@@ -907,17 +907,20 @@ const handleWhatsappInbound = async (req: Request, res: Response): Promise<void>
           }
         } else if (action === 'CREATE_TASK') {
           const taskCommand = normalizeCommandText(command);
+          const aiParsedTask = await aiService.parseTaskCommand(taskCommand);
           const parsedTask = resolvedAction.updates?.title
             ? {
-                title: resolvedAction.updates.title,
-                description: resolvedAction.updates.description || '',
-                deadline: resolvedAction.updates.deadline || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-                priority: resolvedAction.updates.priority || 'MEDIUM',
-                estimatedDuration: resolvedAction.updates.estimatedDuration || 60,
-                tags: resolvedAction.updates.tags || [],
-                reminderTime: resolvedAction.updates.reminderTime || 60,
+                ...aiParsedTask,
+                ...resolvedAction.updates,
+                title: resolvedAction.updates.title || aiParsedTask.title,
+                description: resolvedAction.updates.description ?? aiParsedTask.description,
+                deadline: aiParsedTask.deadline,
+                priority: resolvedAction.updates.priority || aiParsedTask.priority,
+                estimatedDuration: resolvedAction.updates.estimatedDuration || aiParsedTask.estimatedDuration,
+                tags: resolvedAction.updates.tags?.length ? resolvedAction.updates.tags : aiParsedTask.tags,
+                reminderTime: resolvedAction.updates.reminderTime ?? aiParsedTask.reminderTime,
               }
-            : await aiService.parseTaskCommand(taskCommand);
+            : aiParsedTask;
           const createdTask = await taskService.createTask(linkedUser.id, parsedTask);
           actionReply = [
             `✅ Task berhasil dibuat${linkedUser.name ? ` untuk ${linkedUser.name}` : ''}:`,

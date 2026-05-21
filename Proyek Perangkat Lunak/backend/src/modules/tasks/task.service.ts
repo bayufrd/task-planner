@@ -27,7 +27,7 @@ export class TaskService {
     });
 
     await prisma.$executeRawUnsafe(
-      'UPDATE `Task` SET `reminder24hSent` = false, `reminder1hSent` = false WHERE `id` = ?',
+      'UPDATE `Task` SET `reminder24hSent` = false, `reminder1hSent` = false, `reminderDeadlineSent` = false, `skippedNotificationSent` = false WHERE `id` = ?',
       task.id
     );
 
@@ -437,12 +437,12 @@ export class TaskService {
         INNER JOIN User u ON u.id = t.userId
         WHERE t.status = 'PENDING'
           AND t.deletedAt IS NULL
-          AND t.deadline > ?
+          AND t.deadline >= ?
           AND t.deadline <= ?
           AND u.whatsappNumber IS NOT NULL
         ORDER BY t.deadline ASC
       `,
-      now,
+      new Date(now.getTime() - windowMs),
       new Date(now.getTime() + twentyFourHoursMs + windowMs)
     );
 
@@ -466,7 +466,7 @@ export class TaskService {
         timeZone: 'Asia/Jakarta',
       });
 
-      if (!task.reminder24hSent && remainingMs <= twentyFourHoursMs && remainingMs > twentyFourHoursMs - windowMs) {
+      if (!task.reminder24hSent && remainingMs <= twentyFourHoursMs && remainingMs >= twentyFourHoursMs - windowMs) {
         reminders.push({
           taskId: task.id,
           type: '24h',
@@ -482,7 +482,7 @@ export class TaskService {
         });
       }
 
-      if (!task.reminder1hSent && remainingMs <= oneHourMs && remainingMs > oneHourMs - windowMs) {
+      if (!task.reminder1hSent && remainingMs <= oneHourMs && remainingMs >= oneHourMs - windowMs) {
         reminders.push({
           taskId: task.id,
           type: '1h',
