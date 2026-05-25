@@ -373,84 +373,145 @@ Solusi yang ditawarkan adalah pengembangan aplikasi **Smart Task Planner**, yait
 
 | Folder/File | Fungsi |
 |------------|--------|
-| `src/app` | App Router, halaman publik, protected dashboard, API routes |
-| `src/components` | Komponen UI seperti task card, calendar timeline, command palette |
-| `src/lib` | Utility, hooks, API helpers, auth, constants, types |
-| `prisma/schema.prisma` | Schema database Prisma |
-| `docs` | Dokumentasi proyek |
-| `README.md` | Dokumentasi utama aplikasi |
-| `AGENTS.md` | Panduan lokal arah pengembangan agent |
+| `src/app` | App Router Next.js untuk halaman publik, autentikasi, dashboard, overview, dan koneksi WhatsApp |
+| `src/app/api/auth/[...nextauth]` | Handler NextAuth.js untuk session OAuth Google di sisi Next.js |
+| `src/components` | Komponen UI seperti task card, calendar timeline, command palette, provider, dan form |
+| `src/lib` | Utility, hooks, API client, auth helper, constants, dan type definitions |
+| `backend/src/app.ts` | Registrasi seluruh route Express backend |
+| `backend/src/modules/auth` | Modul autentikasi JWT, register/login, profil user, dan Google OAuth backend |
+| `backend/src/modules/tasks` | Modul task CRUD, status task, stats, auto-skip, dan reminder processing |
+| `backend/src/modules/reminders` | Modul reminder dan due reminder retrieval |
+| `backend/src/modules/calendar` | Modul integrasi Google Calendar, calendar CRUD, dan refresh sync |
+| `backend/src/modules/ai` | Modul AI/LLM parsing task command dan overview analysis |
+| `backend/src/modules/whatsappInbound` | Modul internal inbound WhatsApp command dan linking nomor WhatsApp |
+| `backend/prisma/schema.prisma` | Schema database utama backend Express |
+| `prisma/schema.prisma` | Schema Prisma yang masih digunakan pada sisi NextAuth/frontend |
+| `docs` | Dokumentasi proyek, deployment, database, laporan, dan lampiran teknis |
+| `README.md` | Dokumentasi utama aplikasi dan production guide |
+| `backend/README.md` | Dokumentasi endpoint, struktur backend, dan status migrasi Express |
 
 ## 2. PENGEMBANGAN DAN DESAIN {#pengembangan-dan-desain}
 
 ### 2.1 Desain Solusi
 
-Smart Task Planner dirancang sebagai aplikasi fullstack berbasis Next.js App Router. Desain sistem dibagi menjadi beberapa layer:
+Smart Task Planner saat ini dirancang sebagai aplikasi **hybrid fullstack** yang memisahkan frontend dan backend, tidak lagi hanya bertumpu pada Next.js saja. Desain sistem dibagi menjadi beberapa layer:
 
-1. **Client Layer**
-   - Landing page.
-   - Dashboard.
-   - Task components.
+1. **Presentation / Client Layer**
+   - Landing page publik.
+   - Sign in dan sign up page.
+   - Dashboard task management.
+   - Overview analytics page.
+   - Connect WhatsApp page.
    - Calendar timeline.
    - Command palette.
-   - Theme provider dan auth provider.
+   - Theme, language, snackbar, dan auth session provider.
 
-2. **State Layer**
-   - Zustand store untuk state client.
-   - LocalStorage persistence pada MVP.
+2. **Frontend Application Layer**
+   - Next.js 14 App Router sebagai shell aplikasi web.
+   - React component tree untuk interaksi pengguna.
+   - API client pada `src/lib/api/client.ts` untuk komunikasi ke Express backend.
+   - Zustand untuk state client tertentu dan local persistence.
+   - NextAuth.js untuk session management di sisi frontend.
 
-3. **Domain Utility Layer**
-   - Priority algorithm.
-   - Validation utility.
-   - Date utility.
-   - Task utility.
-   - Type definitions.
+3. **Backend API Layer**
+   - Express.js sebagai REST API utama.
+   - Route health check, auth, tasks, reminders, calendars, AI, dan internal WhatsApp.
+   - Middleware CORS, auth JWT, validation, dan error handler.
+   - Scheduler backend untuk auto-skip dan pengiriman reminder WhatsApp.
 
-4. **Backend Layer**
-   - Next.js API Routes.
-   - NextAuth.js.
-   - Prisma Client.
-   - Google Calendar sync service.
+4. **Domain & Business Logic Layer**
+   - Priority algorithm 4 faktor.
+   - Status management `PENDING`, `DONE`, `SKIPPED`.
+   - Soft delete task.
+   - Reminder processing.
+   - AI task parsing.
+   - AI overview analysis cache.
+   - WhatsApp intent resolution dan task command execution.
 
-5. **Database Layer**
-   - MySQL.
-   - Prisma schema.
+5. **Data Layer**
+   - MySQL sebagai database relasional utama.
+   - Prisma ORM untuk query dan schema management.
+   - LocalStorage masih dipertahankan untuk sebagian flow MVP pada sisi client.
 
-6. **External Integration**
+6. **External Integration Layer**
    - Google OAuth 2.0.
    - Google Calendar API.
+   - 9Router sebagai AI gateway / OpenAI-compatible LLM proxy.
+   - WhatsApp bot/gateway internal.
+   - Cloudflare Turnstile untuk bot protection pada autentikasi.
+
+### 2.1.1 Arsitektur Sistem Terkini
+
+Arsitektur implementasi terkini dapat diringkas sebagai berikut:
+
+- **Frontend Next.js** menangani SSR/CSR, halaman publik, dashboard, overview, connect WhatsApp, dan sesi pengguna.
+- **Express backend** menangani API utama aplikasi, termasuk autentikasi JWT, CRUD task, reminder, calendar sync, AI parsing, overview analysis, dan inbound WhatsApp.
+- **NextAuth.js** masih dipakai pada sisi Next.js untuk integrasi OAuth/session frontend.
+- **Prisma + MySQL** menjadi lapisan persistence utama.
+- **9Router** digunakan untuk memproses natural language menjadi task terstruktur serta analisis overview pengguna.
+- **WhatsApp internal gateway** menjadi channel alternatif untuk pengelolaan task melalui chat.
+
+### 2.1.2 Mapping Frontend ke Backend
+
+| Layer | Implementasi | Peran |
+|------|--------------|-------|
+| Frontend Page | `src/app/(public)/page.tsx` | Landing page publik |
+| Frontend Auth | `src/app/auth/signin/page.tsx`, `src/app/auth/signup/page.tsx` | UI login dan registrasi |
+| Frontend Dashboard | `src/app/(protected)/dashboard/page.tsx` | Pengelolaan task harian |
+| Frontend Overview | `src/app/(protected)/overview/page.tsx` | Statistik, AI analysis, dan gamification |
+| Frontend WhatsApp | `src/app/(protected)/connectwhatsapp/page.tsx` | Linking akun ke WhatsApp |
+| Frontend Command | `src/components/command/CommandPalette.tsx` | Input natural language / AI task command |
+| Frontend API Client | `src/lib/api/client.ts` | Jembatan request dari UI ke backend |
+| Backend Router | `backend/src/app.ts` | Registrasi seluruh route Express |
+| Backend Auth | `backend/src/modules/auth` | Register, login, me, logout, Google OAuth backend |
+| Backend Tasks | `backend/src/modules/tasks` | CRUD task, status, stats, skip, priority |
+| Backend Reminder | `backend/src/modules/reminders` | Reminder CRUD dan due reminders |
+| Backend Calendar | `backend/src/modules/calendar` | Calendar CRUD, sync, refresh |
+| Backend AI | `backend/src/modules/ai` | Parse task command, overview analysis, cache |
+| Backend WhatsApp | `backend/src/modules/whatsappInbound` | Inbound WhatsApp command dan linking nomor |
+| Database | `backend/prisma/schema.prisma` | Definisi model dan relasi data |
 
 ### 2.2 Spesifikasi Fungsional
 
 | Kode | Kebutuhan Fungsional | Status |
 |------|----------------------|--------|
 | FR-001 | Sistem menyediakan landing page | Tersedia |
-| FR-002 | Sistem menyediakan login Google OAuth | Phase 1 / struktur tersedia |
-| FR-003 | Sistem dapat membuat task | Tersedia |
-| FR-004 | Sistem dapat mengubah task | Tersedia |
-| FR-005 | Sistem dapat menghapus task | Tersedia |
-| FR-006 | Sistem dapat menandai task selesai | Tersedia |
-| FR-007 | Sistem menghitung prioritas otomatis | Tersedia |
-| FR-008 | Sistem mengurutkan task berdasarkan prioritas | Tersedia |
-| FR-009 | Sistem memfilter task berdasarkan tanggal | Tersedia |
-| FR-010 | Sistem memfilter task berdasarkan tag | Tersedia |
-| FR-011 | Sistem mendukung filter prioritas | Tersedia |
-| FR-012 | Sistem menampilkan calendar timeline | Tersedia |
-| FR-013 | Sistem menyediakan command palette `Ctrl+K` | Tersedia |
-| FR-014 | Sistem memproses input conversational/NLP | Tersedia |
-| FR-015 | Sistem menyimpan data melalui LocalStorage | Tersedia |
-| FR-016 | Sistem mendukung dark/light mode | Tersedia |
-| FR-017 | Sistem menyediakan API CRUD task | Phase 1 |
-| FR-018 | Sistem menyimpan data ke MySQL melalui Prisma | Phase 1 |
-| FR-019 | Sistem melakukan Google Calendar Sync | Phase 1 |
-| FR-020 | Sistem menyediakan reminder dan notifikasi | Direncanakan |
+| FR-002 | Sistem menyediakan login dan signup pengguna | Tersedia |
+| FR-003 | Sistem menyediakan login Google OAuth | Tersedia / hybrid |
+| FR-004 | Sistem dapat membuat task | Tersedia |
+| FR-005 | Sistem dapat mengubah task | Tersedia |
+| FR-006 | Sistem dapat menghapus task secara soft delete | Tersedia |
+| FR-007 | Sistem dapat menandai task selesai | Tersedia |
+| FR-008 | Sistem mengubah task overdue menjadi `SKIPPED` secara otomatis | Tersedia |
+| FR-009 | Sistem menghitung prioritas otomatis | Tersedia |
+| FR-010 | Sistem mengurutkan task berdasarkan prioritas | Tersedia |
+| FR-011 | Sistem memfilter task berdasarkan tanggal | Tersedia |
+| FR-012 | Sistem memfilter task berdasarkan tag | Tersedia |
+| FR-013 | Sistem mendukung filter prioritas dan status | Tersedia |
+| FR-014 | Sistem menampilkan calendar timeline | Tersedia |
+| FR-015 | Sistem menyediakan command palette `Ctrl+K` | Tersedia |
+| FR-016 | Sistem memproses input conversational/NLP lokal dan AI | Tersedia |
+| FR-017 | Sistem menyediakan AI parse task command melalui backend | Tersedia |
+| FR-018 | Sistem menyediakan AI overview analysis | Tersedia |
+| FR-019 | Sistem menyimpan data melalui LocalStorage | Tersedia |
+| FR-020 | Sistem menyimpan data ke MySQL melalui Prisma | Tersedia / ongoing refinement |
+| FR-021 | Sistem menyediakan API CRUD task berbasis Express | Tersedia |
+| FR-022 | Sistem menyediakan statistik task `pending`, `done`, `skipped` | Tersedia |
+| FR-023 | Sistem menyediakan reminder task dan due reminder retrieval | Tersedia baseline |
+| FR-024 | Sistem melakukan Google Calendar Sync | Tersedia baseline |
+| FR-025 | Sistem menyediakan halaman overview analytics | Tersedia |
+| FR-026 | Sistem menyediakan koneksi akun ke WhatsApp | Tersedia |
+| FR-027 | Sistem menerima command task melalui WhatsApp chat | Tersedia |
+| FR-028 | Sistem mengirim reminder personal melalui WhatsApp | Tersedia |
+| FR-029 | Sistem mendukung dark/light mode | Tersedia |
+| FR-030 | Sistem menampilkan snackbar/feedback aksi pengguna | Tersedia |
 
 ### 2.3 Spesifikasi Non-Fungsional
 
 | Kode | Kebutuhan Non-Fungsional | Target |
 |------|---------------------------|--------|
 | NFR-001 | Menggunakan TypeScript untuk type safety | Wajib |
-| NFR-002 | Input pengguna divalidasi | Wajib |
+| NFR-002 | Input pengguna divalidasi di frontend dan backend | Wajib |
 | NFR-003 | Query database menggunakan Prisma untuk mencegah SQL injection | Wajib |
 | NFR-004 | Tidak mengekspos secret/token ke client | Wajib |
 | NFR-005 | Mendukung HTTPS production | Wajib |
@@ -461,32 +522,202 @@ Smart Task Planner dirancang sebagai aplikasi fullstack berbasis Next.js App Rou
 | NFR-010 | Lighthouse performance score 90+ | Target |
 | NFR-011 | Runtime Node.js 18+ dan MySQL 5.7+ | Wajib |
 | NFR-012 | Dokumentasi diperbarui saat fitur berubah | Wajib |
+| NFR-013 | CORS, JWT auth, dan middleware error handler tersedia di backend | Wajib |
+| NFR-014 | Proteksi CAPTCHA menggunakan Cloudflare Turnstile pada flow auth tertentu | Wajib |
+| NFR-015 | Endpoint internal WhatsApp diamankan dengan bearer token dan service secret | Wajib |
+| NFR-016 | Integrasi AI dilakukan server-side agar API key tidak terekspos | Wajib |
+| NFR-017 | Sistem harus scalable untuk pemisahan frontend dan backend service | Target |
+| NFR-018 | Observability melalui logging, smoke test, dan dokumentasi deployment | Target |
 
 ### 2.4 Prototyping
 
-Prototype aplikasi diwujudkan dalam MVP dengan fitur utama:
+Prototype aplikasi telah berkembang dari MVP lokal menjadi platform hybrid dengan fitur utama:
 
 - Dashboard task.
-- Modal task baru.
-- Task card.
+- Modal task baru dan edit task.
+- Task card dengan status `PENDING`, `DONE`, dan `SKIPPED`.
 - Priority list.
 - Calendar timeline.
-- Header dan theme toggle.
-- Command palette.
+- Header, auth action, dan theme toggle.
+- Command palette dengan AI parser dan fallback parser.
+- Overview analytics page.
+- Connect WhatsApp page.
 - Provider untuk auth, theme, language, snackbar, dan command palette.
 
 Komponen utama pada aplikasi:
 
 | Komponen | Lokasi | Fungsi |
 |----------|--------|--------|
-| `TaskCard.tsx` | `src/components/tasks` | Menampilkan detail task |
-| `NewTaskModal.tsx` | `src/components/tasks` | Form pembuatan task |
+| `TaskCard.tsx` | `src/components/tasks` | Menampilkan detail task, aksi complete, delete, dan status visual |
+| `NewTaskModal.tsx` | `src/components/tasks` | Form pembuatan task baru |
+| `EditTaskModal.tsx` | `src/components/tasks` | Form edit task |
 | `TaskPriorityList.tsx` | `src/components/tasks` | Daftar task berdasarkan prioritas |
 | `CalendarTimeline.tsx` | `src/components/calendar` | Visualisasi task dalam timeline |
-| `CommandPalette.tsx` | `src/components/command` | Interface command berbasis `Ctrl+K` |
+| `CommandPalette.tsx` | `src/components/command` | Interface command berbasis `Ctrl+K`, AI parser, dan fallback parser |
 | `Header.tsx` | `src/components/layout` | Header aplikasi |
+| `SnackbarProvider.tsx` | `src/components/providers` | Notifikasi toast/snackbar |
 | `ThemeProvider.tsx` | `src/components/providers` | Pengelolaan tema |
 | `AuthSessionProvider.tsx` | `src/components/providers` | Pengelolaan session auth |
+| `src/app/(protected)/overview/page.tsx` | `src/app/(protected)/overview` | Ringkasan produktivitas, charts, dan AI analysis |
+| `src/app/(protected)/connectwhatsapp/page.tsx` | `src/app/(protected)/connectwhatsapp` | Halaman linking akun ke WhatsApp |
+
+#### 2.4.1 Wireframe Low-Fidelity
+
+Bagian ini digunakan untuk menampilkan sketsa awal atau wireframe mentah sebelum masuk ke desain visual final. Wireframe low-fidelity berfungsi untuk menunjukkan struktur layout, hirarki informasi, dan alur navigasi utama tanpa fokus pada detail warna atau estetika.
+
+**Letakkan gambar pada bagian ini:**
+
+- Wireframe landing page
+- Wireframe sign in / sign up
+- Wireframe dashboard
+- Wireframe command palette
+- Wireframe overview analytics
+- Wireframe connect WhatsApp
+
+**Template penempatan gambar:**
+
+- Gambar 2.1 Wireframe awal landing page Smart Task Planner
+- Gambar 2.2 Wireframe awal halaman autentikasi pengguna
+- Gambar 2.3 Wireframe awal dashboard task management
+- Gambar 2.4 Wireframe awal halaman overview analytics
+- Gambar 2.5 Wireframe awal halaman connect WhatsApp
+
+**Catatan penulisan:**
+
+Tuliskan penjelasan singkat di bawah setiap gambar mengenai tujuan layout, area konten utama, dan alasan penyusunan komponennya.
+
+**Contoh narasi/alasan yang dapat digunakan dan disesuaikan:**
+
+- **Landing page dibuat dengan struktur hero section, value proposition, dan call-to-action yang jelas** agar pengguna baru dapat langsung memahami fungsi utama Smart Task Planner sebagai aplikasi task management cerdas. Peletakan tombol masuk atau mulai digunakan pada area atas bertujuan mempersingkat langkah pengguna menuju fitur inti aplikasi.
+- **Halaman sign in / sign up dibuat sederhana dan terfokus** untuk mengurangi distraksi saat proses autentikasi. Susunan form yang ringkas dipilih agar pengguna dapat masuk ke sistem dengan cepat, baik melalui kredensial maupun integrasi login eksternal.
+- **Dashboard dirancang sebagai pusat aktivitas utama pengguna** karena seluruh proses pengelolaan task dilakukan dari halaman ini. Oleh sebab itu, komponen seperti daftar task, prioritas, filter, statistik singkat, dan tombol aksi ditempatkan pada area yang mudah dijangkau.
+- **Command palette ditempatkan sebagai akses cepat** karena aplikasi mengusung efisiensi input berbasis natural language. Desain ini dipilih agar pengguna dapat membuat atau mengelola task tanpa harus selalu berpindah ke form manual.
+- **Overview analytics dibuat terpisah dari dashboard utama** agar informasi statistik, insight AI, dan evaluasi produktivitas dapat ditampilkan lebih fokus tanpa mengganggu alur kerja task harian.
+- **Halaman connect WhatsApp dirancang sederhana dan instruksional** karena fokus utamanya adalah membantu pengguna menghubungkan akun dengan cepat. Oleh karena itu, elemen seperti QR code, nomor tujuan, format pesan, dan contoh command dibuat dominan dan mudah dipahami.
+
+#### 2.4.2 Wireframe Detail dan Navigasi
+
+Bagian ini digunakan untuk menampilkan wireframe yang lebih rinci beserta alur perpindahan antar halaman atau antar fitur utama. Jika memiliki flow diagram dari user journey, dapat diletakkan pada subbab ini.
+
+**Letakkan gambar pada bagian ini:**
+
+- Detail wireframe landing page
+- Detail wireframe dashboard dengan komponen utama
+- Detail navigasi protected routes
+- Detail alur command palette
+- Detail alur task dari create sampai complete / skipped
+
+**Template penempatan gambar:**
+
+- Gambar 2.6 Wireframe detail landing page
+- Gambar 2.7 Wireframe detail dashboard dan komponen task
+- Gambar 2.8 Wireframe detail overview analytics
+- Gambar 2.9 Wireframe detail halaman connect WhatsApp
+- Gambar 2.10 Diagram navigasi pengguna dalam sistem
+
+**Catatan penulisan:**
+
+Jelaskan hubungan antar halaman, transisi aksi pengguna, serta bagaimana wireframe mendukung kebutuhan fungsional sistem.
+
+**Contoh narasi/alasan yang dapat digunakan dan disesuaikan:**
+
+- **Wireframe detail landing page disusun bertahap dari hero, fitur utama, hingga ajakan penggunaan** agar alur baca pengguna berjalan natural dari mengenal produk hingga terdorong untuk mencoba aplikasi.
+- **Wireframe dashboard dibuat dengan pembagian area navigasi, konten utama, dan aksi cepat** untuk memastikan pengguna dapat mengakses informasi task tanpa kebingungan. Susunan ini juga membantu menjaga efisiensi saat jumlah task mulai banyak.
+- **Navigasi protected routes dipisahkan dengan jelas** agar fitur yang membutuhkan autentikasi, seperti dashboard, overview, dan koneksi WhatsApp, hanya dapat diakses oleh pengguna yang telah login.
+- **Alur command palette dirancang sesingkat mungkin** karena fitur ini ditujukan sebagai sarana input cepat. Oleh sebab itu, pengguna cukup memanggil overlay, mengetik perintah, lalu sistem memproses task tanpa banyak langkah tambahan.
+- **Alur task dari create hingga complete atau skipped divisualisasikan** untuk menunjukkan bahwa sistem tidak hanya menyimpan task, tetapi juga mengelola status task sebagai bagian dari logika bisnis aplikasi.
+
+#### 2.4.3 Desain UI High-Fidelity
+
+Bagian ini digunakan untuk menampilkan hasil desain visual yang sudah lebih matang. Pada tahap ini, elemen warna, tipografi, ikon, tema gelap/terang, dan branding aplikasi sudah mulai terlihat jelas.
+
+**Letakkan gambar pada bagian ini:**
+
+- Mockup landing page final
+- Mockup dashboard final
+- Mockup modal task
+- Mockup overview page
+- Mockup connect WhatsApp page
+- Mockup dark mode dan light mode
+
+**Template penempatan gambar:**
+
+- Gambar 2.11 Desain UI final landing page
+- Gambar 2.12 Desain UI final dashboard Smart Task Planner
+- Gambar 2.13 Desain UI modal pembuatan task
+- Gambar 2.14 Desain UI halaman overview analytics
+- Gambar 2.15 Desain UI halaman connect WhatsApp
+- Gambar 2.16 Perbandingan tampilan dark mode dan light mode
+
+**Catatan penulisan:**
+
+Jelaskan perubahan dari wireframe ke UI final, peningkatan visual, dan alasan pemilihan gaya desain yang mendukung kenyamanan pengguna.
+
+**Contoh narasi/alasan yang dapat digunakan dan disesuaikan:**
+
+- **Desain UI final landing page menggunakan hierarki visual yang kuat** agar pesan utama produk langsung terlihat. Penggunaan ilustrasi, video, atau warna kontras bertujuan meningkatkan daya tarik awal sekaligus memperjelas positioning aplikasi.
+- **Dashboard final dibuat dengan tampilan bersih dan informatif** supaya pengguna dapat fokus pada task yang harus dikerjakan. Penggunaan card, badge status, dan warna prioritas dipilih untuk mempermudah scanning informasi secara cepat.
+- **Modal pembuatan task dirancang ringkas namun lengkap** agar proses input tidak terasa berat. Field disusun berdasarkan prioritas pengisian, mulai dari judul task hingga atribut tambahan seperti deadline, tag, dan durasi.
+- **Halaman overview analytics didesain lebih visual** karena tujuannya bukan hanya menampilkan angka, tetapi juga membantu pengguna memahami progres dan pola produktivitasnya melalui chart, insight AI, dan elemen gamification.
+- **Halaman connect WhatsApp dibuat lebih instruktif dan ramah pengguna** karena sebagian pengguna mungkin belum terbiasa dengan proses linking akun melalui chat. Oleh sebab itu, langkah registrasi dibuat eksplisit dan mudah diikuti.
+- **Penyediaan dark mode dan light mode** bertujuan meningkatkan kenyamanan penggunaan dalam berbagai kondisi pencahayaan serta memberi fleksibilitas preferensi visual kepada pengguna.
+
+#### 2.4.4 Screenshot Implementasi Aplikasi
+
+Bagian ini digunakan untuk menampilkan hasil implementasi nyata dari aplikasi yang sudah berjalan. Berbeda dengan mockup, screenshot implementasi menunjukkan bukti realisasi desain pada sistem yang aktif.
+
+**Letakkan gambar pada bagian ini:**
+
+- Screenshot landing page production
+- Screenshot dashboard dengan data task
+- Screenshot command palette aktif
+- Screenshot overview analytics aktif
+- Screenshot connect WhatsApp page aktif
+- Screenshot auth page aktif
+
+**Template penempatan gambar:**
+
+- Gambar 2.17 Implementasi landing page Smart Task Planner
+- Gambar 2.18 Implementasi dashboard task management
+- Gambar 2.19 Implementasi command palette dengan input natural language
+- Gambar 2.20 Implementasi overview analytics dan AI insight
+- Gambar 2.21 Implementasi halaman connect WhatsApp
+- Gambar 2.22 Implementasi halaman autentikasi pengguna
+
+**Catatan penulisan:**
+
+Sertakan keterangan bahwa screenshot diambil dari aplikasi yang sedang berjalan, baik pada local development maupun deployment production.
+
+**Contoh narasi/alasan yang dapat digunakan dan disesuaikan:**
+
+- **Screenshot landing page ditampilkan untuk membuktikan bahwa rancangan antarmuka publik telah terimplementasi** dan dapat digunakan sebagai halaman perkenalan produk kepada pengguna baru.
+- **Screenshot dashboard ditampilkan sebagai bukti realisasi fitur utama aplikasi** karena halaman ini menjadi pusat pengelolaan task, prioritas, filter, dan ringkasan aktivitas pengguna.
+- **Screenshot command palette aktif ditampilkan untuk menunjukkan keunggulan interaksi berbasis natural language** yang menjadi salah satu pembeda Smart Task Planner dibanding aplikasi to-do list biasa.
+- **Screenshot overview analytics ditampilkan untuk menunjukkan bahwa aplikasi telah berkembang dari task manager sederhana menjadi alat evaluasi produktivitas** dengan dukungan visualisasi data dan analisis AI.
+- **Screenshot connect WhatsApp ditampilkan untuk membuktikan adanya perluasan channel interaksi pengguna** dari web menjadi chat-based productivity flow.
+- **Screenshot halaman autentikasi ditampilkan untuk menunjukkan bahwa sistem telah memiliki flow masuk pengguna yang nyata** dan siap digunakan pada skenario aplikasi fullstack.
+
+#### 2.4.5 Pemetaan Desain ke Implementasi
+
+Bagian ini dipakai untuk menunjukkan keterkaitan antara rancangan awal dengan hasil implementasi akhir.
+
+| Tahap | Artefak | Tujuan |
+|------|---------|--------|
+| Wireframe Low-Fidelity | Sketsa awal halaman | Menentukan struktur layout dan alur utama |
+| Wireframe Detail | Desain struktur lebih rinci | Menentukan posisi komponen dan navigasi |
+| UI High-Fidelity | Mockup visual final | Menentukan tampilan visual, branding, dan konsistensi UI |
+| Screenshot Implementasi | Bukti hasil aplikasi berjalan | Menunjukkan realisasi desain pada sistem nyata |
+
+#### 2.4.6 Catatan Penempatan Gambar Lampiran
+
+Jika jumlah gambar terlalu banyak, maka gambar inti cukup ditampilkan pada bab ini, sedangkan versi lengkap seluruh wireframe, mockup, dan screenshot dapat dipindahkan ke bagian lampiran.
+
+**Struktur lampiran yang disarankan:**
+
+- Lampiran A. Wireframe low-fidelity
+- Lampiran B. Wireframe detail dan alur navigasi
+- Lampiran C. Mockup UI high-fidelity
+- Lampiran D. Screenshot implementasi aplikasi
 
 ## 3. IMPLEMENTASI {#implementasi}
 
@@ -497,12 +728,17 @@ Komponen utama pada aplikasi:
 | Frontend | Next.js 14, React 18, TypeScript |
 | Styling | TailwindCSS |
 | State Management | Zustand |
-| Backend | Next.js API Routes |
+| Frontend Auth Session | NextAuth.js |
+| Backend API | Express.js + TypeScript |
+| Backend Validation | Zod + middleware validation |
+| Backend Security | JWT, CORS, error handler, Cloudflare Turnstile |
 | Database ORM | Prisma |
 | Database | MySQL 5.7+ |
-| Authentication | NextAuth.js |
 | OAuth | Google OAuth 2.0 |
+| AI Integration | 9Router AI gateway |
+| Chat Integration | WhatsApp internal gateway/bot |
 | Calendar Integration | Google Calendar API |
+| Notification Channel | WhatsApp personal reminder |
 | Deployment | Linux, PM2, Nginx, Let's Encrypt |
 
 ### 3.2 Implementasi Priority Algorithm
@@ -560,21 +796,114 @@ stop
 
 ### 3.3 Implementasi API dan Database
 
-Aplikasi memiliki struktur API pada:
+Implementasi aplikasi saat ini menggunakan arsitektur API hybrid:
 
-- `src/app/api/tasks/route.ts`
-- `src/app/api/tasks/[id]/route.ts`
-- `src/app/api/tasks/priority/route.ts`
-- `src/app/api/sync/calendar/route.ts`
-- `src/app/api/auth/[...nextauth]/route.ts`
+1. **Next.js API / Auth Layer**
+   - `src/app/api/auth/[...nextauth]/route.ts`
+   - Digunakan untuk session handling NextAuth.js di frontend.
 
-Model database inti:
+2. **Express API Layer**
+   - `GET /health`
+   - `POST /api/auth/register`
+   - `POST /api/auth/login`
+   - `GET /api/auth/me`
+   - `POST /api/tasks`
+   - `GET /api/tasks`
+   - `GET /api/tasks/stats`
+   - `PATCH /api/tasks/:id`
+   - `PATCH /api/tasks/:id/status`
+   - `POST /api/tasks/:id/skip`
+   - `POST /api/reminders`
+   - `GET /api/reminders`
+   - `POST /api/calendars`
+   - `GET /api/calendars`
+   - `POST /api/calendar/:id/refresh` secara konsep implementasi refresh route backend
+   - `POST /api/ai/parse-task`
+   - `POST /api/ai/overview-analysis`
+   - `POST /internal/wa/inbound`
 
-- `users`
-- `tasks`
-- `task_tags`
-- `reminders`
-- `calendars`
+3. **Task Status Rules**
+   - Status default task baru adalah `PENDING`.
+   - Saat selesai, task berubah menjadi `DONE`.
+   - Task terlewat dapat berubah menjadi `SKIPPED`.
+   - Penghapusan task menggunakan pendekatan soft delete pada backend.
+
+4. **Reminder & Scheduler**
+   - Backend memiliki proses reminder dan auto-skip scheduler.
+   - Reminder personal dapat dikirim melalui WhatsApp.
+
+5. **Model database inti**
+   - `users`
+   - `tasks`
+   - `task_tags`
+   - `reminders`
+   - `calendars`
+   - `overview_analysis_cache`
+
+6. **Relasi Frontend ke Backend**
+   - Frontend melakukan request menggunakan API client terpusat.
+   - Express backend menjadi sumber data utama untuk task, reminder, kalender, AI, dan WhatsApp integration.
+   - NextAuth tetap melengkapi session flow untuk autentikasi pada sisi web.
+
+### 3.3.1 Implementasi AI dan 9Router
+
+Integrasi AI merupakan pengembangan penting pada Smart Task Planner. Backend memanfaatkan 9Router sebagai gateway LLM server-side agar API key tidak diekspos ke browser.
+
+Fungsi AI yang sudah diimplementasikan:
+
+- Parsing natural language command menjadi struktur task.
+- Analisis overview produktivitas pengguna.
+- AI-first resolver untuk command operasional WhatsApp.
+- Fallback ke parser lokal bila layanan AI tidak tersedia.
+
+Contoh penggunaan AI:
+
+- Command palette pada frontend menerima input natural language.
+- Frontend mengirim request ke endpoint `POST /api/ai/parse-task`.
+- Backend meneruskan prompt ke 9Router.
+- Hasil JSON divalidasi dan dikirim kembali ke frontend.
+- Frontend membuat task melalui endpoint task API.
+
+Selain parse task, overview page juga memakai endpoint analisis AI untuk menghasilkan insight produktivitas dan rekomendasi personal.
+
+### 3.3.2 Implementasi WhatsApp Chat dan Reminder
+
+Fitur WhatsApp menambah channel interaksi baru di luar web interface. Pengguna dapat menghubungkan akun ke nomor WhatsApp gateway melalui halaman connect WhatsApp.
+
+Kemampuan utama integrasi WhatsApp:
+
+- Linking nomor WhatsApp ke akun user.
+- Menerima command registrasi format `user_id daftar`.
+- Menerima command `task ...` untuk create/edit/delete/complete/list/overview.
+- Mengirimkan balasan WhatsApp otomatis.
+- Mengirim reminder personal untuk task yang mendekati deadline.
+
+Endpoint internal yang dipakai adalah `POST /internal/wa/inbound` dengan header keamanan internal berupa bearer token dan service secret.
+
+### 3.3.3 Implementasi Overview Analytics dan Gamification
+
+Halaman overview merupakan pengembangan lanjutan dari dashboard biasa. Fitur ini berisi:
+
+- Statistik task `pending`, `done`, dan `skipped`.
+- Grafik harian dan mingguan.
+- AI summary dan rekomendasi produktivitas.
+- Gamification berbasis animal level dari skor aktivitas pengguna.
+- Refresh analysis untuk mendapatkan insight terbaru.
+
+Dengan fitur ini, Smart Task Planner tidak hanya menjadi task manager, tetapi juga alat refleksi produktivitas personal.
+
+### 3.3.4 Implementasi Keamanan Sistem
+
+Lapisan keamanan yang telah diterapkan meliputi:
+
+- Validasi input frontend dan backend.
+- Prisma ORM untuk mengurangi risiko SQL injection.
+- JWT auth pada Express backend.
+- Session auth pada NextAuth.js.
+- Cloudflare Turnstile untuk proteksi bot pada flow auth tertentu.
+- Internal token + service secret pada endpoint WhatsApp inbound.
+- Penyimpanan API key AI hanya di backend environment variable.
+- CORS configuration untuk membatasi origin frontend.
 
 ### 3.4 Implementasi Deployment
 
@@ -593,24 +922,35 @@ Deployment stack:
 
 ## 4. PENGUJIAN {#pengujian}
 
-Pengujian dilakukan untuk memastikan fitur utama berjalan sesuai kebutuhan.
+Pengujian dilakukan untuk memastikan fitur utama web, backend API, AI, dan WhatsApp integration berjalan sesuai kebutuhan.
 
 | No | Skenario Pengujian | Hasil yang Diharapkan | Status |
 |----|--------------------|----------------------|--------|
 | 1 | Membuka landing page | Halaman publik tampil | Lulus |
-| 2 | Membuat task baru | Task tersimpan dan muncul di daftar | Lulus |
-| 3 | Mengedit task | Data task berubah | Lulus |
-| 4 | Menghapus task | Task hilang dari daftar | Lulus |
-| 5 | Menandai task selesai | Status task berubah menjadi selesai | Lulus |
-| 6 | Menghitung prioritas | Priority score muncul sesuai bobot | Lulus |
-| 7 | Filter task berdasarkan tanggal | Task terfilter sesuai tanggal | Lulus |
-| 8 | Filter task berdasarkan tag | Task terfilter sesuai tag | Lulus |
-| 9 | Membuka command palette | Command palette terbuka dengan `Ctrl+K` | Lulus |
-| 10 | Mengubah tema | Dark/light mode berubah | Lulus |
-| 11 | Refresh browser | Data MVP tetap tersimpan di LocalStorage | Lulus |
-| 12 | Build production | Aplikasi dapat dibuild | Perlu validasi berkala |
-| 13 | Google OAuth | Login Google berjalan | Phase 1 |
-| 14 | Google Calendar Sync | Task tersinkron ke Google Calendar | Phase 1 |
+| 2 | Login dan signup user | User dapat masuk ke sistem | Lulus |
+| 3 | Membuat task baru | Task tersimpan dan muncul di daftar | Lulus |
+| 4 | Mengedit task | Data task berubah | Lulus |
+| 5 | Menghapus task | Task ter-soft-delete dan tidak muncul di active list | Lulus |
+| 6 | Menandai task selesai | Status task berubah menjadi `DONE` | Lulus |
+| 7 | Auto skip task overdue | Status task berubah menjadi `SKIPPED` sesuai tolerance | Lulus |
+| 8 | Menghitung prioritas | Priority score muncul sesuai bobot | Lulus |
+| 9 | Filter task berdasarkan tanggal | Task terfilter sesuai tanggal | Lulus |
+| 10 | Filter task berdasarkan tag | Task terfilter sesuai tag | Lulus |
+| 11 | Membuka command palette | Command palette terbuka dengan `Ctrl+K` | Lulus |
+| 12 | AI parse task command | Input natural language diparsing menjadi payload task | Lulus |
+| 13 | AI overview analysis | Sistem menampilkan insight produktivitas | Lulus |
+| 14 | Mengubah tema | Dark/light mode berubah | Lulus |
+| 15 | Refresh browser | Data lokal dan state penting tetap sinkron | Lulus |
+| 16 | Endpoint `GET /health` | Backend mengembalikan status `ok` | Lulus |
+| 17 | Endpoint auth Express | Register, login, dan `me` berjalan | Lulus |
+| 18 | Endpoint task Express | CRUD, stats, status, dan skip berjalan | Lulus |
+| 19 | Endpoint reminder | Reminder dapat dibuat dan diambil | Implementasi baseline |
+| 20 | Endpoint calendar | Calendar sync route tersedia | Implementasi baseline |
+| 21 | Connect WhatsApp page | User melihat QR/link dan format registrasi | Lulus |
+| 22 | Inbound WhatsApp registration | Nomor WhatsApp berhasil dikaitkan ke akun | Lulus |
+| 23 | WhatsApp task command | Command `task ...` diproses backend | Lulus |
+| 24 | WhatsApp personal reminder | Reminder deadline dapat dikirim | Lulus |
+| 25 | Build production | Aplikasi dapat dibuild | Perlu validasi berkala |
 
 Perintah validasi yang direkomendasikan:
 
@@ -618,6 +958,14 @@ Perintah validasi yang direkomendasikan:
 npm run lint
 npm run type-check
 npm run build
+npm run smoke:nextjs
+```
+
+Untuk backend Express, validasi tambahan yang relevan meliputi:
+
+```bash
+cd backend && npm run build
+cd ../scripts && node smoke-test-backend.js
 ```
 
 ## 5. UMPAN BALIK {#umpan-balik}
@@ -628,19 +976,92 @@ Umpan balik yang diperoleh berdasarkan analisis kebutuhan pengguna dan evaluasi 
 2. Priority ranking menjadi nilai utama karena membantu menentukan urutan pengerjaan.
 3. Calendar timeline membantu pengguna melihat beban tugas.
 4. Command palette mempercepat pencatatan task.
-5. Integrasi Google Calendar menjadi fitur penting untuk pengembangan berikutnya.
-6. Aplikasi perlu menjaga performa agar tetap cepat saat jumlah task bertambah.
-7. Sistem perlu memastikan data pengguna aman ketika database dan autentikasi diterapkan.
+5. Integrasi AI membantu pengguna menulis task dengan lebih natural.
+6. Halaman overview memberi nilai tambah karena pengguna bisa melihat statistik dan insight produktivitas.
+7. Integrasi WhatsApp sangat membantu untuk akses cepat tanpa harus selalu membuka web.
+8. Integrasi Google Calendar tetap menjadi fitur penting untuk sinkronisasi lintas platform.
+9. Aplikasi perlu menjaga performa agar tetap cepat saat jumlah task bertambah.
+10. Sistem perlu memastikan data pengguna aman ketika database, autentikasi, AI, dan integrasi chat diterapkan.
+
+## 6. KESIAPAN APLIKASI MENUJU SKALA STARTUP / UNICORN
+
+Untuk menilai kesiapan aplikasi sebagai produk digital serius atau bahkan menuju skala startup/unicorn, tidak cukup hanya melihat fitur teknis. Diperlukan kombinasi aspek produk, bisnis, teknologi, keamanan, dan operasional.
+
+### 6.1 Elemen yang Dibutuhkan untuk Aplikasi Skala Unicorn
+
+1. **Problem-solution fit**
+   - Produk harus menyelesaikan masalah nyata pengguna secara jelas.
+2. **Product-market fit**
+   - Harus ada bukti bahwa segmen pengguna membutuhkan solusi ini secara berulang.
+3. **Scalable architecture**
+   - Pemisahan frontend dan backend seperti arsitektur hybrid saat ini merupakan langkah awal yang baik.
+4. **Reliable data layer**
+   - Database, backup, observability, dan disaster recovery perlu matang.
+5. **Security and compliance**
+   - Auth, secret management, bot protection, access control, dan audit trail penting.
+6. **AI differentiation**
+   - Fitur AI harus memberi keunggulan kompetitif yang sulit ditiru sekadar todo app biasa.
+7. **Omnichannel experience**
+   - Integrasi web, WhatsApp, kalender, dan notifikasi meningkatkan engagement.
+8. **Monetization strategy**
+   - Perlu model bisnis seperti freemium, premium analytics, team workspace, atau enterprise plan.
+9. **Operational readiness**
+   - Monitoring, incident response, CI/CD, testing, dan release workflow perlu disiapkan.
+10. **Growth metrics**
+   - Perlu definisi KPI seperti retention, DAU/MAU, task completion rate, activation rate, dan conversion rate.
+
+### 6.2 Elemen Laporan yang Sebaiknya Ada
+
+Agar laporan proyek lebih matang dan mendekati standar produk nyata, dokumen sebaiknya juga memuat:
+
+- Latar belakang bisnis dan value proposition.
+- Persona pengguna utama.
+- User journey inti.
+- Competitive analysis sederhana.
+- Risk analysis dan mitigasi.
+- Roadmap pengembangan per fase.
+- KPI keberhasilan sistem.
+- Rencana monetisasi.
+- Strategi skalabilitas arsitektur.
+- Strategi keamanan dan compliance.
+- Strategi monitoring, backup, dan recovery.
+
+### 6.3 Posisi Smart Task Planner Saat Ini
+
+Berdasarkan implementasi yang ada, Smart Task Planner sudah memiliki fondasi yang cukup kuat untuk berkembang karena telah mencakup:
+
+- task management inti,
+- arsitektur hybrid frontend–backend,
+- autentikasi,
+- database persistence,
+- analytics overview,
+- AI task parsing,
+- WhatsApp task channel,
+- reminder workflow,
+- integrasi kalender,
+- deployment production.
+
+Namun agar benar-benar siap menuju skala produk besar, aplikasi masih perlu penguatan pada:
+
+- automated testing yang lebih luas,
+- monitoring dan observability production,
+- CI/CD pipeline,
+- hardening security dan audit log,
+- team collaboration/workspace,
+- monetization dan business validation,
+- analytical dashboard tingkat produk.
 
 ---
 
 # BAB IV. KESIMPULAN {#bab-iv-kesimpulan}
 
-Smart Task Planner merupakan proyek aplikasi web untuk mata kuliah **Proyek Perangkat Lunak** yang dikembangkan dengan metode berbasis proyek. Aplikasi ini bertujuan membantu pengguna mengelola tugas dengan lebih efektif melalui fitur task management, priority scoring, filtering, calendar timeline, command palette, dan dukungan dark/light mode.
+Smart Task Planner merupakan proyek aplikasi web untuk mata kuliah **Proyek Perangkat Lunak** yang dikembangkan dengan metode berbasis proyek. Aplikasi ini bertujuan membantu pengguna mengelola tugas dengan lebih efektif melalui fitur task management, priority scoring, filtering, calendar timeline, command palette, analytics overview, AI parsing, integrasi WhatsApp, dan dukungan dark/light mode.
 
-MVP aplikasi telah mencakup fitur utama seperti task CRUD, algoritma prioritas otomatis, filter, timeline, LocalStorage persistence, command palette, dan responsive UI. Pengembangan selanjutnya diarahkan pada integrasi fullstack menggunakan MySQL/Prisma, autentikasi NextAuth.js dengan Google OAuth, reminder, API CRUD, serta sinkronisasi Google Calendar.
+Berbeda dari versi MVP awal yang masih dominan local-first, implementasi saat ini telah berkembang menjadi sistem **hybrid fullstack** dengan frontend Next.js dan backend Express terpisah. Pada sisi frontend, aplikasi menyediakan halaman publik, autentikasi, dashboard, overview, dan koneksi WhatsApp. Pada sisi backend, sistem telah memiliki route auth, task CRUD, reminder, calendar sync, AI endpoint, dan internal WhatsApp inbound. Persistence utama menggunakan MySQL dan Prisma, sementara sebagian flow kompatibilitas MVP tetap mempertahankan local storage tertentu pada client.
 
-Berdasarkan proses analisis, desain, implementasi, dan pengujian, Smart Task Planner telah memenuhi tujuan utama sebagai sistem manajemen tugas cerdas. Dengan deployment pada <https://taskplanner.dastrevas.com>, aplikasi dapat menjadi contoh implementasi modern pengembangan perangkat lunak fullstack berbasis Next.js, React, TypeScript, dan integrasi cloud/API eksternal.
+Pengembangan AI menjadi salah satu pembeda utama karena sistem telah mampu memproses natural language command melalui 9Router, memberi analisis overview produktivitas, dan membantu command resolution pada channel WhatsApp. Penambahan integrasi WhatsApp juga memperluas kanal penggunaan aplikasi dari sekadar web dashboard menjadi omnichannel productivity assistant.
+
+Berdasarkan proses analisis, desain, implementasi, dan pengujian, Smart Task Planner telah melampaui bentuk task manager sederhana dan berkembang menjadi platform produktivitas cerdas berbasis web, API, AI, dan chat. Dengan deployment pada <https://taskplanner.dastrevas.com>, aplikasi ini dapat menjadi contoh implementasi modern pengembangan perangkat lunak fullstack berbasis Next.js, Express.js, React, TypeScript, Prisma, MySQL, integrasi AI, dan layanan cloud/API eksternal.
 
 ---
 
@@ -652,14 +1073,14 @@ Berdasarkan proses analisis, desain, implementasi, dan pengujian, Smart Task Pla
 
 ```text
 @startuml
-title Smart Task Planner - Use Case Flow
+title Smart Task Planner - Use Case Flow (Updated Hybrid System)
 
 start
 :Pengunjung membuka aplikasi;
 :Melihat Landing Page;
 
 if (Pengguna login?) then (Ya)
-:Login dengan Google;
+:Login via Google OAuth / credentials;
 :Masuk Dashboard;
 else (Tidak)
 :Tetap di halaman publik;
@@ -671,20 +1092,34 @@ note right
 - Create
 - Read
 - Update
-- Delete
-- Complete
+- Soft Delete
+- Complete (DONE)
+- Auto Skip (SKIPPED)
 end note
 
 :Melihat Daftar Prioritas;
 :Memfilter Task;
 :Melihat Calendar Timeline;
+:Melihat Overview Analytics;
 
 if (Menggunakan Command Palette?) then (Ya)
 :Tekan Ctrl+K;
 :Input perintah natural language;
-:Proses command;
+:Backend AI parse command;
 else (Tidak)
 :Gunakan UI dashboard;
+endif
+
+if (Menghubungkan WhatsApp?) then (Ya)
+:Buka halaman Connect WhatsApp;
+:Kirim format user_id daftar;
+:WhatsApp linked ke akun;
+endif
+
+if (Menggunakan WhatsApp Command?) then (Ya)
+:Kirim command task ...;
+:Backend proses AI/intent;
+:Balasan WhatsApp dikirim;
 endif
 
 if (Sync Google Calendar?) then (Ya)
@@ -702,40 +1137,57 @@ stop
 
 ```text
 @startuml
-title Smart Task Planner - Context Flow
+title Smart Task Planner - Context Flow (Updated Hybrid System)
 
 start
 :User Input;
 note right
-- task
-- command
-- filter
-- login
+- web task form
+- command palette
+- auth request
+- WhatsApp command
+- overview request
 end note
 
-:Smart Task Planner Process;
+:Next.js Frontend;
+:Express Backend API;
 
 if (Authentication Required?) then (Yes)
-:Google OAuth Login;
-:Create User Session;
+:NextAuth session or JWT verification;
+:Create authenticated context;
 else (No)
-:Use Current Session or Public Access;
+:Public access for landing page only;
 endif
 
-if (Storage Mode?) then (LocalStorage)
-:Persist MVP Data to Browser;
+if (Request Type?) then (Web UI)
+:Frontend calls Express API client;
+elseif (WhatsApp)
+:Internal WA gateway posts inbound payload;
+elseif (AI Overview)
+:Backend AI analyzes user productivity;
+endif
+
+if (Persistence Target?) then (Browser)
+:Use LocalStorage for MVP-compatible client state;
 else (Database)
-:Persist Data to MySQL via Prisma;
+:Persist to MySQL via Prisma;
+endif
+
+if (AI Needed?) then (Yes)
+:Send prompt to 9Router;
+:Validate JSON response;
 endif
 
 if (Calendar Sync?) then (Yes)
-:Send Event to Google Calendar API;
-:Store Calendar Metadata;
-else (No)
-:Skip External Sync;
+:Send event to Google Calendar API;
+:Store calendar metadata;
 endif
 
-:Display Task List, Priority, Timeline;
+if (Reminder Needed?) then (Yes)
+:Schedule reminder / WhatsApp notification;
+endif
+
+:Display task list, stats, priority, timeline, and overview;
 stop
 @enduml
 ```
@@ -744,16 +1196,16 @@ stop
 
 ```text
 @startuml
-title Smart Task Planner - Component Flow
+title Smart Task Planner - Component Flow (Frontend to Backend)
 
 start
 :Next.js App Router;
 :Load Page;
 
 if (Protected Route?) then (Yes)
-:Middleware Check Session;
-if (Session Valid?) then (Yes)
-:Render Dashboard;
+:Check session / token;
+if (Valid?) then (Yes)
+:Render Dashboard / Overview / Connect WhatsApp;
 else (No)
 :Redirect to Sign In;
 stop
@@ -771,20 +1223,31 @@ note right
 - CommandPaletteProvider
 end note
 
+:Load UI Components;
 :Load Task Components;
 :Load Calendar Timeline;
 :Load Command Palette;
-:Use Zustand Store;
-:Use Priority and Validation Utilities;
+:Use Zustand Store and hooks;
+:Use API client;
 
-if (Backend Needed?) then (Yes)
-:Call API Routes;
-:Use Prisma and MySQL;
-else (No)
-:Update Local State;
+if (Need Backend Data?) then (Yes)
+:Call Express API;
+:Backend validates request;
+:Business logic executed;
+:Prisma accesses MySQL;
 endif
 
-:Render Updated UI;
+if (Need AI?) then (Yes)
+:Backend sends prompt to 9Router;
+:Response normalized;
+endif
+
+if (Need WhatsApp?) then (Yes)
+:Connect page shows registration flow;
+:Inbound WA command handled by backend;
+endif
+
+:Render updated UI and snackbar feedback;
 stop
 @enduml
 ```
@@ -800,6 +1263,9 @@ id : string
 name : string
 email : string
 image : string
+passwordHash : string?
+whatsappNumber : string?
+whatsappChatId : string?
 createdAt : datetime
 updatedAt : datetime
 }
@@ -807,14 +1273,16 @@ updatedAt : datetime
 class TASK {
 id : string
 userId : string
-calendarId : string
+calendarId : string?
 title : string
-description : string
-dueDate : datetime
+description : string?
+deadline : datetime?
 priority : string
 priorityScore : float
-estimatedDuration : int
-completed : boolean
+estimatedDuration : int?
+status : enum(PENDING,DONE,SKIPPED)
+deletedAt : datetime?
+skippedAt : datetime?
 createdAt : datetime
 updatedAt : datetime
 }
@@ -823,7 +1291,7 @@ class TASK_TAG {
 id : string
 taskId : string
 name : string
-color : string
+color : string?
 createdAt : datetime
 }
 
@@ -840,14 +1308,23 @@ class CALENDAR {
 id : string
 userId : string
 googleCalendarId : string
-googleEventId : string
-lastSyncedAt : datetime
+googleEventId : string?
+lastSyncedAt : datetime?
+createdAt : datetime
+updatedAt : datetime
+}
+
+class OVERVIEW_ANALYSIS_CACHE {
+id : string
+userId : string
+content : text
 createdAt : datetime
 updatedAt : datetime
 }
 
 USER "1" --> "many" TASK : owns
 USER "1" --> "many" CALENDAR : connects
+USER "1" --> "1" OVERVIEW_ANALYSIS_CACHE : caches
 TASK "1" --> "many" TASK_TAG : has
 TASK "1" --> "many" REMINDER : has
 CALENDAR "1" --> "many" TASK : syncs
@@ -859,39 +1336,47 @@ CALENDAR "1" --> "many" TASK : syncs
 
 ```text
 @startuml
-title Smart Task Planner - Task Management Activity
+title Smart Task Planner - Task Management Activity (Updated)
 
 start
-:Buka Dashboard;
+:Buka Dashboard / Command Palette / WhatsApp;
 :Pilih Aksi Task;
 
 if (Aksi?) then (Tambah Task)
 :Input data task baru;
-:Validasi Input;
+:Validasi input;
+:Optional AI parse command;
 elseif (Edit Task)
 :Pilih task;
 :Edit data task;
-:Validasi Input;
+:Validasi input;
 elseif (Hapus Task)
 :Pilih task;
-:Hapus task;
-:Simpan Data;
-:Perbarui Dashboard;
+:Soft delete task;
+:Simpan data;
+:Perbarui dashboard;
 stop
-else (Tandai Selesai)
+elseif (Selesai)
 :Pilih task;
-:Update status completed;
-:Simpan Data;
-:Perbarui Dashboard;
+:Update status menjadi DONE;
+:Simpan data;
+:Perbarui dashboard;
+stop
+else (Lewat Deadline)
+:Cek tolerance window;
+:Auto update status menjadi SKIPPED;
+:Simpan data;
+:Kirim notifikasi bila perlu;
 stop
 endif
 
 if (Input valid?) then (Ya)
-:Hitung Priority Score;
-:Simpan Data;
-:Perbarui Daftar Prioritas dan Timeline;
+:Hitung priority score;
+:Simpan ke database / local state;
+:Invalidate cache overview AI;
+:Perbarui daftar prioritas, timeline, dan stats;
 else (Tidak)
-:Tampilkan Error;
+:Tampilkan error;
 endif
 
 stop
@@ -902,36 +1387,34 @@ stop
 
 ```text
 @startuml
-title Smart Task Planner - Create Task Sequence
+title Smart Task Planner - Create Task Sequence (Hybrid + AI)
 
 actor User
-participant UI
-participant Validator
-participant Priority
-participant Store
-database Database
+participant FrontendUI
+participant CommandPalette
+participant ExpressAPI
+participant AIService
+database MySQL
 
-User -> UI : Input task data
-UI -> Validator : Validate task
-Validator --> UI : Validation result
+User -> FrontendUI : Input task data / natural command
 
-alt Valid data
-UI -> Priority : Calculate priority score
-Priority --> UI : Priority score
-UI -> Store : Save task
-
-alt MVP LocalStorage
-Store --> UI : Saved locally
-else Phase 1 Database
-Store -> Database : Insert task
-Database --> Store : Saved task
-Store --> UI : Task response
+alt Manual form
+FrontendUI -> ExpressAPI : POST /api/tasks
+else Command palette AI
+FrontendUI -> CommandPalette : Submit natural language
+CommandPalette -> ExpressAPI : POST /api/ai/parse-task
+ExpressAPI -> AIService : Forward prompt to 9Router
+AIService --> ExpressAPI : Structured JSON task
+ExpressAPI --> CommandPalette : Parsed task payload
+CommandPalette -> ExpressAPI : POST /api/tasks
 end
 
-UI --> User : Show updated priority list
-else Invalid data
-UI --> User : Show error message
-end
+ExpressAPI -> ExpressAPI : Validate request
+ExpressAPI -> ExpressAPI : Calculate priority score
+ExpressAPI -> MySQL : Insert task via Prisma
+MySQL --> ExpressAPI : Saved task
+ExpressAPI --> FrontendUI : Success response
+FrontendUI --> User : Show updated task list / snackbar
 
 @enduml
 ```
@@ -957,10 +1440,15 @@ end
 
 Pengembangan berikutnya disarankan fokus pada:
 
-1. Finalisasi integrasi database Prisma/MySQL.
-2. Penguatan autentikasi Google OAuth.
-3. Pengujian endpoint API CRUD.
-4. Pengujian sinkronisasi Google Calendar.
-5. Penambahan test untuk priority algorithm.
-6. Penambahan dokumentasi API.
+1. Finalisasi stabilisasi seluruh endpoint reminder dan calendar.
+2. Penguatan autentikasi hybrid NextAuth + JWT agar flow makin konsisten.
+3. Pengujian otomatis untuk endpoint API, AI parsing, dan WhatsApp inbound.
+4. Pengujian sinkronisasi Google Calendar end-to-end.
+5. Penambahan test untuk priority algorithm dan command parser.
+6. Penambahan dokumentasi API dan diagram arsitektur deployment.
 7. Strategi migrasi data dari LocalStorage ke database user.
+8. Monitoring, observability, dan alerting production.
+9. CI/CD pipeline untuk frontend dan backend.
+10. Audit keamanan, log aktivitas, dan backup recovery.
+11. Fitur kolaborasi tim, workspace, dan monetisasi produk.
+12. Pengembangan analytics dashboard tingkat bisnis dan eksperimen growth.
