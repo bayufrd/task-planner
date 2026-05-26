@@ -13,7 +13,7 @@ Analisis dibuat berdasarkan route yang benar-benar terdaftar pada source code sa
   - CRUD task dasar
   - filter task berdasarkan prioritas
 - Backend Express memiliki cakupan lebih luas:
-  - auth lanjutan
+  - auth lanjutan non-Google
   - statistik task
   - skip task
   - reminders
@@ -29,7 +29,7 @@ Analisis dibuat berdasarkan route yang benar-benar terdaftar pada source code sa
 
 - [x] Java memiliki `GET /api/health` via [`health()`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/TaskPlannerApplication.java:18)
 - [x] Express memiliki `GET /health` via [`createApp()`](Proyek%20Perangkat%20Lunak/backend/src/app.ts:23)
-- [ ] Roadmap target penyamaan path health: Java perlu mengikuti path `GET /health` atau Express perlu mengikuti `GET /api/health`
+- [x] Roadmap target dokumentasi health sudah disamakan ke `GET /api/health`
 
 ### B. Auth
 
@@ -37,17 +37,17 @@ Analisis dibuat berdasarkan route yang benar-benar terdaftar pada source code sa
 - [x] Java memiliki `POST /api/auth/login` via [`login()`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/AuthController.java:75)
 - [ ] Java belum memiliki `GET /api/auth/me`
 - [ ] Java belum memiliki `POST /api/auth/logout`
-- [ ] Java belum memiliki `GET /api/auth/google`
-- [ ] Java belum memiliki `GET /api/auth/google/callback`
 - [ ] Java belum memiliki `POST /api/auth/sync`
 - [ ] Java belum memiliki proteksi auth middleware seperti Express pada endpoint privat
+- [ ] Java belum memiliki `GET /api/auth/google`
+- [ ] Java belum memiliki `GET /api/auth/google/callback`
 
 ### C. Tasks
 
 - [x] Java memiliki `GET /api/tasks`
 - [x] Java memiliki `POST /api/tasks`
 - [x] Java memiliki `GET /api/tasks/{id}`
-- [ ] Java memakai `PUT /api/tasks/{id}`, sedangkan Express memakai `PATCH /api/tasks/:id`
+- [x] Java sudah memiliki endpoint update task, meski masih memakai `PUT /api/tasks/{id}` dan belum `PATCH /api/tasks/:id`
 - [x] Java memiliki `DELETE /api/tasks/{id}`
 - [ ] Java belum memiliki `GET /api/tasks/stats`
 - [ ] Java belum memiliki `GET /api/tasks/stats/daily`
@@ -102,9 +102,9 @@ Berikut endpoint yang ditemukan dari route backend Express:
 - `POST /api/auth/login`
 - `GET /api/auth/me`
 - `POST /api/auth/logout`
-- `GET /api/auth/google`
-- `GET /api/auth/google/callback`
 - `POST /api/auth/sync`
+- `GET /api/auth/google` *(ditunda, checklist tetap dikosongkan)*
+- `GET /api/auth/google/callback` *(ditunda, checklist tetap dikosongkan)*
 
 Sumber: [`auth.routes.ts`](Proyek%20Perangkat%20Lunak/backend/src/modules/auth/auth.routes.ts:11)
 
@@ -162,9 +162,9 @@ Sumber: [`ai.routes.ts`](Proyek%20Perangkat%20Lunak/backend/src/modules/ai/ai.ro
 | Auth | `POST /api/auth/login` | Ada | `POST /api/auth/login` | Sudah ada JWT login |
 | Auth | `GET /api/auth/me` | Belum ada | - | Perlu endpoint profil user login |
 | Auth | `POST /api/auth/logout` | Belum ada | - | Perlu endpoint logout |
-| Auth | `GET /api/auth/google` | Belum ada | - | Belum ada OAuth flow |
-| Auth | `GET /api/auth/google/callback` | Belum ada | - | Belum ada OAuth callback |
-| Auth | `POST /api/auth/sync` | Belum ada | - | Belum ada sinkronisasi session/token |
+| Auth | `POST /api/auth/sync` | Belum ada | - | Perlu endpoint sinkronisasi session/token |
+| Auth | `GET /api/auth/google` | Belum ada | - | Ditunda, tidak dikerjakan dahulu |
+| Auth | `GET /api/auth/google/callback` | Belum ada | - | Ditunda, tidak dikerjakan dahulu |
 | Tasks | `GET /api/tasks` | Ada | `GET /api/tasks` | Sudah ada list/pagination/filter |
 | Tasks | `POST /api/tasks` | Ada | `POST /api/tasks` | Sudah ada create task |
 | Tasks | `GET /api/tasks/:id` | Ada | `GET /api/tasks/{id}` | Sudah ada detail |
@@ -228,9 +228,9 @@ Jika backend Express dijadikan target acuan fitur, maka backend Java masih belum
 #### Auth
 - `GET /api/auth/me`
 - `POST /api/auth/logout`
-- `GET /api/auth/google`
-- `GET /api/auth/google/callback`
 - `POST /api/auth/sync`
+- `GET /api/auth/google` *(ditunda)*
+- `GET /api/auth/google/callback` *(ditunda)*
 
 #### Tasks
 - `GET /api/tasks/stats`
@@ -274,6 +274,7 @@ Urutan prioritas yang disarankan:
 ### Prioritas 1 — Menyamakan Core Task & Auth
 - [ ] `GET /api/auth/me`
 - [ ] `POST /api/auth/logout`
+- [ ] `POST /api/auth/sync`
 - [ ] `PATCH /api/tasks/{id}/status`
 - [ ] `POST /api/tasks/{id}/skip`
 - [ ] `GET /api/tasks/stats`
@@ -289,7 +290,6 @@ Urutan prioritas yang disarankan:
 
 ### Prioritas 4 — Integrasi Lanjutan
 - [ ] Google OAuth flow
-- [ ] session sync endpoint
 - [ ] AI endpoints
 - [ ] internal WhatsApp route
 
@@ -299,4 +299,4 @@ Urutan prioritas yang disarankan:
 
 Jika tujuan backend Java hanya CRUD task dasar dan auth sederhana, implementasi sekarang sudah cukup berjalan.
 
-Jika tujuan backend Java adalah menyamai backend Express di [`Proyek Perangkat Lunak/backend`](Proyek%20Perangkat%20Lunak/backend), maka endpoint Java **masih belum lengkap** dan masih tertinggal pada area auth lanjutan, analytics task, skip/status task, reminders, calendars, AI, dan integrasi internal.
+Jika tujuan backend Java adalah menyamai backend Express di [`Proyek Perangkat Lunak/backend`](Proyek%20Perangkat%20Lunak/backend), maka endpoint Java **masih belum lengkap** dan masih tertinggal pada area auth lanjutan non-Google, analytics task, skip/status task, reminders, calendars, AI, dan integrasi internal. Endpoint Google OAuth tetap dikosongkan sebagai bagian yang ditunda.
