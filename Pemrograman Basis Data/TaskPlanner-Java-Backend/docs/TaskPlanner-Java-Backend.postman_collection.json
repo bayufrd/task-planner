@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "8f67d164-6b2d-4f80-8ea5-9f4d7d2c0d3f",
     "name": "TaskPlanner Java Backend",
-    "description": "Postman collection untuk endpoint yang sudah diimplementasikan pada TaskPlanner Java Backend.",
+    "description": "Postman collection untuk endpoint TaskPlanner Java Backend yang sudah diselaraskan dengan cakupan route backend Express untuk area auth dasar, tasks, reminders, dan AI.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -13,6 +13,10 @@
     {
       "key": "taskId",
       "value": "replace-with-task-id"
+    },
+    {
+      "key": "reminderId",
+      "value": "replace-with-reminder-id"
     },
     {
       "key": "accessToken",
@@ -37,7 +41,7 @@
                 "health"
               ]
             },
-            "description": "Endpoint health check backend Java."
+            "description": "Endpoint health check backend Java. Target dokumentasi disamakan ke /api/health."
           },
           "response": []
         }
@@ -70,7 +74,7 @@
                 "register"
               ]
             },
-            "description": "Register user baru. Response sekarang mengembalikan data user dan token seperti flow auth backend Express."
+            "description": "Register user baru."
           },
           "response": []
         },
@@ -98,7 +102,7 @@
                 "login"
               ]
             },
-            "description": "Login dan mendapatkan user, access token, refresh token, tokenType, dan expiresIn."
+            "description": "Login dan mendapatkan token auth."
           },
           "response": []
         },
@@ -122,7 +126,7 @@
                 "me"
               ]
             },
-            "description": "Mengambil profil user dari access token seperti endpoint me pada backend Express."
+            "description": "Mengambil profil user dari access token."
           },
           "response": []
         },
@@ -146,7 +150,7 @@
                 "logout"
               ]
             },
-            "description": "Logout user dan mengosongkan token lokal pada tabel account."
+            "description": "Logout user dan mengosongkan token lokal pada account."
           },
           "response": []
         }
@@ -219,6 +223,77 @@
           "response": []
         },
         {
+          "name": "Get Task Stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tasks/stats",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tasks",
+                "stats"
+              ]
+            },
+            "description": "Mengambil statistik task ringkas."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Daily Task Stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tasks/stats/daily?days=30",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tasks",
+                "stats",
+                "daily"
+              ],
+              "query": [
+                {
+                  "key": "days",
+                  "value": "30"
+                }
+              ]
+            },
+            "description": "Mengambil statistik task harian."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Weekly Task Stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tasks/stats/weekly?weeks=12",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tasks",
+                "stats",
+                "weekly"
+              ],
+              "query": [
+                {
+                  "key": "weeks",
+                  "value": "12"
+                }
+              ]
+            },
+            "description": "Mengambil statistik task mingguan."
+          },
+          "response": []
+        },
+        {
           "name": "Get Task By ID",
           "request": {
             "method": "GET",
@@ -238,7 +313,7 @@
           "response": []
         },
         {
-          "name": "Update Task",
+          "name": "Update Task PUT",
           "request": {
             "method": "PUT",
             "header": [
@@ -261,7 +336,64 @@
                 "{{taskId}}"
               ]
             },
-            "description": "Memperbarui task berdasarkan ID."
+            "description": "Memperbarui task penuh berdasarkan ID."
+          },
+          "response": []
+        },
+        {
+          "name": "Patch Task",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Finish final report\",\n  \"priority\": \"HIGH\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/tasks/{{taskId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tasks",
+                "{{taskId}}"
+              ]
+            },
+            "description": "Partial update task agar selaras dengan Express."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Task Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"DONE\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/tasks/{{taskId}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tasks",
+                "{{taskId}}",
+                "status"
+              ]
+            },
+            "description": "Memperbarui status task secara khusus."
           },
           "response": []
         },
@@ -281,6 +413,46 @@
               ]
             },
             "description": "Menghapus task berdasarkan ID."
+          },
+          "response": []
+        },
+        {
+          "name": "Calculate Task Priority",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tasks/{{taskId}}/priority",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tasks",
+                "{{taskId}}",
+                "priority"
+              ]
+            },
+            "description": "Menghitung priority score task."
+          },
+          "response": []
+        },
+        {
+          "name": "Skip Task",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tasks/{{taskId}}/skip",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tasks",
+                "{{taskId}}",
+                "skip"
+              ]
+            },
+            "description": "Menandai task sebagai skipped."
           },
           "response": []
         },
@@ -311,6 +483,202 @@
               ]
             },
             "description": "Mengambil task berdasarkan level priority."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Reminders",
+      "item": [
+        {
+          "name": "Create Reminder",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"taskId\": \"{{taskId}}\",\n  \"message\": \"Reminder untuk task penting\",\n  \"remindAt\": \"2026-05-30T09:00:00\",\n  \"status\": \"PENDING\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/reminders",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reminders"
+              ]
+            },
+            "description": "Membuat reminder baru."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Reminders",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/reminders",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reminders"
+              ]
+            },
+            "description": "Mengambil semua reminder."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Due Reminders",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/reminders/due",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reminders",
+                "due"
+              ]
+            },
+            "description": "Mengambil reminder yang sudah due."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Reminder By ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/reminders/{{reminderId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reminders",
+                "{{reminderId}}"
+              ]
+            },
+            "description": "Mengambil detail reminder berdasarkan ID."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Reminder",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Reminder diperbarui\",\n  \"status\": \"SENT\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/reminders/{{reminderId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reminders",
+                "{{reminderId}}"
+              ]
+            },
+            "description": "Memperbarui reminder."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Reminder",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/reminders/{{reminderId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reminders",
+                "{{reminderId}}"
+              ]
+            },
+            "description": "Menghapus reminder."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "AI",
+      "item": [
+        {
+          "name": "Parse Task",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"Besok pagi segera selesaikan laporan presentasi klien\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/ai/parse-task",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ai",
+                "parse-task"
+              ]
+            },
+            "description": "Parse natural language menjadi draft task."
+          },
+          "response": []
+        },
+        {
+          "name": "Overview Analysis",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"user-123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/ai/overview-analysis",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ai",
+                "overview-analysis"
+              ]
+            },
+            "description": "Analisis ringkas overview task user."
           },
           "response": []
         }

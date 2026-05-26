@@ -6,19 +6,22 @@ Analisis dibuat berdasarkan route yang benar-benar terdaftar pada source code sa
 
 ## Ringkasan Singkat
 
-- Backend Java **belum** mencakup semua endpoint yang ada di backend Express.
-- Backend Java saat ini fokus pada:
+- Backend Java **sudah mencakup hampir semua endpoint utama** untuk area task, reminder, dan AI yang ada di backend Express.
+- Backend Java saat ini sudah memiliki:
   - health check
   - auth register/login/me/logout
   - CRUD task dasar
-  - filter task berdasarkan prioritas
-- Backend Express memiliki cakupan lebih luas:
-  - auth lanjutan non-Google
   - statistik task
+  - update status task
   - skip task
+  - kalkulasi priority task
   - reminders
   - AI endpoints
-  - internal WhatsApp webhook route
+- Gap utama yang masih tersisa dibanding backend Express:
+  - `POST /api/auth/sync`
+  - Google OAuth endpoints
+  - route internal WhatsApp webhook
+  - beberapa detail logic masih versi sederhana/mock pada reminder dan AI
 
 ---
 
@@ -48,28 +51,28 @@ Analisis dibuat berdasarkan route yang benar-benar terdaftar pada source code sa
 - [x] Java memiliki `GET /api/tasks/{id}`
 - [x] Java sudah memiliki endpoint update task, meski masih memakai `PUT /api/tasks/{id}` dan belum `PATCH /api/tasks/:id`
 - [x] Java memiliki `DELETE /api/tasks/{id}`
-- [ ] Java belum memiliki `GET /api/tasks/stats`
-- [ ] Java belum memiliki `GET /api/tasks/stats/daily`
-- [ ] Java belum memiliki `GET /api/tasks/stats/weekly`
-- [ ] Java belum memiliki `PATCH /api/tasks/{id}/status`
-- [ ] Java belum memiliki `POST /api/tasks/{id}/priority`
-- [ ] Java belum memiliki `POST /api/tasks/{id}/skip`
+- [x] Java memiliki `GET /api/tasks/stats`
+- [x] Java memiliki `GET /api/tasks/stats/daily`
+- [x] Java memiliki `GET /api/tasks/stats/weekly`
+- [x] Java memiliki `PATCH /api/tasks/{id}/status`
+- [x] Java memiliki `POST /api/tasks/{id}/priority`
+- [x] Java memiliki `POST /api/tasks/{id}/skip`
 
 ### D. Reminders
 
-- [ ] Java belum memiliki module reminders setara Express
-- [ ] Java belum memiliki `POST /api/reminders`
-- [ ] Java belum memiliki `GET /api/reminders`
-- [ ] Java belum memiliki `GET /api/reminders/due`
-- [ ] Java belum memiliki `GET /api/reminders/{id}`
-- [ ] Java belum memiliki `PATCH /api/reminders/{id}`
-- [ ] Java belum memiliki `DELETE /api/reminders/{id}`
+- [x] Java sudah memiliki module reminders dasar setara endpoint Express
+- [x] Java memiliki `POST /api/reminders`
+- [x] Java memiliki `GET /api/reminders`
+- [x] Java memiliki `GET /api/reminders/due`
+- [x] Java memiliki `GET /api/reminders/{id}`
+- [x] Java memiliki `PATCH /api/reminders/{id}`
+- [x] Java memiliki `DELETE /api/reminders/{id}`
 
 ### E. AI
 
-- [ ] Java belum memiliki module AI setara Express
-- [ ] Java belum memiliki `POST /api/ai/parse-task`
-- [ ] Java belum memiliki `POST /api/ai/overview-analysis`
+- [x] Java sudah memiliki module AI dasar setara endpoint Express
+- [x] Java memiliki `POST /api/ai/parse-task`
+- [x] Java memiliki `POST /api/ai/overview-analysis`
 
 ### F. Internal / Integrasi Lain
 
@@ -144,21 +147,21 @@ Sumber: [`ai.routes.ts`](Proyek%20Perangkat%20Lunak/backend/src/modules/ai/ai.ro
 | Tasks | `POST /api/tasks` | Ada | `POST /api/tasks` | Sudah ada create task |
 | Tasks | `GET /api/tasks/:id` | Ada | `GET /api/tasks/{id}` | Sudah ada detail |
 | Tasks | `PATCH /api/tasks/:id` | Sebagian ada | `PUT /api/tasks/{id}` | Fungsi update ada, method berbeda |
-| Tasks | `PATCH /api/tasks/:id/status` | Belum ada | - | Belum ada update status khusus |
+| Tasks | `PATCH /api/tasks/:id/status` | Ada | `PATCH /api/tasks/{id}/status` | Sudah ada update status khusus |
 | Tasks | `DELETE /api/tasks/:id` | Ada | `DELETE /api/tasks/{id}` | Sudah ada delete |
-| Tasks | `GET /api/tasks/stats` | Belum ada | - | Belum ada statistik task |
-| Tasks | `GET /api/tasks/stats/daily` | Belum ada | - | Belum ada statistik harian |
-| Tasks | `GET /api/tasks/stats/weekly` | Belum ada | - | Belum ada statistik mingguan |
-| Tasks | `POST /api/tasks/:id/priority` | Belum ada | - | Belum ada kalkulasi prioritas per endpoint |
-| Tasks | `POST /api/tasks/:id/skip` | Belum ada | - | Baru ada di roadmap Java |
-| Reminders | `POST /api/reminders` | Belum ada | - | Modul belum ada |
-| Reminders | `GET /api/reminders` | Belum ada | - | Modul belum ada |
-| Reminders | `GET /api/reminders/due` | Belum ada | - | Modul belum ada |
-| Reminders | `GET /api/reminders/:id` | Belum ada | - | Modul belum ada |
-| Reminders | `PATCH /api/reminders/:id` | Belum ada | - | Modul belum ada |
-| Reminders | `DELETE /api/reminders/:id` | Belum ada | - | Modul belum ada |
-| AI | `POST /api/ai/parse-task` | Belum ada | - | Modul AI belum ada |
-| AI | `POST /api/ai/overview-analysis` | Belum ada | - | Modul AI belum ada |
+| Tasks | `GET /api/tasks/stats` | Ada | `GET /api/tasks/stats` | Sudah ada statistik task |
+| Tasks | `GET /api/tasks/stats/daily` | Ada | `GET /api/tasks/stats/daily` | Sudah ada statistik harian |
+| Tasks | `GET /api/tasks/stats/weekly` | Ada | `GET /api/tasks/stats/weekly` | Sudah ada statistik mingguan |
+| Tasks | `POST /api/tasks/:id/priority` | Ada | `POST /api/tasks/{id}/priority` | Sudah ada kalkulasi prioritas per endpoint |
+| Tasks | `POST /api/tasks/:id/skip` | Ada | `POST /api/tasks/{id}/skip` | Sudah ada skip task |
+| Reminders | `POST /api/reminders` | Ada | `POST /api/reminders` | Sudah ada implementasi reminder dasar in-memory |
+| Reminders | `GET /api/reminders` | Ada | `GET /api/reminders` | Sudah ada list reminder |
+| Reminders | `GET /api/reminders/due` | Ada | `GET /api/reminders/due` | Sudah ada due reminder |
+| Reminders | `GET /api/reminders/:id` | Ada | `GET /api/reminders/{id}` | Sudah ada detail reminder |
+| Reminders | `PATCH /api/reminders/:id` | Ada | `PATCH /api/reminders/{id}` | Sudah ada update reminder |
+| Reminders | `DELETE /api/reminders/:id` | Ada | `DELETE /api/reminders/{id}` | Sudah ada delete reminder |
+| AI | `POST /api/ai/parse-task` | Ada | `POST /api/ai/parse-task` | Sudah ada parser task heuristik |
+| AI | `POST /api/ai/overview-analysis` | Ada | `POST /api/ai/overview-analysis` | Sudah ada overview analysis berbasis data task |
 | Internal | `/internal/wa` | Belum ada | - | Integrasi internal belum ada |
 
 ---
@@ -174,10 +177,25 @@ Berdasarkan implementasi saat ini di backend Java:
 - `POST /api/auth/logout`
 - `GET /api/tasks`
 - `POST /api/tasks`
+- `GET /api/tasks/stats`
+- `GET /api/tasks/stats/daily`
+- `GET /api/tasks/stats/weekly`
 - `GET /api/tasks/{id}`
 - `PUT /api/tasks/{id}`
+- `PATCH /api/tasks/{id}`
+- `PATCH /api/tasks/{id}/status`
 - `DELETE /api/tasks/{id}`
+- `POST /api/tasks/{id}/priority`
+- `POST /api/tasks/{id}/skip`
 - `GET /api/tasks/priority/{level}`
+- `POST /api/reminders`
+- `GET /api/reminders`
+- `GET /api/reminders/due`
+- `GET /api/reminders/{id}`
+- `PATCH /api/reminders/{id}`
+- `DELETE /api/reminders/{id}`
+- `POST /api/ai/parse-task`
+- `POST /api/ai/overview-analysis`
 
 Referensi implementasi:
 - [`TaskPlannerApplication`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/TaskPlannerApplication.java:12)
@@ -188,39 +206,30 @@ Referensi implementasi:
 
 ## 5. Apakah Endpoint Java Sudah Semua?
 
-**Belum.**
+**Belum 100%.**
 
-Jika backend Express dijadikan target acuan fitur, maka backend Java masih belum lengkap.
+Jika backend Express dijadikan target acuan fitur, maka backend Java untuk area task, reminder, dan AI **sudah jauh lebih selaras**, tetapi masih belum lengkap pada area auth lanjutan dan integrasi internal.
 
-### Yang belum ada pada Java
+### Yang masih belum ada pada Java
 
 #### Auth
 - `POST /api/auth/sync`
 - `GET /api/auth/google` *(ditunda)*
 - `GET /api/auth/google/callback` *(ditunda)*
 
-#### Tasks
-- `GET /api/tasks/stats`
-- `GET /api/tasks/stats/daily`
-- `GET /api/tasks/stats/weekly`
-- `PATCH /api/tasks/{id}/status`
-- `POST /api/tasks/{id}/priority`
-- `POST /api/tasks/{id}/skip`
-
-#### Reminders
-- `POST /api/reminders`
-- `GET /api/reminders`
-- `GET /api/reminders/due`
-- `GET /api/reminders/{id}`
-- `PATCH /api/reminders/{id}`
-- `DELETE /api/reminders/{id}`
-
-#### AI
-- `POST /api/ai/parse-task`
-- `POST /api/ai/overview-analysis`
-
 #### Internal
 - route internal `/internal/wa`
+
+### Catatan perbedaan implementasi
+
+#### Tasks
+- `PATCH /api/tasks/{id}` sudah ada, tetapi Java juga masih mempertahankan `PUT /api/tasks/{id}`.
+
+#### Reminders
+- Endpoint reminders sudah ada, tetapi implementasi saat ini masih memakai penyimpanan in-memory pada [`ReminderController`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/ReminderController.java:16), belum persistence database seperti backend Express.
+
+#### AI
+- Endpoint AI sudah ada, tetapi logika saat ini masih berupa heuristic/basic analysis pada [`AiController`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/AiController.java:13), belum integrasi AI provider seperti backend Express.
 
 ---
 
@@ -228,29 +237,21 @@ Jika backend Express dijadikan target acuan fitur, maka backend Java masih belum
 
 Urutan prioritas yang disarankan:
 
-### Prioritas 1 — Menyamakan Core Task & Auth
+### Prioritas 1 — Menyamakan Auth & Integrasi Inti
 - [ ] `POST /api/auth/sync`
-- [ ] `PATCH /api/tasks/{id}/status`
-- [ ] `POST /api/tasks/{id}/skip`
-- [ ] `GET /api/tasks/stats`
-
-### Prioritas 2 — Statistik & Decision Support
-- [ ] `GET /api/tasks/stats/daily`
-- [ ] `GET /api/tasks/stats/weekly`
-- [ ] `POST /api/tasks/{id}/priority`
-
-### Prioritas 3 — Integrasi Produktivitas
-- [ ] seluruh module reminders
-
-### Prioritas 4 — Integrasi Lanjutan
-- [ ] Google OAuth flow
-- [ ] AI endpoints
 - [ ] internal WhatsApp route
+
+### Prioritas 2 — Integrasi Lanjutan
+- [ ] Google OAuth flow
+
+### Prioritas 3 — Pematangan Implementasi
+- [ ] persistence database untuk reminders
+- [ ] penyelarasan logic AI agar setara backend Express
 
 ---
 
 ## 7. Kesimpulan
 
-Jika tujuan backend Java hanya CRUD task dasar dan auth register/login/me/logout sederhana, implementasi sekarang sudah cukup berjalan.
+Jika tujuan backend Java hanya CRUD task dasar dan auth register/login/me/logout sederhana, implementasi sekarang sudah lebih dari cukup dan sudah mencakup task analytics, reminders, serta AI endpoints dasar.
 
-Jika tujuan backend Java adalah menyamai backend Express di [`Proyek Perangkat Lunak/backend`](Proyek%20Perangkat%20Lunak/backend), maka endpoint Java **masih belum lengkap** dan masih tertinggal pada area auth non-Google untuk `sync`, analytics task, skip/status task, reminders, AI, dan integrasi internal. Endpoint Google OAuth tetap dikosongkan sebagai bagian yang ditunda.
+Jika tujuan backend Java adalah menyamai backend Express di [`Proyek Perangkat Lunak/backend`](Proyek%20Perangkat%20Lunak/backend), maka untuk area endpoint task, reminder, dan AI Java **sudah hampir setara secara route**, namun masih tertinggal pada `POST /api/auth/sync`, Google OAuth, route internal WhatsApp, persistence reminder, dan kedalaman logic AI. Endpoint Google OAuth tetap dikosongkan sebagai bagian yang ditunda.
