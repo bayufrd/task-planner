@@ -21,8 +21,11 @@ public class TokenService {
 
     public TokenService(@Value("${SPRING_JWT_SECRET:taskplanner-secret-change-me}") String secret,
                         @Value("${SPRING_JWT_EXP_MS:3600000}") long expirationMs) {
-        // Use provided secret as bytes; in production use strong random secret
-        this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+        byte[] secretBytes = secret.getBytes(StandardCharsets.UTF_8);
+        if (secretBytes.length < 32) {
+            secretBytes = String.format("%-32s", secret).replace(' ', '_').getBytes(StandardCharsets.UTF_8);
+        }
+        this.key = Keys.hmacShaKeyFor(secretBytes);
         this.expirationMs = expirationMs;
     }
 
