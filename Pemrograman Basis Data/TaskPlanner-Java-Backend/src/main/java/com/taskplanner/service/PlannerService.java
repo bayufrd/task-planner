@@ -8,7 +8,9 @@ import org.springframework.stereotype.Service;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -61,22 +63,37 @@ public class PlannerService {
      * Generate today's plan: fetch user's tasks, compute dynamic scores, sort and return top N
      */
     public List<Task> generateTodayPlan(String userId, int limit) {
-        // fetch tasks for user (no filters) - page 1, large limit
         List<Task> tasks = taskRepository.findByUserId(userId, 1, 1000, null, null, null, "deadline", "ASC");
 
         int completedCount = taskRepository.countCompletedTasks(userId);
 
         return tasks.stream()
-                .filter(t -> !"DONE".equalsIgnoreCase(t.getStatus())) // exclude done
-                .map(t -> {
-                    int score = calculatePriority(t, completedCount);
-                    // temporarily store score in title or other field is not desired; keep pure
-                    // Instead we can decorate in caller response. For sorting we keep score locally.
-                    return new Object[]{t, score};
-                })
+                .filter(t -> !"DONE".equalsIgnoreCase(t.getStatus()))
+                .map(t -> new Object[]{t, calculatePriority(t, completedCount)})
                 .sorted((a, b) -> Integer.compare((int) b[1], (int) a[1]))
                 .limit(limit)
                 .map(o -> (Task) o[0])
+                .collect(Collectors.toList());
+    }
+
+    public List<Map<String, Object>> generateTodayPlanWithScores(String userId, int limit) {
+        List<Task> tasks = taskRepository.findByUserId(userId, 1, 1000, null, null, null, "deadline", "ASC");
+        int completedCount = taskRepository.countCompletedTasks(userId);
+
+        return tasks.stream()
+                .filter(t -> !"DONE".equalsIgnoreCase(t.getStatus()))
+                .map(t -> {
+                    int score = calculatePriority(t, completedCount);
+                    Map<String, Object> item = new LinkedHashMap<>();
+                    item.put("task", t);
+                    item.put("priorityScore", score);
+                    item.put("priority", t.getPriority());
+                    item.put("status", t.getStatus());
+                    item.put("deadline", t.getDeadline());
+                    return item;
+                })
+                .sorted((a, b) -> Integer.compare((int) b.get("priorityScore"), (int) a.get("priorityScore")))
+                .limit(limit)
                 .collect(Collectors.toList());
     }
 }

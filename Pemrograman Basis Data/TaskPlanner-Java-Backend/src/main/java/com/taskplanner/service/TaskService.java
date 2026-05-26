@@ -6,17 +6,16 @@ import com.taskplanner.dto.UpdateTaskRequest;
 import com.taskplanner.model.Task;
 import com.taskplanner.repository.TaskRepository;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.temporal.WeekFields;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.UUID;
 
 /**
  * Task Service
@@ -33,15 +32,11 @@ public class TaskService {
     @Autowired
     private PlannerService plannerService;
 
-    /**
-     * Get all tasks with pagination and filters
-     */
-    public PaginatedResponse<Task> getTasks(String userId, int page, int limit, 
-                                            String search, String status, String priority, 
+    public PaginatedResponse<Task> getTasks(String userId, int page, int limit,
+                                            String search, String status, String priority,
                                             String sort, String order) {
         LOGGER.info("Fetching tasks for user: {} (page: {}, limit: {})", userId, page, limit);
-        
-        // Validate pagination params
+
         if (page < 1) page = 1;
         if (limit < 1 || limit > 100) limit = 20;
 
@@ -50,38 +45,31 @@ public class TaskService {
         int totalPages = (int) Math.ceil((double) total / limit);
 
         PaginatedResponse.PaginationInfo pagination = new PaginatedResponse.PaginationInfo(
-            page,
-            limit,
-            total,
-            totalPages,
-            page < totalPages,
-            page > 1
+                page,
+                limit,
+                total,
+                totalPages,
+                page < totalPages,
+                page > 1
         );
 
         return new PaginatedResponse<>(
-            true,
-            "Tasks retrieved successfully",
-            tasks,
-            pagination
+                true,
+                "Tasks retrieved successfully",
+                tasks,
+                pagination
         );
     }
 
-    /**
-     * Get single task by ID
-     */
-    public Task getTaskById(String id) {
-        LOGGER.info("Fetching task: {}", id);
-        return taskRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Task not found: " + id));
+    public Task getTaskById(String userId, String id) {
+        LOGGER.info("Fetching task: {} for user: {}", id, userId);
+        return taskRepository.findByIdAndUserId(id, userId)
+                .orElseThrow(() -> new RuntimeException("Task not found: " + id));
     }
 
-    /**
-     * Create new task
-     */
     public Task createTask(String userId, CreateTaskRequest request) {
         LOGGER.info("Creating task for user: {}", userId);
 
-        // Validate required fields
         if (request.getTitle() == null || request.getTitle().trim().isEmpty()) {
             throw new IllegalArgumentException("Task title is required");
         }
@@ -98,7 +86,7 @@ public class TaskService {
         task.setPriority(request.getPriority() != null ? request.getPriority() : "MEDIUM");
         task.setStatus(request.getStatus() != null ? request.getStatus() : "TODO");
         task.setEstimatedDuration(request.getEstimatedDuration());
-        task.setReminderTime(60); // default 60 minutes before deadline
+        task.setReminderTime(60);
         task.setReminderSent(false);
         task.setCreatedAt(LocalDateTime.now());
         task.setUpdatedAt(LocalDateTime.now());
@@ -106,13 +94,10 @@ public class TaskService {
         return taskRepository.create(task);
     }
 
-    /**
-     * Update task
-     */
-    public Task updateTask(String taskId, UpdateTaskRequest request) {
-        LOGGER.info("Updating task: {}", taskId);
+    public Task updateTask(String userId, String taskId, UpdateTaskRequest request) {
+        LOGGER.info("Updating task: {} for user: {}", taskId, userId);
 
-        Task task = getTaskById(taskId);
+        Task task = getTaskById(userId, taskId);
 
         if (request.getTitle() != null) task.setTitle(request.getTitle());
         if (request.getDescription() != null) task.setDescription(request.getDescription());
@@ -120,30 +105,41 @@ public class TaskService {
         if (request.getPriority() != null) task.setPriority(request.getPriority());
         if (request.getStatus() != null) task.setStatus(request.getStatus());
         if (request.getEstimatedDuration() != null) task.setEstimatedDuration(request.getEstimatedDuration());
+        if ("DONE".equalsIgnoreCase(task.getStatus()) && task.getCompletedAt() == null) {
+            task.setCompletedAt(LocalDateTime.now());
+        }
+        if (!"DONE".equalsIgnoreCase(task.getStatus())) {
+            task.setCompletedAt(null);
+        }
 
         taskRepository.update(taskId, task);
-        return task;
+        return getTaskById(userId, taskId);
     }
 
-    public Task updateTaskStatus(String taskId, String status) {
-        LOGGER.info("Updating task status: {} -> {}", taskId, status);
+    public Task updateTaskStatus(String userId, String taskId, String status) {
+        LOGGER.info("Updating task status: {} -> {} for user: {}", taskId, status, userId);
 
-        Task task = getTaskById(taskId);
-        task.setStatus(status);
-        task.setCompletedAt("DONE".equalsIgnoreCase(status) ? LocalDateTime.now() : null);
-        taskRepository.updateStatus(taskId, status, task.getCompletedAt());
-        return getTaskById(taskId);
+        getTaskById(userId, taskId);
+        LocalDateTime completedAt = "DONE".equalsIgnoreCase(status) ? LocalDateTime.now() : null;
+        taskRepository.updateStatus(taskId, status, completedAt);
+        return getTaskById(userId, taskId);
     }
 
-    public Task skipTask(String taskId) {
-        return updateTaskStatus(taskId, "SKIPPED");
+    public Task completeTask(String userId, String taskId) {
+        return updateTaskStatus(userId, taskId, "DONE");
+    }
+
+    public Task skipTask(String userId, String taskId) {
+        return updateTaskStatus(userId, taskId, "SKIPPED");
     }
 
     public Map<String, Integer> getTaskStats(String userId) {
         Map<String, Integer> stats = new LinkedHashMap<>();
         stats.put("pending", taskRepository.countByStatus(userId, "TODO"));
+        stats.put("inProgress", taskRepository.countByStatus(userId, "IN_PROGRESS"));
         stats.put("done", taskRepository.countByStatus(userId, "DONE"));
         stats.put("skipped", taskRepository.countByStatus(userId, "SKIPPED"));
+        stats.put("total", stats.get("pending") + stats.get("inProgress") + stats.get("done") + stats.get("skipped"));
         return stats;
     }
 
@@ -186,7 +182,7 @@ public class TaskService {
     }
 
     public Map<String, Object> calculateTaskPriority(String userId, String taskId) {
-        Task task = getTaskById(taskId);
+        Task task = getTaskById(userId, taskId);
         int completedCount = taskRepository.countCompletedTasks(userId);
         int score = plannerService.calculatePriority(task, completedCount);
 
@@ -194,21 +190,17 @@ public class TaskService {
         result.put("taskId", taskId);
         result.put("score", score);
         result.put("priority", task.getPriority());
+        result.put("status", task.getStatus());
+        result.put("deadline", task.getDeadline());
         return result;
     }
 
-    /**
-     * Delete task
-     */
-    public void deleteTask(String taskId) {
-        LOGGER.info("Deleting task: {}", taskId);
-        getTaskById(taskId); // Verify exists
+    public void deleteTask(String userId, String taskId) {
+        LOGGER.info("Deleting task: {} for user: {}", taskId, userId);
+        getTaskById(userId, taskId);
         taskRepository.delete(taskId);
     }
 
-    /**
-     * Get tasks by priority
-     */
     public PaginatedResponse<Task> getTasksByPriority(String userId, String priority, int page, int limit) {
         LOGGER.info("Fetching {} priority tasks for user: {}", priority, userId);
 
@@ -218,10 +210,10 @@ public class TaskService {
         List<Task> tasks = taskRepository.findByPriority(userId, priority, page, limit);
 
         return new PaginatedResponse<>(
-            true,
-            "Priority tasks retrieved successfully",
-            tasks,
-            new PaginatedResponse.PaginationInfo(page, limit, tasks.size(), 1, false, page > 1)
+                true,
+                "Priority tasks retrieved successfully",
+                tasks,
+                new PaginatedResponse.PaginationInfo(page, limit, tasks.size(), 1, false, page > 1)
         );
     }
 }

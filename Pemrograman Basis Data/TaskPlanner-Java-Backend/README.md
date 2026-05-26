@@ -51,8 +51,6 @@ Dokumentasi ini sudah disesuaikan dengan endpoint yang **benar-benar tersedia sa
 - `GET /api/auth/google`
 - `GET /api/auth/google/callback`
 - route internal `/internal/wa`
-- `GET /api/planner/today`
-- `POST /api/tasks/{id}/complete`
 
 ---
 
@@ -69,7 +67,7 @@ Fokus backend Java saat ini:
 - AI helper endpoint dasar
 
 Catatan penting implementasi saat ini:
-- endpoint task saat ini masih memakai `userId = "user-123"` hardcoded pada beberapa flow task controller, belum sepenuhnya terhubung ke auth user login
+- endpoint task dan planner kini memakai Bearer token JWT untuk resolve `userId` dari user login
 - module reminder masih memakai penyimpanan in-memory, belum persistence database
 - endpoint AI masih heuristic/basic, belum terhubung ke provider AI eksternal
 
@@ -1511,8 +1509,6 @@ Mengacu ke [`ROADMAP_API_ENDPOINT.md`](Pemrograman%20Basis%20Data/TaskPlanner-Ja
 - `GET /api/auth/google`
 - `GET /api/auth/google/callback`
 - internal WhatsApp route
-- planner endpoint seperti `GET /api/planner/today`
-- complete endpoint `POST /api/tasks/{id}/complete`
 
 ### Sudah ada tetapi belum matang
 - reminder masih in-memory

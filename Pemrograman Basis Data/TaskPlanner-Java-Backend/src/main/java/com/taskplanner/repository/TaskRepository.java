@@ -115,6 +115,17 @@ public class TaskRepository {
         }
     }
 
+    public Optional<Task> findByIdAndUserId(String id, String userId) {
+        String query = "SELECT * FROM Task WHERE id = ? AND userId = ?";
+        try {
+            Task task = jdbcTemplate.queryForObject(query, taskRowMapper, id, userId);
+            return Optional.ofNullable(task);
+        } catch (Exception e) {
+            LOGGER.debug("Task not found: {} for user: {}", id, userId);
+            return Optional.empty();
+        }
+    }
+
     /**
      * Create new task
      */
