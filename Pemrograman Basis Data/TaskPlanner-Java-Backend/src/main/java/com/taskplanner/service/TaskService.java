@@ -5,6 +5,10 @@ import com.taskplanner.dto.PaginatedResponse;
 import com.taskplanner.dto.UpdateTaskRequest;
 import com.taskplanner.model.Task;
 import com.taskplanner.repository.TaskRepository;
+import java.time.LocalDate;
+import java.time.temporal.WeekFields;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +29,9 @@ public class TaskService {
 
     @Autowired
     private TaskRepository taskRepository;
+
+    @Autowired
+    private PlannerService plannerService;
 
     /**
      * Get all tasks with pagination and filters
@@ -116,6 +123,78 @@ public class TaskService {
 
         taskRepository.update(taskId, task);
         return task;
+    }
+
+    public Task updateTaskStatus(String taskId, String status) {
+        LOGGER.info("Updating task status: {} -> {}", taskId, status);
+
+        Task task = getTaskById(taskId);
+        task.setStatus(status);
+        task.setCompletedAt("DONE".equalsIgnoreCase(status) ? LocalDateTime.now() : null);
+        taskRepository.updateStatus(taskId, status, task.getCompletedAt());
+        return getTaskById(taskId);
+    }
+
+    public Task skipTask(String taskId) {
+        return updateTaskStatus(taskId, "SKIPPED");
+    }
+
+    public Map<String, Integer> getTaskStats(String userId) {
+        Map<String, Integer> stats = new LinkedHashMap<>();
+        stats.put("pending", taskRepository.countByStatus(userId, "TODO"));
+        stats.put("done", taskRepository.countByStatus(userId, "DONE"));
+        stats.put("skipped", taskRepository.countByStatus(userId, "SKIPPED"));
+        return stats;
+    }
+
+    public List<Map<String, Object>> getDailyTaskStats(String userId, int days) {
+        int safeDays = Math.max(days, 1);
+        LocalDate startDate = LocalDate.now().minusDays(safeDays);
+        Map<LocalDate, Integer> rawStats = taskRepository.countCompletedTasksByDay(userId, startDate);
+        List<Map<String, Object>> result = new java.util.ArrayList<>();
+
+        for (int i = 0; i <= safeDays; i++) {
+            LocalDate date = startDate.plusDays(i);
+            Map<String, Object> item = new LinkedHashMap<>();
+            item.put("date", date.toString());
+            item.put("count", rawStats.getOrDefault(date, 0));
+            result.add(item);
+        }
+
+        return result;
+    }
+
+    public List<Map<String, Object>> getWeeklyTaskStats(String userId, int weeks) {
+        int safeWeeks = Math.max(weeks, 1);
+        LocalDate startDate = LocalDate.now().minusWeeks(safeWeeks);
+        Map<String, Integer> rawStats = taskRepository.countCompletedTasksByWeek(userId, startDate);
+        List<Map<String, Object>> result = new java.util.ArrayList<>();
+        WeekFields weekFields = WeekFields.ISO;
+
+        for (int i = 0; i <= safeWeeks; i++) {
+            LocalDate date = startDate.plusWeeks(i);
+            int week = date.get(weekFields.weekOfWeekBasedYear());
+            int year = date.get(weekFields.weekBasedYear());
+            String key = String.format("%d-W%02d", year, week);
+            Map<String, Object> item = new LinkedHashMap<>();
+            item.put("week", key);
+            item.put("count", rawStats.getOrDefault(key, 0));
+            result.add(item);
+        }
+
+        return result;
+    }
+
+    public Map<String, Object> calculateTaskPriority(String userId, String taskId) {
+        Task task = getTaskById(taskId);
+        int completedCount = taskRepository.countCompletedTasks(userId);
+        int score = plannerService.calculatePriority(task, completedCount);
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("taskId", taskId);
+        result.put("score", score);
+        result.put("priority", task.getPriority());
+        return result;
     }
 
     /**

@@ -4,6 +4,7 @@ import com.taskplanner.dto.ApiResponse;
 import com.taskplanner.dto.CreateTaskRequest;
 import com.taskplanner.dto.PaginatedResponse;
 import com.taskplanner.dto.UpdateTaskRequest;
+import java.util.Map;
 import com.taskplanner.model.Task;
 import com.taskplanner.service.TaskService;
 import org.slf4j.Logger;
@@ -22,9 +23,16 @@ import org.springframework.web.bind.annotation.*;
  * Endpoints:
  * - GET    /api/tasks                 → Get all tasks (paginated, filtered)
  * - POST   /api/tasks                 → Create new task
+ * - GET    /api/tasks/stats           → Get task stats
+ * - GET    /api/tasks/stats/daily     → Get daily task stats
+ * - GET    /api/tasks/stats/weekly    → Get weekly task stats
  * - GET    /api/tasks/:id             → Get task by ID
  * - PUT    /api/tasks/:id             → Update task
+ * - PATCH  /api/tasks/:id             → Partial update task
+ * - PATCH  /api/tasks/:id/status      → Update task status
  * - DELETE /api/tasks/:id             → Delete task
+ * - POST   /api/tasks/:id/priority    → Calculate task priority score
+ * - POST   /api/tasks/:id/skip        → Mark task as skipped
  * - GET    /api/tasks/priority/:level → Get tasks by priority level
  */
 @RestController
@@ -120,6 +128,32 @@ public class TaskController {
         }
     }
 
+    @GetMapping("/stats")
+    public ResponseEntity<ApiResponse<Map<String, Integer>>> getTaskStats() {
+        LOGGER.info("GET /tasks/stats - Fetching task stats");
+
+        String userId = "user-123";
+        return ResponseEntity.ok(new ApiResponse<>(true, "Task stats retrieved successfully", taskService.getTaskStats(userId)));
+    }
+
+    @GetMapping("/stats/daily")
+    public ResponseEntity<ApiResponse<java.util.List<Map<String, Object>>>> getDailyStats(
+            @RequestParam(defaultValue = "30") int days) {
+        LOGGER.info("GET /tasks/stats/daily - Fetching daily stats for {} days", days);
+
+        String userId = "user-123";
+        return ResponseEntity.ok(new ApiResponse<>(true, "Daily task stats retrieved successfully", taskService.getDailyTaskStats(userId, days)));
+    }
+
+    @GetMapping("/stats/weekly")
+    public ResponseEntity<ApiResponse<java.util.List<Map<String, Object>>>> getWeeklyStats(
+            @RequestParam(defaultValue = "12") int weeks) {
+        LOGGER.info("GET /tasks/stats/weekly - Fetching weekly stats for {} weeks", weeks);
+
+        String userId = "user-123";
+        return ResponseEntity.ok(new ApiResponse<>(true, "Weekly task stats retrieved successfully", taskService.getWeeklyTaskStats(userId, weeks)));
+    }
+
     // ========================================================================
     // GET /tasks/:id
     // ========================================================================
@@ -185,6 +219,39 @@ public class TaskController {
         }
     }
 
+    @PatchMapping("/{id}")
+    public ResponseEntity<ApiResponse<Task>> patchTask(
+            @PathVariable String id,
+            @RequestBody UpdateTaskRequest request) {
+        LOGGER.info("PATCH /tasks/{} - Updating task", id);
+        return updateTask(id, request);
+    }
+
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<ApiResponse<Task>> updateTaskStatus(
+            @PathVariable String id,
+            @RequestBody Map<String, String> request) {
+        LOGGER.info("PATCH /tasks/{}/status - Updating task status", id);
+
+        String status = request.get("status");
+        if (status == null || status.trim().isEmpty()) {
+            return ResponseEntity.badRequest()
+                .body(new ApiResponse<>(false, "Task status is required", null));
+        }
+
+        try {
+            Task task = taskService.updateTaskStatus(id, status);
+            return ResponseEntity.ok(new ApiResponse<>(true, "Task status updated successfully", task));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(new ApiResponse<>(false, "Task not found", null));
+        } catch (Exception e) {
+            LOGGER.error("Error updating task status", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse<>(false, "Failed to update task status", null));
+        }
+    }
+
     // ========================================================================
     // DELETE /tasks/:id
     // ========================================================================
@@ -210,6 +277,41 @@ public class TaskController {
             LOGGER.error("Error deleting task", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(new ApiResponse<>(false, "Failed to delete task", null));
+        }
+    }
+
+    @PostMapping("/{id}/priority")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> calculatePriority(@PathVariable String id) {
+        LOGGER.info("POST /tasks/{}/priority - Calculating task priority", id);
+
+        String userId = "user-123";
+
+        try {
+            return ResponseEntity.ok(new ApiResponse<>(true, "Task priority calculated successfully", taskService.calculateTaskPriority(userId, id)));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(new ApiResponse<>(false, "Task not found", null));
+        } catch (Exception e) {
+            LOGGER.error("Error calculating task priority", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse<>(false, "Failed to calculate task priority", null));
+        }
+    }
+
+    @PostMapping("/{id}/skip")
+    public ResponseEntity<ApiResponse<Task>> skipTask(@PathVariable String id) {
+        LOGGER.info("POST /tasks/{}/skip - Marking task as skipped", id);
+
+        try {
+            Task task = taskService.skipTask(id);
+            return ResponseEntity.ok(new ApiResponse<>(true, "Task skipped successfully", task));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(new ApiResponse<>(false, "Task not found", null));
+        } catch (Exception e) {
+            LOGGER.error("Error skipping task", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse<>(false, "Failed to skip task", null));
         }
     }
 

@@ -8,8 +8,14 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
 
+import java.sql.Date;
 import java.sql.Timestamp;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.temporal.WeekFields;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -198,6 +204,57 @@ public class TaskRepository {
         String query = "SELECT COUNT(*) FROM Task WHERE userId = ? AND status = 'DONE'";
         Integer count = jdbcTemplate.queryForObject(query, Integer.class, userId);
         return count != null ? count : 0;
+    }
+
+    public void updateStatus(String id, String status, LocalDateTime completedAt) {
+        String query = "UPDATE Task SET status = ?, completedAt = ?, updatedAt = NOW() WHERE id = ?";
+        try {
+            jdbcTemplate.update(query, status, completedAt, id);
+            LOGGER.info("Task status updated: {} -> {}", id, status);
+        } catch (Exception e) {
+            LOGGER.error("Error updating task status: {}", id, e);
+            throw new RuntimeException("Failed to update task status", e);
+        }
+    }
+
+    public int countByStatus(String userId, String status) {
+        String query = "SELECT COUNT(*) FROM Task WHERE userId = ? AND status = ?";
+        Integer count = jdbcTemplate.queryForObject(query, Integer.class, userId, status);
+        return count != null ? count : 0;
+    }
+
+    public Map<LocalDate, Integer> countCompletedTasksByDay(String userId, LocalDate startDate) {
+        String query = "SELECT DATE(completedAt) AS completedDate, COUNT(*) AS total " +
+                "FROM Task WHERE userId = ? AND status = 'DONE' AND completedAt >= ? " +
+                "GROUP BY DATE(completedAt) ORDER BY completedDate ASC";
+
+        Map<LocalDate, Integer> result = new LinkedHashMap<>();
+        jdbcTemplate.query(query, rs -> {
+            Date completedDate = rs.getDate("completedDate");
+            if (completedDate != null) {
+                result.put(completedDate.toLocalDate(), rs.getInt("total"));
+            }
+        }, userId, Timestamp.valueOf(startDate.atStartOfDay()));
+        return result;
+    }
+
+    public Map<String, Integer> countCompletedTasksByWeek(String userId, LocalDate startDate) {
+        String query = "SELECT completedAt FROM Task WHERE userId = ? AND status = 'DONE' AND completedAt >= ? ORDER BY completedAt ASC";
+        Map<String, Integer> result = new LinkedHashMap<>();
+        WeekFields weekFields = WeekFields.ISO;
+
+        jdbcTemplate.query(query, rs -> {
+            Timestamp completedAt = rs.getTimestamp("completedAt");
+            if (completedAt != null) {
+                LocalDate date = completedAt.toLocalDateTime().toLocalDate();
+                int week = date.get(weekFields.weekOfWeekBasedYear());
+                int year = date.get(weekFields.weekBasedYear());
+                String key = String.format("%d-W%02d", year, week);
+                result.put(key, result.getOrDefault(key, 0) + 1);
+            }
+        }, userId, Timestamp.valueOf(startDate.atStartOfDay()));
+
+        return result;
     }
 
     /**

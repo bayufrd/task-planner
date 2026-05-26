@@ -1,4 +1,6 @@
 spring:
+  config:
+    import: optional:file:.env[.properties]
   application:
     name: Task Planner API
   
@@ -26,7 +28,7 @@ spring:
     expiration-ms: ${SPRING_JWT_EXP_MS:3600000}
 
 server:
-  port: 8080
+  port: ${SERVER_PORT:8080}
   servlet:
     context-path: /api
 
