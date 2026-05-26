@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "8f67d164-6b2d-4f80-8ea5-9f4d7d2c0d3f",
     "name": "TaskPlanner Java Backend",
-    "description": "Postman collection untuk endpoint TaskPlanner Java Backend yang sudah diselaraskan dengan cakupan route backend Express untuk area auth dasar, tasks, reminders, dan AI.",
+    "description": "Postman collection untuk endpoint TaskPlanner Java Backend yang sudah diselaraskan dengan implementasi auth JWT, task user-aware, planner, reminders, dan AI.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -41,7 +41,7 @@
                 "health"
               ]
             },
-            "description": "Endpoint health check backend Java. Target dokumentasi disamakan ke /api/health."
+            "description": "Endpoint health check backend Java."
           },
           "response": []
         }
@@ -74,7 +74,7 @@
                 "register"
               ]
             },
-            "description": "Register user baru."
+            "description": "Register user baru dan mendapatkan token awal."
           },
           "response": []
         },
@@ -102,7 +102,7 @@
                 "login"
               ]
             },
-            "description": "Login dan mendapatkan token auth."
+            "description": "Login dan mendapatkan access token JWT."
           },
           "response": []
         },
@@ -150,7 +150,7 @@
                 "logout"
               ]
             },
-            "description": "Logout user dan mengosongkan token lokal pada account."
+            "description": "Logout user dan membersihkan token account lokal."
           },
           "response": []
         }
@@ -163,7 +163,12 @@
           "name": "Get Tasks",
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/tasks?page=1&limit=20&sort=deadline&order=asc",
               "host": [
@@ -191,7 +196,7 @@
                 }
               ]
             },
-            "description": "Mengambil daftar task dengan pagination dan sorting."
+            "description": "Mengambil daftar task milik user login."
           },
           "response": []
         },
@@ -201,13 +206,17 @@
             "method": "POST",
             "header": [
               {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
                 "key": "Content-Type",
                 "value": "application/json"
               }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"title\": \"Finish report\",\n  \"description\": \"Prepare weekly summary\",\n  \"deadline\": \"2026-04-20T10:00:00\",\n  \"priority\": \"HIGH\",\n  \"status\": \"PROGRESS\",\n  \"estimatedDuration\": 120\n}"
+              "raw": "{\n  \"title\": \"Finish report\",\n  \"description\": \"Prepare weekly summary\",\n  \"deadline\": \"2026-04-20T10:00:00\",\n  \"priority\": \"HIGH\",\n  \"status\": \"TODO\",\n  \"estimatedDuration\": 120\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/tasks",
@@ -218,7 +227,7 @@
                 "tasks"
               ]
             },
-            "description": "Membuat task baru."
+            "description": "Membuat task baru untuk user login."
           },
           "response": []
         },
@@ -226,7 +235,12 @@
           "name": "Get Task Stats",
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/tasks/stats",
               "host": [
@@ -237,7 +251,7 @@
                 "stats"
               ]
             },
-            "description": "Mengambil statistik task ringkas."
+            "description": "Mengambil statistik task ringkas user login."
           },
           "response": []
         },
@@ -245,7 +259,12 @@
           "name": "Get Daily Task Stats",
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/tasks/stats/daily?days=30",
               "host": [
@@ -263,7 +282,7 @@
                 }
               ]
             },
-            "description": "Mengambil statistik task harian."
+            "description": "Mengambil statistik task harian user login."
           },
           "response": []
         },
@@ -271,7 +290,12 @@
           "name": "Get Weekly Task Stats",
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/tasks/stats/weekly?weeks=12",
               "host": [
@@ -289,7 +313,7 @@
                 }
               ]
             },
-            "description": "Mengambil statistik task mingguan."
+            "description": "Mengambil statistik task mingguan user login."
           },
           "response": []
         },
@@ -297,7 +321,12 @@
           "name": "Get Task By ID",
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/tasks/{{taskId}}",
               "host": [
@@ -308,7 +337,7 @@
                 "{{taskId}}"
               ]
             },
-            "description": "Mengambil detail task berdasarkan ID."
+            "description": "Mengambil detail task milik user login berdasarkan ID."
           },
           "response": []
         },
@@ -317,6 +346,10 @@
           "request": {
             "method": "PUT",
             "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
               {
                 "key": "Content-Type",
                 "value": "application/json"
@@ -336,7 +369,7 @@
                 "{{taskId}}"
               ]
             },
-            "description": "Memperbarui task penuh berdasarkan ID."
+            "description": "Memperbarui task penuh milik user login berdasarkan ID."
           },
           "response": []
         },
@@ -345,6 +378,10 @@
           "request": {
             "method": "PATCH",
             "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
               {
                 "key": "Content-Type",
                 "value": "application/json"
@@ -364,7 +401,7 @@
                 "{{taskId}}"
               ]
             },
-            "description": "Partial update task agar selaras dengan Express."
+            "description": "Partial update task milik user login."
           },
           "response": []
         },
@@ -373,6 +410,10 @@
           "request": {
             "method": "PATCH",
             "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
               {
                 "key": "Content-Type",
                 "value": "application/json"
@@ -398,10 +439,40 @@
           "response": []
         },
         {
+          "name": "Complete Task",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tasks/{{taskId}}/complete",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tasks",
+                "{{taskId}}",
+                "complete"
+              ]
+            },
+            "description": "Menandai task milik user login sebagai DONE."
+          },
+          "response": []
+        },
+        {
           "name": "Delete Task",
           "request": {
             "method": "DELETE",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/tasks/{{taskId}}",
               "host": [
@@ -412,7 +483,7 @@
                 "{{taskId}}"
               ]
             },
-            "description": "Menghapus task berdasarkan ID."
+            "description": "Menghapus task milik user login berdasarkan ID."
           },
           "response": []
         },
@@ -420,7 +491,12 @@
           "name": "Calculate Task Priority",
           "request": {
             "method": "POST",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/tasks/{{taskId}}/priority",
               "host": [
@@ -432,7 +508,7 @@
                 "priority"
               ]
             },
-            "description": "Menghitung priority score task."
+            "description": "Menghitung priority score task milik user login."
           },
           "response": []
         },
@@ -440,7 +516,12 @@
           "name": "Skip Task",
           "request": {
             "method": "POST",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/tasks/{{taskId}}/skip",
               "host": [
@@ -452,7 +533,7 @@
                 "skip"
               ]
             },
-            "description": "Menandai task sebagai skipped."
+            "description": "Menandai task milik user login sebagai skipped."
           },
           "response": []
         },
@@ -460,7 +541,12 @@
           "name": "Get Tasks By Priority",
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/tasks/priority/HIGH?page=1&limit=20",
               "host": [
@@ -482,7 +568,42 @@
                 }
               ]
             },
-            "description": "Mengambil task berdasarkan level priority."
+            "description": "Mengambil task user login berdasarkan level priority."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Planner",
+      "item": [
+        {
+          "name": "Get Today Plan",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/planner/today?limit=5",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "planner",
+                "today"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "5"
+                }
+              ]
+            },
+            "description": "Generate today plan milik user login berdasarkan JWT subject."
           },
           "response": []
         }
