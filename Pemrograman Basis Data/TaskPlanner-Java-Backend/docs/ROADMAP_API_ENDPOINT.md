@@ -9,7 +9,7 @@ Analisis dibuat berdasarkan route yang benar-benar terdaftar pada source code sa
 - Backend Java **belum** mencakup semua endpoint yang ada di backend Express.
 - Backend Java saat ini fokus pada:
   - health check
-  - auth dasar register/login
+  - auth register/login/me/logout
   - CRUD task dasar
   - filter task berdasarkan prioritas
 - Backend Express memiliki cakupan lebih luas:
@@ -17,7 +17,6 @@ Analisis dibuat berdasarkan route yang benar-benar terdaftar pada source code sa
   - statistik task
   - skip task
   - reminders
-  - calendars
   - AI endpoints
   - internal WhatsApp webhook route
 
@@ -35,10 +34,10 @@ Analisis dibuat berdasarkan route yang benar-benar terdaftar pada source code sa
 
 - [x] Java memiliki `POST /api/auth/register` via [`register()`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/AuthController.java:36)
 - [x] Java memiliki `POST /api/auth/login` via [`login()`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/AuthController.java:75)
-- [ ] Java belum memiliki `GET /api/auth/me`
-- [ ] Java belum memiliki `POST /api/auth/logout`
+- [x] Java memiliki `GET /api/auth/me`
+- [x] Java memiliki `POST /api/auth/logout`
 - [ ] Java belum memiliki `POST /api/auth/sync`
-- [ ] Java belum memiliki proteksi auth middleware seperti Express pada endpoint privat
+- [x] Java sudah memiliki verifikasi `Bearer token` minimal pada endpoint privat auth
 - [ ] Java belum memiliki `GET /api/auth/google`
 - [ ] Java belum memiliki `GET /api/auth/google/callback`
 
@@ -66,25 +65,13 @@ Analisis dibuat berdasarkan route yang benar-benar terdaftar pada source code sa
 - [ ] Java belum memiliki `PATCH /api/reminders/{id}`
 - [ ] Java belum memiliki `DELETE /api/reminders/{id}`
 
-### E. Calendars
-
-- [ ] Java belum memiliki module calendars setara Express
-- [ ] Java belum memiliki `POST /api/calendars`
-- [ ] Java belum memiliki `GET /api/calendars`
-- [ ] Java belum memiliki `GET /api/calendars/default`
-- [ ] Java belum memiliki `POST /api/calendars/sync`
-- [ ] Java belum memiliki `GET /api/calendars/{id}`
-- [ ] Java belum memiliki `PATCH /api/calendars/{id}`
-- [ ] Java belum memiliki `DELETE /api/calendars/{id}`
-- [ ] Java belum memiliki `POST /api/calendars/{id}/refresh`
-
-### F. AI
+### E. AI
 
 - [ ] Java belum memiliki module AI setara Express
 - [ ] Java belum memiliki `POST /api/ai/parse-task`
 - [ ] Java belum memiliki `POST /api/ai/overview-analysis`
 
-### G. Internal / Integrasi Lain
+### F. Internal / Integrasi Lain
 
 - [ ] Java belum memiliki route internal WhatsApp seperti `app.use('/internal/wa', ...)` pada [`createApp()`](Proyek%20Perangkat%20Lunak/backend/src/app.ts:28)
 
@@ -133,18 +120,6 @@ Sumber: [`task.routes.ts`](Proyek%20Perangkat%20Lunak/backend/src/modules/tasks/
 
 Sumber: [`reminder.routes.ts`](Proyek%20Perangkat%20Lunak/backend/src/modules/reminders/reminder.routes.ts:11)
 
-### Calendars
-- `POST /api/calendars`
-- `GET /api/calendars`
-- `GET /api/calendars/default`
-- `POST /api/calendars/sync`
-- `GET /api/calendars/:id`
-- `PATCH /api/calendars/:id`
-- `DELETE /api/calendars/:id`
-- `POST /api/calendars/:id/refresh`
-
-Sumber: [`calendar.routes.ts`](Proyek%20Perangkat%20Lunak/backend/src/modules/calendar/calendar.routes.ts:11) dan [`calendar.refresh.routes.ts`](Proyek%20Perangkat%20Lunak/backend/src/modules/calendar/calendar.refresh.routes.ts:7)
-
 ### AI
 - `POST /api/ai/parse-task`
 - `POST /api/ai/overview-analysis`
@@ -160,8 +135,8 @@ Sumber: [`ai.routes.ts`](Proyek%20Perangkat%20Lunak/backend/src/modules/ai/ai.ro
 | Health | `GET /api/health` | Sebagian ada | `GET /api/health` | Java sudah sesuai target roadmap, Express masih `GET /health` |
 | Auth | `POST /api/auth/register` | Ada | `POST /api/auth/register` | Sudah setara dasar |
 | Auth | `POST /api/auth/login` | Ada | `POST /api/auth/login` | Sudah ada JWT login |
-| Auth | `GET /api/auth/me` | Belum ada | - | Perlu endpoint profil user login |
-| Auth | `POST /api/auth/logout` | Belum ada | - | Perlu endpoint logout |
+| Auth | `GET /api/auth/me` | Ada | `GET /api/auth/me` | Sudah mengambil profil user dari access token |
+| Auth | `POST /api/auth/logout` | Ada | `POST /api/auth/logout` | Sudah mengosongkan token lokal pada account |
 | Auth | `POST /api/auth/sync` | Belum ada | - | Perlu endpoint sinkronisasi session/token |
 | Auth | `GET /api/auth/google` | Belum ada | - | Ditunda, tidak dikerjakan dahulu |
 | Auth | `GET /api/auth/google/callback` | Belum ada | - | Ditunda, tidak dikerjakan dahulu |
@@ -182,14 +157,6 @@ Sumber: [`ai.routes.ts`](Proyek%20Perangkat%20Lunak/backend/src/modules/ai/ai.ro
 | Reminders | `GET /api/reminders/:id` | Belum ada | - | Modul belum ada |
 | Reminders | `PATCH /api/reminders/:id` | Belum ada | - | Modul belum ada |
 | Reminders | `DELETE /api/reminders/:id` | Belum ada | - | Modul belum ada |
-| Calendars | `POST /api/calendars` | Belum ada | - | Modul belum ada |
-| Calendars | `GET /api/calendars` | Belum ada | - | Modul belum ada |
-| Calendars | `GET /api/calendars/default` | Belum ada | - | Modul belum ada |
-| Calendars | `POST /api/calendars/sync` | Belum ada | - | Modul belum ada |
-| Calendars | `GET /api/calendars/:id` | Belum ada | - | Modul belum ada |
-| Calendars | `PATCH /api/calendars/:id` | Belum ada | - | Modul belum ada |
-| Calendars | `DELETE /api/calendars/:id` | Belum ada | - | Modul belum ada |
-| Calendars | `POST /api/calendars/:id/refresh` | Belum ada | - | Modul belum ada |
 | AI | `POST /api/ai/parse-task` | Belum ada | - | Modul AI belum ada |
 | AI | `POST /api/ai/overview-analysis` | Belum ada | - | Modul AI belum ada |
 | Internal | `/internal/wa` | Belum ada | - | Integrasi internal belum ada |
@@ -203,6 +170,8 @@ Berdasarkan implementasi saat ini di backend Java:
 - `GET /api/health`
 - `POST /api/auth/register`
 - `POST /api/auth/login`
+- `GET /api/auth/me`
+- `POST /api/auth/logout`
 - `GET /api/tasks`
 - `POST /api/tasks`
 - `GET /api/tasks/{id}`
@@ -226,8 +195,6 @@ Jika backend Express dijadikan target acuan fitur, maka backend Java masih belum
 ### Yang belum ada pada Java
 
 #### Auth
-- `GET /api/auth/me`
-- `POST /api/auth/logout`
 - `POST /api/auth/sync`
 - `GET /api/auth/google` *(ditunda)*
 - `GET /api/auth/google/callback` *(ditunda)*
@@ -248,16 +215,6 @@ Jika backend Express dijadikan target acuan fitur, maka backend Java masih belum
 - `PATCH /api/reminders/{id}`
 - `DELETE /api/reminders/{id}`
 
-#### Calendars
-- `POST /api/calendars`
-- `GET /api/calendars`
-- `GET /api/calendars/default`
-- `POST /api/calendars/sync`
-- `GET /api/calendars/{id}`
-- `PATCH /api/calendars/{id}`
-- `DELETE /api/calendars/{id}`
-- `POST /api/calendars/{id}/refresh`
-
 #### AI
 - `POST /api/ai/parse-task`
 - `POST /api/ai/overview-analysis`
@@ -272,8 +229,6 @@ Jika backend Express dijadikan target acuan fitur, maka backend Java masih belum
 Urutan prioritas yang disarankan:
 
 ### Prioritas 1 — Menyamakan Core Task & Auth
-- [ ] `GET /api/auth/me`
-- [ ] `POST /api/auth/logout`
 - [ ] `POST /api/auth/sync`
 - [ ] `PATCH /api/tasks/{id}/status`
 - [ ] `POST /api/tasks/{id}/skip`
@@ -286,7 +241,6 @@ Urutan prioritas yang disarankan:
 
 ### Prioritas 3 — Integrasi Produktivitas
 - [ ] seluruh module reminders
-- [ ] seluruh module calendars
 
 ### Prioritas 4 — Integrasi Lanjutan
 - [ ] Google OAuth flow
@@ -297,6 +251,6 @@ Urutan prioritas yang disarankan:
 
 ## 7. Kesimpulan
 
-Jika tujuan backend Java hanya CRUD task dasar dan auth sederhana, implementasi sekarang sudah cukup berjalan.
+Jika tujuan backend Java hanya CRUD task dasar dan auth register/login/me/logout sederhana, implementasi sekarang sudah cukup berjalan.
 
-Jika tujuan backend Java adalah menyamai backend Express di [`Proyek Perangkat Lunak/backend`](Proyek%20Perangkat%20Lunak/backend), maka endpoint Java **masih belum lengkap** dan masih tertinggal pada area auth lanjutan non-Google, analytics task, skip/status task, reminders, calendars, AI, dan integrasi internal. Endpoint Google OAuth tetap dikosongkan sebagai bagian yang ditunda.
+Jika tujuan backend Java adalah menyamai backend Express di [`Proyek Perangkat Lunak/backend`](Proyek%20Perangkat%20Lunak/backend), maka endpoint Java **masih belum lengkap** dan masih tertinggal pada area auth non-Google untuk `sync`, analytics task, skip/status task, reminders, AI, dan integrasi internal. Endpoint Google OAuth tetap dikosongkan sebagai bagian yang ditunda.

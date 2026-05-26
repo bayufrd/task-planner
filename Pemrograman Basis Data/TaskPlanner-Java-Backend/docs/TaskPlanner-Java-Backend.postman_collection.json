@@ -13,6 +13,10 @@
     {
       "key": "taskId",
       "value": "replace-with-task-id"
+    },
+    {
+      "key": "accessToken",
+      "value": "replace-with-access-token"
     }
   ],
   "item": [
@@ -66,7 +70,7 @@
                 "register"
               ]
             },
-            "description": "Register user baru."
+            "description": "Register user baru. Response sekarang mengembalikan data user dan token seperti flow auth backend Express."
           },
           "response": []
         },
@@ -94,7 +98,55 @@
                 "login"
               ]
             },
-            "description": "Login dan mendapatkan access token + refresh token."
+            "description": "Login dan mendapatkan user, access token, refresh token, tokenType, dan expiresIn."
+          },
+          "response": []
+        },
+        {
+          "name": "Me",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "me"
+              ]
+            },
+            "description": "Mengambil profil user dari access token seperti endpoint me pada backend Express."
+          },
+          "response": []
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "logout"
+              ]
+            },
+            "description": "Logout user dan mengosongkan token lokal pada tabel account."
           },
           "response": []
         }

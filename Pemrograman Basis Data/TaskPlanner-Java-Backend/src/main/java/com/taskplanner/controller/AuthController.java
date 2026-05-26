@@ -7,14 +7,19 @@ import com.taskplanner.dto.ApiResponse;
 import com.taskplanner.model.Account;
 import com.taskplanner.model.User;
 import com.taskplanner.repository.AuthRepository;
+import io.jsonwebtoken.Claims;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -63,8 +68,27 @@ public class AuthController {
                 return ResponseEntity.status(500).body(new ApiResponse<>(false, "db_error: " + dbEx.getMessage(), null));
             }
 
+            String accessToken = tokenService.createAccessToken(user);
+            String refreshToken = tokenService.createRefreshToken();
+            long expiresMs = tokenService.getExpirationMs();
+
+            try {
+                authRepository.updateAccountTokens(user.getId(), refreshToken, accessToken, (int) (expiresMs / 1000), "Bearer");
+            } catch (Exception e) {
+                LOGGER.warn("Failed to persist tokens for user {} after register: {}", user.getId(), e.getMessage());
+            }
+
+            Map<String, Object> userData = buildUserData(user);
+            Map<String, Object> payload = new LinkedHashMap<>();
+            payload.put("user", userData);
+            payload.put("token", accessToken);
+            payload.put("refreshToken", refreshToken);
+            payload.put("tokenType", "Bearer");
+            payload.put("expiresIn", expiresMs / 1000);
+
             LOGGER.info("Registered new user: {}", userId);
-            return ResponseEntity.ok().body(new ApiResponse<>(true, "registered", userId));
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(new ApiResponse<>(true, "Registration successful", payload));
         } catch (Exception ex) {
             LOGGER.error("Error in register endpoint", ex);
             return ResponseEntity.status(500).body(new ApiResponse<>(false, "error: " + ex.getMessage(), null));
@@ -93,12 +117,81 @@ public class AuthController {
                 LOGGER.warn("Failed to persist tokens for user {}: {}", user.getId(), e.getMessage());
             }
 
-            LoginResponse resp = new LoginResponse(accessToken, refreshToken, expiresMs / 1000);
-            return ResponseEntity.ok(resp);
+            Map<String, Object> userData = buildUserData(user);
+            Map<String, Object> payload = new LinkedHashMap<>();
+            payload.put("user", userData);
+            payload.put("token", accessToken);
+            payload.put("refreshToken", refreshToken);
+            payload.put("tokenType", "Bearer");
+            payload.put("expiresIn", expiresMs / 1000);
+
+            return ResponseEntity.ok(new ApiResponse<>(true, "Login successful", payload));
         } catch (Exception ex) {
             LOGGER.error("Error in login endpoint", ex);
             return ResponseEntity.status(500).body("error: " + ex.getMessage());
         }
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<ApiResponse<?>> getMe(HttpServletRequest request) {
+        try {
+            String token = extractBearerToken(request);
+            Claims claims = tokenService.parseAccessToken(token);
+            String userId = claims.getSubject();
+
+            Optional<User> opt = authRepository.findUserById(userId);
+            if (opt.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(new ApiResponse<>(false, "User not found", null));
+            }
+
+            Map<String, Object> userData = buildUserData(opt.get());
+            return ResponseEntity.ok(new ApiResponse<>(true, null, userData));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ApiResponse<>(false, e.getMessage(), null));
+        } catch (Exception e) {
+            LOGGER.error("Error in me endpoint", e);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ApiResponse<>(false, "Invalid or expired token", null));
+        }
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<ApiResponse<?>> logout(HttpServletRequest request) {
+        try {
+            String token = extractBearerToken(request);
+            Claims claims = tokenService.parseAccessToken(token);
+            String userId = claims.getSubject();
+            authRepository.clearAccountTokens(userId);
+            return ResponseEntity.ok(new ApiResponse<>(true, "Logout successful", null));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ApiResponse<>(false, e.getMessage(), null));
+        } catch (Exception e) {
+            LOGGER.error("Error in logout endpoint", e);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ApiResponse<>(false, "Invalid or expired token", null));
+        }
+    }
+
+    private String extractBearerToken(HttpServletRequest request) {
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            throw new IllegalArgumentException("No token provided");
+        }
+        return authHeader.substring(7);
+    }
+
+    private Map<String, Object> buildUserData(User user) {
+        Map<String, Object> userData = new LinkedHashMap<>();
+        userData.put("id", user.getId());
+        userData.put("name", user.getName());
+        userData.put("email", user.getEmail());
+        userData.put("theme", user.getTheme());
+        userData.put("image", user.getImage());
+        userData.put("createdAt", user.getCreatedAt());
+        return userData;
     }
 
 }

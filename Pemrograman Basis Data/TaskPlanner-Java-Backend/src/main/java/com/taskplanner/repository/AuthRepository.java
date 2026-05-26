@@ -42,6 +42,16 @@ public class AuthRepository {
         }
     }
 
+    public Optional<User> findUserById(String id) {
+        String query = "SELECT * FROM User WHERE id = ?";
+        try {
+            User u = jdbcTemplate.queryForObject(query, userRowMapper, id);
+            return Optional.ofNullable(u);
+        } catch (Exception e) {
+            return Optional.empty();
+        }
+    }
+
     public void createUser(User user) {
         String query = "INSERT INTO User (id, email, name, password, image, theme, createdAt, updatedAt) " +
                 "VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())";
@@ -64,5 +74,11 @@ public class AuthRepository {
         String query = "UPDATE Account SET refresh_token = ?, access_token = ?, expires_at = ?, token_type = ? WHERE userId = ? AND provider = 'local'";
         jdbcTemplate.update(query, refreshToken, accessToken, expiresAt, tokenType, userId);
         LOGGER.info("Updated tokens for user {} (provider=local)", userId);
+    }
+
+    public void clearAccountTokens(String userId) {
+        String query = "UPDATE Account SET refresh_token = NULL, access_token = NULL, expires_at = NULL, token_type = NULL WHERE userId = ? AND provider = 'local'";
+        jdbcTemplate.update(query, userId);
+        LOGGER.info("Cleared tokens for user {} (provider=local)", userId);
     }
 }
