@@ -1,14 +1,17 @@
 package com.taskplanner.controller;
 
 import com.taskplanner.dto.ApiResponse;
-import com.taskplanner.repository.TaskRepository;
+import com.taskplanner.service.AiService;
+import com.taskplanner.service.TaskService;
+import com.taskplanner.service.TokenService;
+import io.jsonwebtoken.Claims;
+import jakarta.servlet.http.HttpServletRequest;
+import java.util.List;
+import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.time.LocalDateTime;
-import java.util.LinkedHashMap;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/ai")
@@ -16,50 +19,55 @@ import java.util.Map;
 public class AiController {
 
     @Autowired
-    private TaskRepository taskRepository;
+    private AiService aiService;
+
+    @Autowired
+    private TaskService taskService;
+
+    @Autowired
+    private TokenService tokenService;
 
     @PostMapping("/parse-task")
     public ResponseEntity<ApiResponse<Map<String, Object>>> parseTask(@RequestBody Map<String, Object> request) {
-        String text = String.valueOf(request.getOrDefault("text", "")).trim();
-        Map<String, Object> parsed = new LinkedHashMap<>();
-        parsed.put("title", text.isBlank() ? "Untitled Task" : text);
-        parsed.put("description", text);
-        parsed.put("priority", inferPriority(text));
-        parsed.put("status", "TODO");
-        parsed.put("estimatedDuration", 60);
-        parsed.put("deadline", LocalDateTime.now().plusDays(1).withSecond(0).withNano(0).toString());
-        return ResponseEntity.ok(new ApiResponse<>(true, "Task parsed successfully", parsed));
+        String command = String.valueOf(request.getOrDefault("command", request.getOrDefault("text", ""))).trim();
+        try {
+            Map<String, Object> parsed = aiService.parseTaskCommand(command);
+            return ResponseEntity.ok(new ApiResponse<>(true, "Task command parsed successfully", parsed));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(new ApiResponse<>(false, e.getMessage(), null));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
+                    .body(new ApiResponse<>(false, e.getMessage(), null));
+        }
     }
 
     @PostMapping("/overview-analysis")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> overviewAnalysis(@RequestBody(required = false) Map<String, Object> request) {
-        String userId = request != null && request.get("userId") != null ? String.valueOf(request.get("userId")) : "user-123";
-        int totalDone = taskRepository.countCompletedTasks(userId);
-        int totalTodo = taskRepository.countByStatus(userId, "TODO");
-        int totalSkipped = taskRepository.countByStatus(userId, "SKIPPED");
-
-        Map<String, Object> analysis = new LinkedHashMap<>();
-        analysis.put("userId", userId);
-        analysis.put("summary", String.format("User has %d active tasks, %d completed tasks, and %d skipped tasks.", totalTodo, totalDone, totalSkipped));
-        analysis.put("metrics", Map.of(
-                "todo", totalTodo,
-                "done", totalDone,
-                "skipped", totalSkipped
-        ));
-        analysis.put("recommendation", totalTodo > totalDone
-                ? "Focus on high priority tasks and reduce overdue backlog first."
-                : "Task completion trend looks healthy. Keep maintaining consistency.");
-        return ResponseEntity.ok(new ApiResponse<>(true, "Overview analysis generated successfully", analysis));
+    public ResponseEntity<ApiResponse<Map<String, Object>>> overviewAnalysis(
+            HttpServletRequest httpRequest,
+            @RequestBody(required = false) Map<String, Object> request) {
+        try {
+            String userId = extractUserId(httpRequest);
+            Map<String, Integer> stats = taskService.getTaskStats(userId);
+            List<Map<String, Object>> dailyData = taskService.getDailyTaskStats(userId, 7);
+            Map<String, Object> analysis = aiService.analyzeOverview(userId, stats, dailyData);
+            return ResponseEntity.ok(new ApiResponse<>(true, "Overview analysis completed", analysis));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ApiResponse<>(false, e.getMessage(), null));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
+                    .body(new ApiResponse<>(false, e.getMessage(), null));
+        }
     }
 
-    private String inferPriority(String text) {
-        String normalized = text.toLowerCase();
-        if (normalized.contains("urgent") || normalized.contains("penting") || normalized.contains("segera")) {
-            return "HIGH";
+    private String extractUserId(HttpServletRequest request) {
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            throw new IllegalArgumentException("No token provided");
         }
-        if (normalized.contains("nanti") || normalized.contains("low")) {
-            return "LOW";
-        }
-        return "MEDIUM";
+
+        String token = authHeader.substring(7);
+        Claims claims = tokenService.parseAccessToken(token);
+        return claims.getSubject();
     }
 }

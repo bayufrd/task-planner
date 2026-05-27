@@ -27,6 +27,12 @@ spring:
     secret: ${SPRING_JWT_SECRET:taskplanner-secret-change-me}
     expiration-ms: ${SPRING_JWT_EXP_MS:3600000}
 
+ai:
+  nine-router:
+    api: ${NINE_ROUTER_API:}
+    api-key: ${NINE_ROUTER_API_KEY:}
+    model: ${NINE_ROUTER_MODEL:cx/gpt-5.2}
+
 server:
   port: ${SERVER_PORT:8080}
   servlet:
