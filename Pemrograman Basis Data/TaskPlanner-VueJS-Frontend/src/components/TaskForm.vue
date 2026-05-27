@@ -28,11 +28,15 @@ watch(
   { immediate: true },
 )
 
+function toBackendDeadline(value: string) {
+  return value.length === 16 ? `${value}:00` : value
+}
+
 function submit() {
   emit('submit', {
     title: form.title,
     description: form.description,
-    deadline: new Date(form.deadline).toISOString(),
+    deadline: toBackendDeadline(form.deadline),
     priority: form.priority,
     status: form.status,
     estimatedDuration: Number(form.estimatedDuration),

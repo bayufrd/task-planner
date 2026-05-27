@@ -2,7 +2,6 @@ package com.taskplanner.controller;
 
 import com.taskplanner.dto.RegisterRequest;
 import com.taskplanner.dto.LoginRequest;
-import com.taskplanner.dto.LoginResponse;
 import com.taskplanner.dto.ApiResponse;
 import com.taskplanner.model.Account;
 import com.taskplanner.model.User;
@@ -25,6 +24,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/auth")
+@CrossOrigin(origins = "*", allowedHeaders = "*")
 public class AuthController {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AuthController.class);
