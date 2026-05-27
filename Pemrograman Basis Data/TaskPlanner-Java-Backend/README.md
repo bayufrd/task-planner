@@ -32,7 +32,11 @@ Dokumentasi ini sudah disesuaikan dengan endpoint yang **benar-benar tersedia sa
 - `DELETE /api/tasks/{id}`
 - `POST /api/tasks/{id}/priority`
 - `POST /api/tasks/{id}/skip`
+- `POST /api/tasks/{id}/complete`
 - `GET /api/tasks/priority/{level}`
+
+#### Planner
+- `GET /api/planner/today`
 
 #### Reminders
 - `POST /api/reminders`
@@ -1510,11 +1514,16 @@ Mengacu ke [`ROADMAP_API_ENDPOINT.md`](Pemrograman%20Basis%20Data/TaskPlanner-Ja
 - `GET /api/auth/google/callback`
 - internal WhatsApp route
 
+### Sudah tersedia sesuai checklist roadmap
+- `GET /api/planner/today`
+- `POST /api/tasks/{id}/complete`
+- endpoint task privat sudah resolve `userId` dari Bearer JWT, bukan hardcoded lagi
+
 ### Sudah ada tetapi belum matang
 - reminder masih in-memory
 - AI masih heuristic
-- task flow belum full user-auth aware pada semua endpoint task
 - ada perbedaan method update dengan backend Express, karena Java mendukung `PUT` dan `PATCH`
+- beberapa fitur auth lanjutan pada roadmap seperti sync session dan Google OAuth masih belum ada
 
 ---
 
