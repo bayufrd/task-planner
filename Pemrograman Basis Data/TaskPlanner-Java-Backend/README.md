@@ -137,6 +137,41 @@ java -jar target/taskplanner-api-1.0.0.jar
 
 ---
 
+## ✅ Auto Testing Endpoint Development
+
+Pengujian end-to-end terakhir sudah dijalankan terhadap environment development di [`.env`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/.env) dengan backend aktif di `http://localhost:8080`.
+
+Scope pengujian yang berhasil:
+- auth: `register`, `login`, `me`, `logout`
+- task: `create`, `list`, `detail`, `update`, `patch status`, `priority`, `skip`, `complete`, `stats`, `daily`, `weekly`, `priority list`, `delete`
+- planner: `GET /api/planner/today`
+- reminder: `create`, `list`, `due`, `detail`, `update`, `delete`
+- AI: `parse-task`, `overview-analysis`
+
+### Command yang dipakai
+
+```bash
+EMAIL="alice.$(date +%s)@example.com"; PASS='secret123'; BASE='http://localhost:8080/api'; COMMAND='besok jam 9 pagi kerjakan laporan sprint selama 120 menit priority high ingatkan 30 menit sebelumnya'; echo "TEST_EMAIL=$EMAIL"; REGISTER=$(curl -sS -X POST "$BASE/auth/register" -H 'Content-Type: application/json' -d "{\"email\":\"$EMAIL\",\"name\":\"Alice Test\",\"password\":\"$PASS\"}"); LOGIN=$(curl -sS -X POST "$BASE/auth/login" -H 'Content-Type: application/json' -d "{\"email\":\"$EMAIL\",\"password\":\"$PASS\"}"); TOKEN=$(printf '%s' "$LOGIN" | python3 -c 'import sys,json; print(json.load(sys.stdin)["data"]["token"])'); USER_ID=$(printf '%s' "$LOGIN" | python3 -c 'import sys,json; print(json.load(sys.stdin)["data"]["user"]["id"])'); CREATE_TASK=$(curl -sS -X POST "$BASE/tasks" -H 'Content-Type: application/json' -H "Authorization: Bearer $TOKEN" -d '{"title":"Finish report","description":"Prepare weekly summary","deadline":"2026-05-28T09:00:00","priority":"HIGH","status":"TODO","estimatedDuration":120}'); TASK_ID=$(printf '%s' "$CREATE_TASK" | python3 -c 'import sys,json; print(json.load(sys.stdin)["data"]["id"])'); curl -sS "$BASE/tasks?page=1&limit=10&status=TODO&priority=HIGH&sort=deadline&order=asc" -H "Authorization: Bearer $TOKEN"; curl -sS "$BASE/tasks/$TASK_ID" -H "Authorization: Bearer $TOKEN"; curl -sS -X PUT "$BASE/tasks/$TASK_ID" -H 'Content-Type: application/json' -H "Authorization: Bearer $TOKEN" -d '{"title":"Finish final report","description":"Prepare weekly summary and slides","deadline":"2026-05-28T10:00:00","priority":"MEDIUM","status":"IN_PROGRESS","estimatedDuration":150}'; curl -sS -X PATCH "$BASE/tasks/$TASK_ID/status" -H 'Content-Type: application/json' -H "Authorization: Bearer $TOKEN" -d '{"status":"TODO"}'; curl -sS -X POST "$BASE/tasks/$TASK_ID/priority" -H "Authorization: Bearer $TOKEN"; curl -sS -X POST "$BASE/tasks/$TASK_ID/skip" -H "Authorization: Bearer $TOKEN"; curl -sS -X POST "$BASE/tasks/$TASK_ID/complete" -H "Authorization: Bearer $TOKEN"; curl -sS "$BASE/tasks/stats" -H "Authorization: Bearer $TOKEN"; curl -sS "$BASE/tasks/stats/daily?days=7" -H "Authorization: Bearer $TOKEN"; curl -sS "$BASE/tasks/stats/weekly?weeks=4" -H "Authorization: Bearer $TOKEN"; curl -sS "$BASE/tasks/priority/HIGH?page=1&limit=10" -H "Authorization: Bearer $TOKEN"; curl -sS "$BASE/planner/today?limit=5" -H "Authorization: Bearer $TOKEN"; CREATE_REMINDER=$(curl -sS -X POST "$BASE/reminders" -H 'Content-Type: application/json' -d '{"title":"Reminder test","description":"Check report","remindAt":"2026-05-28T08:30:00","taskId":"'"$TASK_ID"'","userId":"'"$USER_ID"'"}'); REMINDER_ID=$(printf '%s' "$CREATE_REMINDER" | python3 -c 'import sys,json; print(json.load(sys.stdin)["data"]["id"])'); curl -sS "$BASE/reminders"; curl -sS "$BASE/reminders/due"; curl -sS "$BASE/reminders/$REMINDER_ID"; curl -sS -X PATCH "$BASE/reminders/$REMINDER_ID" -H 'Content-Type: application/json' -d '{"title":"Reminder updated","description":"Updated desc"}'; curl -sS -X POST "$BASE/ai/parse-task" -H 'Content-Type: application/json' -d "{\"command\":\"$COMMAND\"}"; curl -sS -X POST "$BASE/ai/overview-analysis" -H 'Content-Type: application/json' -H "Authorization: Bearer $TOKEN" -d '{}'; curl -sS -X DELETE "$BASE/tasks/$TASK_ID" -H "Authorization: Bearer $TOKEN"; curl -sS -X DELETE "$BASE/reminders/$REMINDER_ID"; curl -sS -X POST "$BASE/auth/logout" -H "Authorization: Bearer $TOKEN"
+```
+
+### Hasil validasi terakhir
+
+- [`GET /api/health`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/TaskPlannerApplication.java:18) sukses `200`
+- [`POST /api/auth/register`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/AuthController.java:40) sukses `201`
+- [`POST /api/auth/login`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/AuthController.java:98) sukses `200`
+- [`GET /api/auth/me`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/AuthController.java:135) sukses `200`
+- [`POST /api/auth/logout`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/AuthController.java:160) sukses `200`
+- endpoint task privat sudah tervalidasi memakai JWT owner dari [`extractUserId()`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/TaskController.java:323)
+- [`POST /api/ai/parse-task`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/AiController.java:30) sukses `200`
+- [`POST /api/ai/overview-analysis`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/AiController.java:44) sukses `200`
+
+Catatan hasil uji:
+- planner dapat mengembalikan list kosong jika task uji sudah selesai/terfilter
+- reminder Java saat ini tetap in-memory pada [`ReminderController`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/ReminderController.java:21)
+- AI parse dapat mengembalikan deadline dalam format UTC, misalnya `2026-05-28T02:00:00Z`
+
+---
+
 ## 🔐 Environment Auth JWT
 
 Sesuaikan environment berikut:
@@ -146,7 +181,7 @@ Sesuaikan environment berikut:
 - `SPRING_DATASOURCE_USERNAME`
 - `SPRING_DATASOURCE_PASSWORD`
 
-Lihat contoh di [` .env.example`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/.env.example).
+Lihat contoh di [`.env.example`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/.env.example).
 
 ---
 
