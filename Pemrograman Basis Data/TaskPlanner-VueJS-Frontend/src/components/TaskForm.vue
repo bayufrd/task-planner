@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { reactive, watch } from 'vue'
-import type { Task, TaskPriority, TaskStatus } from '../types'
+import type { Task, TaskPriority } from '../types'
 import { toLocalInputValue } from '../utils/format'
 
 const props = defineProps<{ modelValue?: Partial<Task>; submitLabel: string; busy?: boolean }>()
@@ -11,7 +11,6 @@ const form = reactive({
   description: '',
   deadline: toLocalInputValue(),
   priority: 'MEDIUM' as TaskPriority,
-  status: 'TODO' as TaskStatus,
   estimatedDuration: 60,
 })
 
@@ -22,7 +21,6 @@ watch(
     form.description = value?.description || ''
     form.deadline = toLocalInputValue(value?.deadline)
     form.priority = (value?.priority as TaskPriority) || 'MEDIUM'
-    form.status = (value?.status as TaskStatus) || 'TODO'
     form.estimatedDuration = value?.estimatedDuration || 60
   },
   { immediate: true },
@@ -38,7 +36,6 @@ function submit() {
     description: form.description,
     deadline: toBackendDeadline(form.deadline),
     priority: form.priority,
-    status: form.status,
     estimatedDuration: Number(form.estimatedDuration),
   })
 }
@@ -65,15 +62,6 @@ function submit() {
           <option value="HIGH">High</option>
           <option value="MEDIUM">Medium</option>
           <option value="LOW">Low</option>
-        </select>
-      </label>
-      <label>
-        <span>Status</span>
-        <select v-model="form.status">
-          <option value="TODO">To do</option>
-          <option value="IN_PROGRESS">In progress</option>
-          <option value="DONE">Done</option>
-          <option value="SKIPPED">Skipped</option>
         </select>
       </label>
       <label>
