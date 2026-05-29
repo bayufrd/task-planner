@@ -9,7 +9,7 @@ Analisis dibuat berdasarkan route yang benar-benar terdaftar pada source code sa
 - Backend Java **sudah mencakup hampir semua endpoint utama** untuk area task, reminder, dan AI yang ada di backend Express.
 - Backend Java saat ini sudah memiliki:
   - health check
-  - auth register/login/me/logout
+  - auth register/login/refresh/me/logout
   - CRUD task dasar
   - statistik task
   - update status task
@@ -35,8 +35,9 @@ Analisis dibuat berdasarkan route yang benar-benar terdaftar pada source code sa
 
 ### B. Auth
 
-- [x] Java memiliki `POST /api/auth/register` via [`register()`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/AuthController.java:36)
-- [x] Java memiliki `POST /api/auth/login` via [`login()`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/AuthController.java:75)
+- [x] Java memiliki `POST /api/auth/register` via [`register()`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/AuthController.java:40)
+- [x] Java memiliki `POST /api/auth/login` via [`login()`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/AuthController.java:98)
+- [x] Java memiliki `POST /api/auth/refresh` via [`refresh()`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/AuthController.java:160)
 - [x] Java memiliki `GET /api/auth/me`
 - [x] Java memiliki `POST /api/auth/logout`
 - [ ] Java belum memiliki `POST /api/auth/sync`
@@ -90,6 +91,7 @@ Berikut endpoint yang ditemukan dari route backend Express:
 ### Auth
 - `POST /api/auth/register`
 - `POST /api/auth/login`
+- `POST /api/auth/refresh`
 - `GET /api/auth/me`
 - `POST /api/auth/logout`
 - `POST /api/auth/sync`
@@ -138,6 +140,7 @@ Sumber: [`ai.routes.ts`](Proyek%20Perangkat%20Lunak/backend/src/modules/ai/ai.ro
 | Health | `GET /api/health` | Sebagian ada | `GET /api/health` | Java sudah sesuai target roadmap, Express masih `GET /health` |
 | Auth | `POST /api/auth/register` | Ada | `POST /api/auth/register` | Sudah setara dasar |
 | Auth | `POST /api/auth/login` | Ada | `POST /api/auth/login` | Sudah ada JWT login |
+| Auth | `POST /api/auth/refresh` | Ada | `POST /api/auth/refresh` | Sudah ada refresh access token dengan token rotation |
 | Auth | `GET /api/auth/me` | Ada | `GET /api/auth/me` | Sudah mengambil profil user dari access token |
 | Auth | `POST /api/auth/logout` | Ada | `POST /api/auth/logout` | Sudah mengosongkan token lokal pada account |
 | Auth | `POST /api/auth/sync` | Belum ada | - | Perlu endpoint sinkronisasi session/token |
@@ -173,6 +176,7 @@ Berdasarkan implementasi saat ini di backend Java:
 - `GET /api/health`
 - `POST /api/auth/register`
 - `POST /api/auth/login`
+- `POST /api/auth/refresh`
 - `GET /api/auth/me`
 - `POST /api/auth/logout`
 - `GET /api/tasks`
@@ -238,6 +242,7 @@ Jika backend Express dijadikan target acuan fitur, maka backend Java untuk area 
 Urutan prioritas yang disarankan:
 
 ### Prioritas 1 — Menyamakan Auth & Integrasi Inti
+- [ ] integrasikan frontend auto refresh terhadap `POST /api/auth/refresh`
 - [ ] `POST /api/auth/sync`
 - [ ] internal WhatsApp route
 
@@ -252,6 +257,6 @@ Urutan prioritas yang disarankan:
 
 ## 7. Kesimpulan
 
-Jika tujuan backend Java hanya CRUD task dasar dan auth register/login/me/logout sederhana, implementasi sekarang sudah lebih dari cukup dan sudah mencakup task analytics, reminders, serta AI endpoints dasar.
+Jika tujuan backend Java hanya CRUD task dasar dan auth register/login/refresh/me/logout sederhana, implementasi sekarang sudah lebih dari cukup dan sudah mencakup task analytics, reminders, serta AI endpoints dasar.
 
-Jika tujuan backend Java adalah menyamai backend Express di [`Proyek Perangkat Lunak/backend`](Proyek%20Perangkat%20Lunak/backend), maka untuk area endpoint task, reminder, dan AI Java **sudah hampir setara secara route**, namun masih tertinggal pada `POST /api/auth/sync`, Google OAuth, route internal WhatsApp, persistence reminder, dan kedalaman logic AI. Endpoint Google OAuth tetap dikosongkan sebagai bagian yang ditunda.
+Jika tujuan backend Java adalah menyamai backend Express di [`Proyek Perangkat Lunak/backend`](Proyek%20Perangkat%20Lunak/backend), maka untuk area endpoint task, reminder, dan AI Java **sudah hampir setara secara route**, namun masih tertinggal pada integrasi frontend ke `POST /api/auth/refresh`, `POST /api/auth/sync`, Google OAuth, route internal WhatsApp, persistence reminder, dan kedalaman logic AI. Endpoint Google OAuth tetap dikosongkan sebagai bagian yang ditunda.

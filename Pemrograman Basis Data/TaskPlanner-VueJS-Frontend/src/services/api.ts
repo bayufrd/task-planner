@@ -1,4 +1,4 @@
-import { getAuthToken } from '../stores/auth'
+import { authStore, getAuthToken } from '../stores/auth'
 import type {
   ApiEnvelope,
   AuthResult,
@@ -19,7 +19,33 @@ import type {
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api'
 
-async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+let refreshPromise: Promise<AuthResult> | null = null
+
+async function parseResponse<T>(response: Response): Promise<T> {
+  const contentType = response.headers.get('content-type') || ''
+  const isJson = contentType.includes('application/json')
+  return (isJson ? await response.json() : await response.text()) as T
+}
+
+function getErrorMessage(payload: unknown, status: number) {
+  return typeof payload === 'string'
+    ? payload
+    : (payload as { message?: string; error?: string } | null)?.message
+      || (payload as { message?: string; error?: string } | null)?.error
+      || `HTTP ${status}`
+}
+
+async function refreshAccessToken() {
+  if (!refreshPromise) {
+    refreshPromise = authStore.refreshSession().finally(() => {
+      refreshPromise = null
+    })
+  }
+
+  return refreshPromise
+}
+
+async function request<T>(path: string, options: RequestInit = {}, allowRefresh = true): Promise<T> {
   const headers = new Headers(options.headers)
   if (!headers.has('Content-Type') && options.body) {
     headers.set('Content-Type', 'application/json')
@@ -29,18 +55,29 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   if (token) headers.set('Authorization', `Bearer ${token}`)
 
   const response = await fetch(`${API_BASE}${path}`, { ...options, headers })
-  const contentType = response.headers.get('content-type') || ''
-  const isJson = contentType.includes('application/json')
-  const payload = isJson ? await response.json() : await response.text()
+  const payload = await parseResponse<T>(response)
 
   if (!response.ok) {
-    const message = typeof payload === 'string'
-      ? payload
-      : payload?.message || payload?.error || `HTTP ${response.status}`
+    const message = getErrorMessage(payload, response.status)
+    const isAuthRoute = path.startsWith('/auth/')
+    const shouldTryRefresh = allowRefresh
+      && response.status === 401
+      && !isAuthRoute
+      && Boolean(authStore.state.refreshToken)
+
+    if (shouldTryRefresh) {
+      try {
+        await refreshAccessToken()
+        return request<T>(path, options, false)
+      } catch {
+        authStore.logoutLocal()
+      }
+    }
+
     throw new Error(message)
   }
 
-  return payload as T
+  return payload
 }
 
 function unwrap<T>(payload: ApiEnvelope<T> | T): T {
@@ -63,6 +100,13 @@ export const authApi = {
       method: 'POST',
       body: JSON.stringify(payload),
     })
+    return unwrap(result)
+  },
+  async refresh(refreshToken: string) {
+    const result = await request<ApiEnvelope<AuthResult>>('/auth/refresh', {
+      method: 'POST',
+      body: JSON.stringify({ refreshToken }),
+    }, false)
     return unwrap(result)
   },
   async me() {

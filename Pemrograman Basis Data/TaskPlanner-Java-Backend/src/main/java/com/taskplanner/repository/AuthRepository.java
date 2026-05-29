@@ -76,6 +76,22 @@ public class AuthRepository {
         LOGGER.info("Updated tokens for user {} (provider=local)", userId);
     }
 
+    public Optional<User> findUserByRefreshToken(String refreshToken) {
+        String query = """
+                SELECT u.*
+                FROM Account a
+                JOIN User u ON u.id = a.userId
+                WHERE a.refresh_token = ? AND a.provider = 'local'
+                LIMIT 1
+                """;
+        try {
+            User user = jdbcTemplate.queryForObject(query, userRowMapper, refreshToken);
+            return Optional.ofNullable(user);
+        } catch (Exception e) {
+            return Optional.empty();
+        }
+    }
+
     public void clearAccountTokens(String userId) {
         String query = "UPDATE Account SET refresh_token = NULL, access_token = NULL, expires_at = NULL, token_type = NULL WHERE userId = ? AND provider = 'local'";
         jdbcTemplate.update(query, userId);

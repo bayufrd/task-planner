@@ -157,6 +157,44 @@ public class AuthController {
         }
     }
 
+    @PostMapping("/refresh")
+    public ResponseEntity<ApiResponse<?>> refresh(@RequestBody Map<String, String> body) {
+        try {
+            String refreshToken = body.get("refreshToken");
+            if (refreshToken == null || refreshToken.isBlank()) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(new ApiResponse<>(false, "Refresh token is required", null));
+            }
+
+            Optional<User> opt = authRepository.findUserByRefreshToken(refreshToken);
+            if (opt.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(new ApiResponse<>(false, "Invalid refresh token", null));
+            }
+
+            User user = opt.get();
+            String newAccessToken = tokenService.createAccessToken(user);
+            String newRefreshToken = tokenService.createRefreshToken();
+            long expiresMs = tokenService.getExpirationMs();
+
+            authRepository.updateAccountTokens(user.getId(), newRefreshToken, newAccessToken, (int) (expiresMs / 1000), "Bearer");
+
+            Map<String, Object> userData = buildUserData(user);
+            Map<String, Object> payload = new LinkedHashMap<>();
+            payload.put("user", userData);
+            payload.put("token", newAccessToken);
+            payload.put("refreshToken", newRefreshToken);
+            payload.put("tokenType", "Bearer");
+            payload.put("expiresIn", expiresMs / 1000);
+
+            return ResponseEntity.ok(new ApiResponse<>(true, "Token refreshed successfully", payload));
+        } catch (Exception e) {
+            LOGGER.error("Error in refresh endpoint", e);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ApiResponse<>(false, "Invalid refresh token", null));
+        }
+    }
+
     @PostMapping("/logout")
     public ResponseEntity<ApiResponse<?>> logout(HttpServletRequest request) {
         try {

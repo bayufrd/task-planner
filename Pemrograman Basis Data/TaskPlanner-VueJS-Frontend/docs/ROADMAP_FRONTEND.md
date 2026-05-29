@@ -13,6 +13,7 @@
 - [x] Implement AI helper page
 - [x] Remove unsupported Google auth, theme toggle, and multi-language UI
 - [x] Write documentation and API adaptation notes
+- [ ] Integrate automatic access-token refresh using `POST /api/auth/refresh`
 - [ ] Add modal-based editing UX similar to the Next.js reference
 - [ ] Add dedicated weekly chart visualization using `GET /api/tasks/stats/weekly`
 - [ ] Add toast/snackbar feedback system
@@ -29,3 +30,5 @@
 - [x] Use in-memory reminder module as-is without persistence assumptions
 - [x] Handle possible plain-text auth error responses
 - [x] Keep UI text in English only
+- [ ] Retry `401` requests once after calling `POST /api/auth/refresh`
+- [ ] Fallback to local logout if refresh fails

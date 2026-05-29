@@ -160,7 +160,54 @@ Struktur request mengikuti [`LoginRequest`](Pemrograman%20Basis%20Data/TaskPlann
 #### Catatan Implementasi
 
 - JWT dibuat melalui [`TokenService`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/service/TokenService.java)
-- Token kemudian dicoba untuk disimpan ke tabel account melalui [`updateAccountTokens()`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/AuthController.java:91)
+- Token kemudian dicoba untuk disimpan ke tabel account melalui [`updateAccountTokens()`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/repository/AuthRepository.java:73)
+
+### POST `/api/auth/refresh`
+
+Sumber implementasi: [`refresh()`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/AuthController.java:160)
+
+Memvalidasi `refreshToken`, lalu menerbitkan ulang access token dan me-rotate refresh token.
+
+#### Request Body
+
+```json
+{
+  "refreshToken": "<refresh-token>"
+}
+```
+
+#### Response Sukses `200 OK`
+
+```json
+{
+  "success": true,
+  "message": "Token refreshed successfully",
+  "data": {
+    "user": {
+      "id": "user-id",
+      "name": "Alice",
+      "email": "alice@example.com",
+      "theme": "light",
+      "image": null,
+      "createdAt": "2026-05-27T02:55:00"
+    },
+    "token": "<new-jwt-access-token>",
+    "refreshToken": "<new-refresh-token>",
+    "tokenType": "Bearer",
+    "expiresIn": 3600
+  },
+  "timestamp": "2026-05-29T09:00:00"
+}
+```
+
+#### Response Gagal
+
+- `401 Unauthorized` jika `refreshToken` kosong, invalid, atau tidak ditemukan
+
+#### Catatan Implementasi
+
+- Lookup refresh token dilakukan melalui [`findUserByRefreshToken()`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/repository/AuthRepository.java:79)
+- Endpoint ini melakukan token rotation dengan menyimpan pasangan token baru via [`updateAccountTokens()`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/repository/AuthRepository.java:73)
 
 ---
 
@@ -511,6 +558,7 @@ Authorization: Bearer <accessToken>
 | GET | `/api/health` | Health check aplikasi |
 | POST | `/api/auth/register` | Registrasi user lokal |
 | POST | `/api/auth/login` | Login dan generate token |
+| POST | `/api/auth/refresh` | Refresh access token dan rotate refresh token |
 | GET | `/api/auth/me` | Ambil profil user dari token |
 | POST | `/api/auth/logout` | Logout user |
 | GET | `/api/tasks` | Ambil daftar task dengan filter/pagination |
