@@ -6,23 +6,24 @@ defineProps<{ items: PlannerItem[] }>()
 </script>
 
 <template>
-  <section class="panel">
-    <div class="section-header">
+  <section class="panel planner-panel-simple">
+    <div class="section-header dashboard-section-header-simple">
       <div>
+        <span class="chart-kicker">Today</span>
         <h2>Today planner</h2>
-        <p>Generated from [`GET /api/planner/today`](../Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/docs/API_ENDPOINTS.md).</p>
+        <p>Priority suggestions for what to pick up next.</p>
       </div>
     </div>
-    <div class="planner-list">
-      <article v-for="item in items" :key="item.task.id" class="planner-card">
-        <div>
+    <div class="planner-list planner-list-simple">
+      <article v-for="item in items" :key="item.task.id" class="planner-card planner-card-simple">
+        <div class="planner-card-copy">
           <h3>{{ item.task.title }}</h3>
           <p>{{ item.task.description || 'No description' }}</p>
         </div>
-        <div class="planner-meta">
+        <div class="planner-meta planner-meta-simple">
           <span class="badge">Score {{ item.priorityScore }}</span>
           <span class="badge">{{ item.priority }}</span>
-          <span>{{ formatDateTime(item.deadline) }}</span>
+          <span class="task-item-time">{{ formatDateTime(item.deadline) }}</span>
         </div>
       </article>
     </div>

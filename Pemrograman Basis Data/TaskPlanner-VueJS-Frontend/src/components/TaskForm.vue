@@ -45,7 +45,7 @@ function submit() {
 </script>
 
 <template>
-  <form class="panel form-panel" @submit.prevent="submit">
+  <form class="form-panel" @submit.prevent="submit">
     <div class="form-grid">
       <label>
         <span>Title</span>
