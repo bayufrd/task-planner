@@ -12,6 +12,9 @@ import {
   LayoutDashboard,
   ChevronLeft,
   ChevronRight,
+  House,
+  LogIn,
+  UserPlus,
 } from '@lucide/vue'
 
 
@@ -251,7 +254,7 @@ function goToNextCollectionSlide() {
         </div>
       </section>
 
-      <footer class="next-footer">
+      <footer class="next-footer public-mobile-safe-footer">
         <div class="next-footer-grid">
           <div>
             <img src="/opt-logo/logo3.png" alt="Smart Task Planner" class="next-footer-logo" />
@@ -293,5 +296,24 @@ function goToNextCollectionSlide() {
         </div>
       </footer>
     </div>
+
+    <nav class="mobile-tabbar mobile-tabbar-public" aria-label="Public mobile navigation">
+      <RouterLink class="mobile-tab" to="/">
+        <House :size="18" />
+        <span>Home</span>
+      </RouterLink>
+      <a class="mobile-tab" href="/#features">
+        <LayoutDashboard :size="18" />
+        <span>Features</span>
+      </a>
+      <RouterLink class="mobile-tab" to="/login">
+        <LogIn :size="18" />
+        <span>Sign in</span>
+      </RouterLink>
+      <RouterLink class="mobile-tab" to="/register">
+        <UserPlus :size="18" />
+        <span>Register</span>
+      </RouterLink>
+    </nav>
   </main>
 </template>

@@ -35,4 +35,23 @@ async function handleLogout() {
       </button>
     </div>
   </header>
+
+  <nav class="mobile-tabbar" aria-label="Mobile navigation">
+    <RouterLink :class="['mobile-tab', { active: route.path === '/dashboard' }]" to="/dashboard">
+      <LayoutDashboard :size="18" />
+      <span>Dashboard</span>
+    </RouterLink>
+    <RouterLink :class="['mobile-tab', { active: route.path === '/reminders' }]" to="/reminders">
+      <BellRing :size="18" />
+      <span>Reminders</span>
+    </RouterLink>
+    <RouterLink :class="['mobile-tab', { active: route.path === '/ai-assistant' }]" to="/ai-assistant">
+      <Brain :size="18" />
+      <span>AI Helper</span>
+    </RouterLink>
+    <button class="mobile-tab mobile-tab-logout" @click="handleLogout">
+      <LogOut :size="18" />
+      <span>Logout</span>
+    </button>
+  </nav>
 </template>
