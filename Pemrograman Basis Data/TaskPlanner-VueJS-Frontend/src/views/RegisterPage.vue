@@ -42,14 +42,16 @@ async function submit() {
     </header>
 
     <main class="auth-page auth-layout auth-page-chrome-body">
-      <section class="auth-showcase">
-        <div class="auth-showcase-copy">
-          <span class="hero-badge"><Sparkles :size="14" /> Get started</span>
+      <section class="auth-showcase auth-showcase-image-shell">
+        <img src="/opt-hero/3.png" alt="Smart Task Planner register preview" class="auth-showcase-image" />
+        <div class="auth-showcase-overlay"></div>
+        <div class="auth-showcase-copy auth-showcase-copy-overlay">
+          <span class="hero-badge auth-hero-badge"><Sparkles :size="14" /> Get started</span>
           <h1>Create your planning account in minutes.</h1>
-          <p>Register through the implemented Java backend auth endpoints and start using the dashboard, reminders, and AI task parsing flow.</p>
+          <p>Join Smart Task Planner and start organizing tasks, setting priorities, and planning your day with less effort.</p>
           <ul class="auth-points">
-            <li><UserPlus :size="18" /> Simple local account registration</li>
-            <li><ArrowRight :size="18" /> Immediate access to the task planner dashboard</li>
+            <li><UserPlus :size="18" /> Quick account setup for a smoother planning flow</li>
+            <li><ArrowRight :size="18" /> Start building better daily habits from your first task</li>
           </ul>
         </div>
       </section>
@@ -57,13 +59,13 @@ async function submit() {
       <form class="panel auth-card auth-card-next" @submit.prevent="submit">
         <div class="auth-card-head">
           <span class="eyebrow">Create account</span>
-          <h2>Start your workspace</h2>
-          <p>Only supported backend auth fields are included.</p>
+          <h2>Start planning with Smart Task Planner</h2>
+          <p>Create your account to manage tasks, set priorities, and organize your day more easily.</p>
         </div>
 
         <label>
           <span>Name</span>
-          <input v-model="form.name" required type="text" placeholder="Alex Johnson" />
+          <input v-model="form.name" required type="text" placeholder="Bayu Farid" />
         </label>
         <label>
           <span>Email</span>
@@ -77,10 +79,10 @@ async function submit() {
         <p v-if="error" class="error-text">{{ error }}</p>
 
         <button class="primary-button auth-submit" :disabled="authStore.state.loading">
-          {{ authStore.state.loading ? 'Creating...' : 'Create account' }}
+          {{ authStore.state.loading ? 'Creating...' : 'Start planning now' }}
         </button>
 
-        <p class="auth-foot">Already have an account? <RouterLink to="/login">Sign in</RouterLink></p>
+        <p class="auth-foot">Already using Smart Task Planner? <RouterLink to="/login">Sign in</RouterLink></p>
       </form>
     </main>
 

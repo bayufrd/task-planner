@@ -256,15 +256,15 @@ function goToNextCollectionSlide() {
           <div>
             <img src="/opt-logo/logo3.png" alt="Smart Task Planner" class="next-footer-logo" />
             <p class="next-footer-text">
-              Smart Task Planner brings tasks, reminders, scheduling, and AI-assisted planning into one simple productivity experience.
+              Smart Task Planner helps everyone organize tasks, plan daily priorities, and stay productive with a simpler workflow.
             </p>
           </div>
           <div>
             <h4>Product</h4>
             <ul>
               <li><a href="#features">Features</a></li>
-              <li><RouterLink to="/dashboard">Dashboard</RouterLink></li>
-              <li><RouterLink to="/ai-assistant">AI Helper</RouterLink></li>
+              <li><a href="#start-now">Try Now</a></li>
+              <li><a href="#features">How It Works</a></li>
             </ul>
           </div>
           <div>
@@ -272,23 +272,23 @@ function goToNextCollectionSlide() {
             <ul>
               <li><RouterLink to="/login">Sign in</RouterLink></li>
               <li><RouterLink to="/register">Create account</RouterLink></li>
-              <li><RouterLink to="/reminders">Reminders</RouterLink></li>
+              <li><a href="#start-now">Get Started</a></li>
             </ul>
           </div>
           <div>
-            <h4>Company</h4>
+            <h4>Contact</h4>
             <ul>
-              <li><a href="#start-now">Try Now</a></li>
-              <li><a href="#features">Overview</a></li>
-              <li><RouterLink to="/dashboard">Workspace</RouterLink></li>
+              <li><a href="mailto:hello@smarttaskplanner.app">hello@smarttaskplanner.app</a></li>
+              <li><a href="mailto:support@smarttaskplanner.app">support@smarttaskplanner.app</a></li>
+              <li><a href="#start-now">Start Planning</a></li>
             </ul>
           </div>
         </div>
         <div class="next-footer-bottom">
           <span>© 2026 Smart Task Planner. All rights reserved.</span>
           <div>
-            <a href="#features">Privacy Policy</a>
-            <a href="#start-now">Get Started</a>
+            <a href="#features">Overview</a>
+            <a href="mailto:hello@smarttaskplanner.app">Contact</a>
           </div>
         </div>
       </footer>

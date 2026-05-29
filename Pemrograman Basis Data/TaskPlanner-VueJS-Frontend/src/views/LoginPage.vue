@@ -42,14 +42,16 @@ async function submit() {
     </header>
 
     <main class="auth-page auth-layout auth-page-chrome-body">
-      <section class="auth-showcase">
-        <div class="auth-showcase-copy">
-          <span class="hero-badge"><Sparkles :size="14" /> Secure access</span>
+      <section class="auth-showcase auth-showcase-image-shell">
+        <img src="/opt-hero/2.png" alt="Smart Task Planner login preview" class="auth-showcase-image" />
+        <div class="auth-showcase-overlay"></div>
+        <div class="auth-showcase-copy auth-showcase-copy-overlay">
+          <span class="hero-badge auth-hero-badge"><Sparkles :size="14" /> Secure access</span>
           <h1>Welcome back to your planning workspace.</h1>
-          <p>Sign in with the Java backend email/password flow and continue managing tasks, reminders, and AI-assisted planning.</p>
+          <p>Sign in and continue managing tasks, reminders, and daily priorities with a simpler workflow.</p>
           <ul class="auth-points">
-            <li><ShieldCheck :size="18" /> JWT-based authentication only</li>
-            <li><ArrowRight :size="18" /> Dashboard, planner, reminder, and AI helper access</li>
+            <li><ShieldCheck :size="18" /> Secure account access for your daily planning</li>
+            <li><ArrowRight :size="18" /> Continue where you left off with tasks and reminders</li>
           </ul>
         </div>
       </section>
@@ -57,8 +59,8 @@ async function submit() {
       <form class="panel auth-card auth-card-next" @submit.prevent="submit">
         <div class="auth-card-head">
           <span class="eyebrow">Sign in</span>
-          <h2>Access your account</h2>
-          <p>Use your registered email and password.</p>
+          <h2>Continue with Smart Task Planner</h2>
+          <p>Access your tasks, reminders, and daily planning workspace in one place.</p>
         </div>
 
         <label>
@@ -73,10 +75,10 @@ async function submit() {
         <p v-if="error" class="error-text">{{ error }}</p>
 
         <button class="primary-button auth-submit" :disabled="authStore.state.loading">
-          {{ authStore.state.loading ? 'Signing in...' : 'Sign in' }}
+          {{ authStore.state.loading ? 'Signing in...' : 'Open my planner' }}
         </button>
 
-        <p class="auth-foot">No account yet? <RouterLink to="/register">Create one</RouterLink></p>
+        <p class="auth-foot">New to Smart Task Planner? <RouterLink to="/register">Create your account</RouterLink></p>
       </form>
     </main>
 
