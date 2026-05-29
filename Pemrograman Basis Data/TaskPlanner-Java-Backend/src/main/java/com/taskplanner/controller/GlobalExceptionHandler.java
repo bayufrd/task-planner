@@ -1,5 +1,6 @@
 package com.taskplanner.controller;
 
+import io.jsonwebtoken.JwtException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -36,6 +37,15 @@ public class GlobalExceptionHandler {
         body.put("detail", ex.getMessage());
         LOGGER.debug("Bad request body: {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
+    }
+
+    @ExceptionHandler({JwtException.class, IllegalArgumentException.class})
+    public ResponseEntity<?> handleUnauthorized(RuntimeException ex) {
+        LOGGER.debug("Unauthorized request: {}", ex.getMessage());
+        Map<String, Object> body = new HashMap<>();
+        body.put("status", HttpStatus.UNAUTHORIZED.value());
+        body.put("error", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(body);
     }
 
     @ExceptionHandler(Exception.class)
