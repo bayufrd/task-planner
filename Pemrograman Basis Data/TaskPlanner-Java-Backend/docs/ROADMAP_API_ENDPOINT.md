@@ -139,7 +139,7 @@ Sumber: [`ai.routes.ts`](Proyek%20Perangkat%20Lunak/backend/src/modules/ai/ai.ro
 |---|---|---|---|---|
 | Health | `GET /api/health` | Sebagian ada | `GET /api/health` | Java sudah sesuai target roadmap, Express masih `GET /health` |
 | Auth | `POST /api/auth/register` | Ada | `POST /api/auth/register` | Sudah setara dasar |
-| Auth | `POST /api/auth/login` | Ada | `POST /api/auth/login` | Sudah ada JWT login |
+| Auth | `POST /api/auth/login` | Ada | `POST /api/auth/login` | Sudah ada JWT login dengan message error terstruktur untuk email tidak terdaftar, password salah, dan server error |
 | Auth | `POST /api/auth/refresh` | Ada | `POST /api/auth/refresh` | Sudah ada refresh access token dengan token rotation |
 | Auth | `GET /api/auth/me` | Ada | `GET /api/auth/me` | Sudah mengambil profil user dari access token |
 | Auth | `POST /api/auth/logout` | Ada | `POST /api/auth/logout` | Sudah mengosongkan token lokal pada account |
@@ -164,7 +164,7 @@ Sumber: [`ai.routes.ts`](Proyek%20Perangkat%20Lunak/backend/src/modules/ai/ai.ro
 | Reminders | `PATCH /api/reminders/:id` | Ada | `PATCH /api/reminders/{id}` | Sudah ada update reminder |
 | Reminders | `DELETE /api/reminders/:id` | Ada | `DELETE /api/reminders/{id}` | Sudah ada delete reminder |
 | AI | `POST /api/ai/parse-task` | Ada | `POST /api/ai/parse-task` | Sudah ada parser task heuristik |
-| AI | `POST /api/ai/overview-analysis` | Ada | `POST /api/ai/overview-analysis` | Sudah ada overview analysis berbasis data task |
+| AI | `POST /api/ai/overview-analysis` | Ada sebagian | `POST /api/ai/ai/overview-analysis` | Java sudah ada overview analysis berbasis data task, tetapi belum ada cache/persistence database seperti `overviewAnalysisCache` di Express |
 | Internal | `/internal/wa` | Belum ada | - | Integrasi internal belum ada |
 
 ---
@@ -233,7 +233,7 @@ Jika backend Express dijadikan target acuan fitur, maka backend Java untuk area 
 - Endpoint reminders sudah ada, tetapi implementasi saat ini masih memakai penyimpanan in-memory pada [`ReminderController`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/ReminderController.java:16), belum persistence database seperti backend Express.
 
 #### AI
-- Endpoint AI sudah ada, tetapi logika saat ini masih berupa heuristic/basic analysis pada [`AiController`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/AiController.java:13), belum integrasi AI provider seperti backend Express.
+- Endpoint AI sudah ada dan Java sudah memakai provider AI melalui [`AiService.analyzeOverview()`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/service/AiService.java:123), tetapi hasil overview belum memiliki cache/persistence database seperti [`prisma.overviewAnalysisCache.upsert()`](Proyek%20Perangkat%20Lunak/backend/src/modules/ai/ai.service.ts:657) di backend Express.
 
 ---
 
@@ -242,7 +242,7 @@ Jika backend Express dijadikan target acuan fitur, maka backend Java untuk area 
 Urutan prioritas yang disarankan:
 
 ### Prioritas 1 — Menyamakan Auth & Integrasi Inti
-- [ ] integrasikan frontend auto refresh terhadap `POST /api/auth/refresh`
+- [x] integrasikan frontend auto refresh terhadap `POST /api/auth/refresh`
 - [ ] `POST /api/auth/sync`
 - [ ] internal WhatsApp route
 
@@ -251,6 +251,7 @@ Urutan prioritas yang disarankan:
 
 ### Prioritas 3 — Pematangan Implementasi
 - [ ] persistence database untuk reminders
+- [ ] cache/persistence database untuk overview analysis AI
 - [ ] penyelarasan logic AI agar setara backend Express
 
 ---
@@ -259,4 +260,4 @@ Urutan prioritas yang disarankan:
 
 Jika tujuan backend Java hanya CRUD task dasar dan auth register/login/refresh/me/logout sederhana, implementasi sekarang sudah lebih dari cukup dan sudah mencakup task analytics, reminders, serta AI endpoints dasar.
 
-Jika tujuan backend Java adalah menyamai backend Express di [`Proyek Perangkat Lunak/backend`](Proyek%20Perangkat%20Lunak/backend), maka untuk area endpoint task, reminder, dan AI Java **sudah hampir setara secara route**, namun masih tertinggal pada integrasi frontend ke `POST /api/auth/refresh`, `POST /api/auth/sync`, Google OAuth, route internal WhatsApp, persistence reminder, dan kedalaman logic AI. Endpoint Google OAuth tetap dikosongkan sebagai bagian yang ditunda.
+Jika tujuan backend Java adalah menyamai backend Express di [`Proyek Perangkat Lunak/backend`](Proyek%20Perangkat%20Lunak/backend), maka untuk area endpoint task, reminder, dan AI Java **sudah hampir setara secara route**, frontend refresh token juga sudah terintegrasi, dan login sekarang sudah mengembalikan message error terstruktur. Bagian yang masih tertinggal ada pada `POST /api/auth/sync`, Google OAuth, route internal WhatsApp, persistence reminder, cache/persistence overview analysis AI, dan kedalaman logic AI. Endpoint Google OAuth tetap dikosongkan sebagai bagian yang ditunda.

@@ -106,13 +106,14 @@ export interface ParsedTaskDraft {
   deadline: string
 }
 
+export interface OverviewAdviceItem {
+  title: string
+  description: string
+  type: 'success' | 'warning' | 'info'
+}
+
 export interface OverviewAnalysis {
-  userId: string
-  summary: string
-  metrics: {
-    todo: number
-    done: number
-    skipped: number
-  }
-  recommendation: string
+  score: number
+  insights: string[]
+  advice: OverviewAdviceItem[]
 }

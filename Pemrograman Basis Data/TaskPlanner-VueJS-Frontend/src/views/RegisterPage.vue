@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { reactive, ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
-import { ArrowRight, House, LayoutDashboard, LogIn, Sparkles, UserPlus } from '@lucide/vue'
+import { ArrowRight, House, LayoutDashboard, LogIn, Mail, Lock, Sparkles, User, UserPlus } from '@lucide/vue'
 import { authStore } from '../stores/auth'
 
 const router = useRouter()
@@ -20,7 +20,7 @@ async function submit() {
 </script>
 
 <template>
-  <div class="next-landing-page auth-page-with-chrome">
+  <div class="next-landing-page auth-page-with-chrome next-auth-page-shell">
     <header class="next-landing-header auth-chrome-header">
       <div class="next-header-content">
         <div class="next-brand-block">
@@ -41,92 +41,105 @@ async function submit() {
       </div>
     </header>
 
-    <main class="auth-page auth-layout auth-page-chrome-body">
-      <section class="auth-showcase auth-showcase-image-shell">
-        <img src="/opt-hero/3.png" alt="Smart Task Planner register preview" class="auth-showcase-image" />
-        <div class="auth-showcase-overlay"></div>
-        <div class="auth-showcase-copy auth-showcase-copy-overlay">
-          <span class="hero-badge auth-hero-badge"><Sparkles :size="14" /> Get started</span>
-          <h1>Create your planning account in minutes.</h1>
-          <p>Join Smart Task Planner and start organizing tasks, setting priorities, and planning your day with less effort.</p>
-          <ul class="auth-points">
+    <main class="next-auth-layout next-auth-layout-signup">
+      <section class="next-auth-visual-panel">
+        <div class="next-auth-visual-blur next-auth-visual-blur-top"></div>
+        <div class="next-auth-visual-blur next-auth-visual-blur-bottom"></div>
+        <div class="next-auth-visual-card">
+          <div class="next-auth-logo-center">
+            <img src="/opt-logo/logo3.png" alt="TaskPlanner Logo" />
+          </div>
+          <div class="next-auth-heading-block">
+            <h1>Join TaskPlanner</h1>
+            <p>Create your account to start planning smarter.</p>
+          </div>
+          <ul class="next-auth-feature-list">
             <li><UserPlus :size="18" /> Quick account setup for a smoother planning flow</li>
             <li><ArrowRight :size="18" /> Start building better daily habits from your first task</li>
+            <li><Sparkles :size="18" /> Unlock overview insights, task planning, and reminders in one place</li>
           </ul>
         </div>
       </section>
 
-      <form class="panel auth-card auth-card-next" @submit.prevent="submit">
-        <div class="auth-card-head">
-          <span class="eyebrow">Create account</span>
-          <h2>Start planning with Smart Task Planner</h2>
-          <p>Create your account to manage tasks, set priorities, and organize your day more easily.</p>
+      <form class="next-auth-form-card" @submit.prevent="submit">
+        <div class="next-auth-card-head centered">
+          <div class="next-auth-card-logo-wrap">
+            <img src="/opt-logo/logo3.png" alt="TaskPlanner Logo" class="next-auth-card-logo" />
+          </div>
+          <div>
+            <h2>Join TaskPlanner</h2>
+            <p>Create your account to start planning smarter</p>
+          </div>
         </div>
 
-        <label>
-          <span>Name</span>
-          <input v-model="form.name" required type="text" placeholder="Bayu Farid" />
-        </label>
-        <label>
-          <span>Email</span>
-          <input v-model="form.email" required type="email" placeholder="you@example.com" />
-        </label>
-        <label>
-          <span>Password</span>
-          <input v-model="form.password" required minlength="6" type="password" placeholder="Minimum 6 characters" />
-        </label>
+        <div v-if="error" class="next-auth-alert error">
+          <p>{{ error }}</p>
+        </div>
 
-        <p v-if="error" class="error-text">{{ error }}</p>
+        <div class="next-auth-form-grid">
+          <label class="next-auth-field">
+            <span>Full Name</span>
+            <div class="next-auth-input-shell">
+              <User :size="18" />
+              <input v-model="form.name" required type="text" placeholder="Enter your full name" />
+            </div>
+          </label>
 
-        <button class="primary-button auth-submit" :disabled="authStore.state.loading">
-          {{ authStore.state.loading ? 'Creating...' : 'Start planning now' }}
+          <label class="next-auth-field">
+            <span>Email Address</span>
+            <div class="next-auth-input-shell">
+              <Mail :size="18" />
+              <input v-model="form.email" required type="email" placeholder="you@example.com" />
+            </div>
+          </label>
+
+          <label class="next-auth-field">
+            <span>Password</span>
+            <div class="next-auth-input-shell">
+              <Lock :size="18" />
+              <input v-model="form.password" required minlength="6" type="password" placeholder="Minimum 6 characters" />
+            </div>
+          </label>
+        </div>
+
+        <button class="next-auth-submit-button" :disabled="authStore.state.loading">
+          <template v-if="authStore.state.loading">Creating account...</template>
+          <template v-else>
+            <Sparkles :size="16" />
+            <span>Create Account</span>
+            <ArrowRight :size="16" />
+          </template>
         </button>
 
-        <p class="auth-foot">Already using Smart Task Planner? <RouterLink to="/login">Sign in</RouterLink></p>
+        <div class="next-auth-divider">
+          <span>What You Get</span>
+        </div>
+
+        <div class="next-auth-benefits">
+          <div class="next-auth-benefit-item">
+            <span>✓</span>
+            <p>AI-powered task creation & prioritization</p>
+          </div>
+          <div class="next-auth-benefit-item">
+            <span>✓</span>
+            <p>Overview insights and planning trends from your activity</p>
+          </div>
+          <div class="next-auth-benefit-item">
+            <span>✓</span>
+            <p>Focused dashboard workspace with reminders and task flow</p>
+          </div>
+        </div>
+
+        <div class="next-auth-link-block">
+          <p>Already have an account? <RouterLink to="/login">Sign in here</RouterLink></p>
+        </div>
+
+        <div class="next-auth-footnote">
+          <p>By creating an account, you agree to our Terms of Service and Privacy Policy</p>
+          <p>TaskPlanner Vue version uses email/password authentication only</p>
+        </div>
       </form>
     </main>
-
-    <footer class="next-footer auth-chrome-footer public-mobile-safe-footer">
-      <div class="next-footer-grid">
-        <div>
-          <img src="/opt-logo/logo3.png" alt="Smart Task Planner" class="next-footer-logo" />
-          <p class="next-footer-text">
-            Smart task planning UI in Vue.js with backend-aligned authentication, task management, reminders, and AI parsing.
-          </p>
-        </div>
-        <div>
-          <h4>Product</h4>
-          <ul>
-            <li><RouterLink to="/">Home</RouterLink></li>
-            <li><RouterLink to="/register">Create account</RouterLink></li>
-            <li><RouterLink to="/dashboard">Dashboard</RouterLink></li>
-          </ul>
-        </div>
-        <div>
-          <h4>Resources</h4>
-          <ul>
-            <li><a href="/#features">Features</a></li>
-            <li><RouterLink to="/login">Sign in</RouterLink></li>
-            <li><RouterLink to="/ai-assistant">AI Helper</RouterLink></li>
-          </ul>
-        </div>
-        <div>
-          <h4>Company</h4>
-          <ul>
-            <li><a href="/#pricing">Pricing</a></li>
-            <li><RouterLink to="/reminders">Reminders</RouterLink></li>
-            <li><RouterLink to="/dashboard">Workspace</RouterLink></li>
-          </ul>
-        </div>
-      </div>
-      <div class="next-footer-bottom">
-        <span>© 2026 Task Planner. All rights reserved.</span>
-        <div>
-          <a href="/#features">Privacy Policy</a>
-          <a href="/#pricing">Terms of Service</a>
-        </div>
-      </div>
-    </footer>
 
     <nav class="mobile-tabbar mobile-tabbar-public" aria-label="Public mobile navigation">
       <RouterLink class="mobile-tab" to="/">

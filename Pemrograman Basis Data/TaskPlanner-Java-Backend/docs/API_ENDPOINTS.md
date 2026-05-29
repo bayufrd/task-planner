@@ -153,9 +153,32 @@ Struktur request mengikuti [`LoginRequest`](Pemrograman%20Basis%20Data/TaskPlann
 ```
 
 #### Response Gagal
+ 
+- `401 Unauthorized` dengan wrapper JSON message `Email is not registered` jika email tidak ditemukan
+- `401 Unauthorized` dengan wrapper JSON message `Incorrect password` jika password salah
+- `500 Internal Server Error` dengan wrapper JSON message `Login failed due to a server error` jika terjadi error internal
 
-- `401 Unauthorized` dengan body text `invalid_credentials` jika email tidak ditemukan atau password salah
-- `500 Internal Server Error` jika terjadi error internal
+Contoh response ketika email belum terdaftar:
+
+```json
+{
+  "success": false,
+  "message": "Email is not registered",
+  "data": null,
+  "timestamp": "2026-05-29T11:00:00"
+}
+```
+
+Contoh response ketika password salah:
+
+```json
+{
+  "success": false,
+  "message": "Incorrect password",
+  "data": null,
+  "timestamp": "2026-05-29T11:00:00"
+}
+```
 
 #### Catatan Implementasi
 

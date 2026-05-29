@@ -54,7 +54,13 @@ async function request<T>(path: string, options: RequestInit = {}, allowRefresh 
   const token = getAuthToken()
   if (token) headers.set('Authorization', `Bearer ${token}`)
 
-  const response = await fetch(`${API_BASE}${path}`, { ...options, headers })
+  let response: Response
+  try {
+    response = await fetch(`${API_BASE}${path}`, { ...options, headers })
+  } catch {
+    throw new Error('Unable to reach the backend server. Please check whether the API is running and reachable.')
+  }
+
   const payload = await parseResponse<T>(response)
 
   if (!response.ok) {

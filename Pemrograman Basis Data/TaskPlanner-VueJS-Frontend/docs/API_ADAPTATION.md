@@ -17,7 +17,7 @@ Karena backend Java saat ini belum menyediakan endpoint terkait, frontend Vue ti
 
 ### Auth
 - `POST /api/auth/register` -> register page
-- `POST /api/auth/login` -> login page
+- `POST /api/auth/login` -> login page with specific auth error message handling
 - `GET /api/auth/me` -> auth bootstrap
 - `POST /api/auth/logout` -> header logout action
 
@@ -49,8 +49,14 @@ Karena backend Java saat ini belum menyediakan endpoint terkait, frontend Vue ti
 
 ## Response handling
 
-Frontend adapter menerima dua jenis pola:
-- wrapper JSON `success/message/data`
-- plain text error seperti `invalid_credentials`
+Frontend adapter menerima pola utama wrapper JSON `success/message/data`.
+
+Untuk login, frontend sekarang menampilkan message backend yang lebih spesifik, misalnya:
+- `Email is not registered`
+- `Incorrect password`
+- `Login failed due to a server error`
+
+Jika backend tidak bisa dijangkau atau server belum berjalan, adapter request akan menampilkan pesan jaringan yang lebih jelas daripada raw `Failed to fetch`:
+- `Unable to reach the backend server. Please check whether the API is running and reachable.`
 
 Semua request ditangani di [`src/services/api.ts`](../src/services/api.ts).

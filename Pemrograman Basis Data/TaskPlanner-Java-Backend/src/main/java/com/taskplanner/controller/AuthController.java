@@ -100,11 +100,13 @@ public class AuthController {
         try {
             var opt = authRepository.findUserByEmail(req.getEmail());
             if (opt.isEmpty()) {
-                return ResponseEntity.status(401).body("invalid_credentials");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(new ApiResponse<>(false, "Email is not registered", null));
             }
             User user = opt.get();
             if (!passwordEncoder.matches(req.getPassword(), user.getPassword())) {
-                return ResponseEntity.status(401).body("invalid_credentials");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(new ApiResponse<>(false, "Incorrect password", null));
             }
 
             String accessToken = tokenService.createAccessToken(user);
@@ -128,7 +130,8 @@ public class AuthController {
             return ResponseEntity.ok(new ApiResponse<>(true, "Login successful", payload));
         } catch (Exception ex) {
             LOGGER.error("Error in login endpoint", ex);
-            return ResponseEntity.status(500).body("error: " + ex.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse<>(false, "Login failed due to a server error", null));
         }
     }
 

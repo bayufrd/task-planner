@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { CalendarDays, CheckCircle2, CircleDashed, Clock3, Plus, RefreshCw, X } from '@lucide/vue'
+import { CalendarDays, CheckCircle2, CircleDashed, Clock3, Command, Plus, RefreshCw, X } from '@lucide/vue'
 
 const calendarViews = ['This week', 'This month', 'Next month'] as const
+
 type CalendarView = (typeof calendarViews)[number]
+
 import AppHeader from '../components/AppHeader.vue'
-import StatsCards from '../components/StatsCards.vue'
-import TaskCharts from '../components/TaskCharts.vue'
 import TaskForm from '../components/TaskForm.vue'
 import TaskTable from '../components/TaskTable.vue'
 import PlannerPanel from '../components/PlannerPanel.vue'
@@ -124,18 +124,6 @@ function closeTaskModal() {
   editTarget.value = null
 }
 
-const calendarHeading = computed(() => {
-  if (selectedCalendarView.value === 'This week') {
-    return 'See your weekly planning flow at a glance.'
-  }
-
-  if (selectedCalendarView.value === 'This month') {
-    return 'See the full month and plan around every date.'
-  }
-
-  return 'Preview the next month and spread tasks earlier.'
-})
-
 const calendarEntries = computed(() => {
   const today = todayReference.value
 
@@ -210,22 +198,21 @@ onMounted(refresh)
 <template>
   <div>
     <AppHeader />
-    <main class="dashboard-shell">
-      <section class="dashboard-topbar">
+    <main class="dashboard-shell dashboard-shell-next">
+      <section class="dashboard-topbar dashboard-topbar-next">
         <div>
-          <p class="dashboard-kicker">Workspace</p>
           <h1>Tasks</h1>
         </div>
-        <button class="primary-button dashboard-top-action" @click="showTaskForm = true; editTarget = null">
-          <Plus :size="18" /> New task
+        <button class="dashboard-new-task-button" @click="showTaskForm = true; editTarget = null">
+          <Plus :size="18" /> New Task
         </button>
       </section>
 
-      <section class="dashboard-timeline panel">
+      <section class="dashboard-timeline dashboard-timeline-next">
         <div class="dashboard-timeline-head">
           <div>
-            <span class="eyebrow">Calendar overview</span>
-            <h2>{{ calendarHeading }}</h2>
+            <h2>Calendar overview</h2>
+            <p>Keep today, this week, and the next planning window visible in one place.</p>
           </div>
           <div class="dashboard-calendar-controls">
             <button
@@ -240,7 +227,7 @@ onMounted(refresh)
             </button>
           </div>
         </div>
-        <div class="dashboard-calendar-shell">
+        <div class="dashboard-calendar-shell dashboard-calendar-shell-next">
           <div class="dashboard-calendar-grid dashboard-calendar-days">
             <span v-for="day in calendarDayLabels" :key="day">{{ day }}</span>
           </div>
@@ -261,46 +248,98 @@ onMounted(refresh)
         </div>
       </section>
 
-      <section class="dashboard-hero panel">
-        <div class="dashboard-hero-copy">
-          <span class="eyebrow">Task planner overview</span>
-          <h2>Plan faster, track what matters, and keep today’s work visible on every screen.</h2>
-          <p>A denser dashboard flow keeps stats, calendar context, and task execution close together without feeling cramped on mobile.</p>
-        </div>
-        <div class="dashboard-hero-art">
+      <section class="dashboard-stats-strip">
+        <article class="dashboard-stats-strip-card pending">
+          <CircleDashed :size="18" />
+          <div>
+            <strong>{{ (appStore.stats?.todo ?? 0) + (appStore.stats?.inProgress ?? 0) }}</strong>
+            <span>Pending</span>
+          </div>
+        </article>
+        <article class="dashboard-stats-strip-card done">
+          <CheckCircle2 :size="18" />
+          <div>
+            <strong>{{ appStore.stats?.done ?? 0 }}</strong>
+            <span>Done</span>
+          </div>
+        </article>
+        <article class="dashboard-stats-strip-card skipped">
+          <Clock3 :size="18" />
+          <div>
+            <strong>{{ appStore.stats?.skipped ?? 0 }}</strong>
+            <span>Skipped</span>
+          </div>
+        </article>
+      </section>
+
+      <section class="dashboard-hero dashboard-hero-next">
+        <div class="dashboard-hero-art dashboard-hero-art-full">
           <div class="dashboard-hero-image-frame">
             <img src="/opt-hero/2.png" alt="Task planner dashboard preview" class="dashboard-hero-image" />
-            <div class="dashboard-hero-image-badge">
-              <span class="badge">Live stats</span>
-              <strong>{{ (appStore.stats?.todo ?? 0) + (appStore.stats?.inProgress ?? 0) }}</strong>
-              <small>pending tasks right now</small>
-            </div>
           </div>
-        </div>
-        <div class="dashboard-focus-grid">
-          <article
-            v-for="item in focusStats"
-            :key="item.key"
-            :class="['dashboard-focus-card', item.tone]"
-          >
-            <div class="dashboard-focus-icon">
-              <component :is="item.icon" :size="18" />
-            </div>
-            <div>
-              <span>{{ item.label }}</span>
-              <strong>{{ item.value }}</strong>
-            </div>
-          </article>
         </div>
       </section>
 
-      <p v-if="error" class="error-text">{{ error }}</p>
-
-      <StatsCards :stats="appStore.stats" />
-
-      <section class="dashboard-main-grid">
+      <section class="dashboard-main-grid dashboard-main-grid-next">
         <div class="dashboard-left-column">
-          <TaskCharts :daily="appStore.dailyStats" :stats="appStore.stats" />
+          <section v-if="filteredTasks.length === 0" class="panel dashboard-empty-state">
+            <div class="dashboard-empty-icon">
+              <Command :size="26" />
+            </div>
+            <h2>No tasks yet</h2>
+            <p>Create your first task to start building momentum.</p>
+            <button class="dashboard-new-task-button" @click="showTaskForm = true; editTarget = null">
+              <Plus :size="18" /> Add Task
+            </button>
+          </section>
+
+          <section v-else class="panel dashboard-task-list-panel">
+            <div class="section-header dashboard-section-header-simple">
+              <div>
+                <span class="chart-kicker">Task list</span>
+                <h2>Active tasks</h2>
+                <p>Review and act on your highest priority work.</p>
+              </div>
+            </div>
+            <TaskTable
+              :tasks="filteredTasks"
+              @edit="editTarget = $event; showTaskForm = true"
+              @complete="appStore.completeTask($event).then(refresh)"
+              @skip="appStore.skipTask($event).then(refresh)"
+              @remove="appStore.deleteTask($event).then(refresh)"
+            />
+          </section>
+        </div>
+
+        <aside class="dashboard-right-column">
+          <section class="panel dashboard-focus-panel">
+            <div class="section-header dashboard-section-header-simple">
+              <div>
+                <span class="chart-kicker">Focus</span>
+                <h2>Quick stats</h2>
+                <p>Stay close to your current task rhythm.</p>
+              </div>
+              <button class="ghost-button dashboard-refresh-button" @click="refresh">
+                <RefreshCw :size="16" /> Refresh
+              </button>
+            </div>
+            <div class="dashboard-focus-grid">
+              <article
+                v-for="item in focusStats"
+                :key="item.key"
+                :class="['dashboard-focus-card', item.tone]"
+              >
+                <div class="dashboard-focus-icon">
+                  <component :is="item.icon" :size="18" />
+                </div>
+                <div>
+                  <span>{{ item.label }}</span>
+                  <strong>{{ item.value }}</strong>
+                </div>
+              </article>
+            </div>
+          </section>
+
           <section class="panel filters-panel dashboard-filters">
             <div class="section-header dashboard-section-header-simple">
               <div>
@@ -308,7 +347,6 @@ onMounted(refresh)
                 <h2>Filter tasks</h2>
                 <p>Search and narrow your task list quickly.</p>
               </div>
-              <button class="ghost-button dashboard-refresh-button" @click="refresh"><RefreshCw :size="16" /> Refresh</button>
             </div>
             <div class="filters-grid">
               <input v-model="search" placeholder="Search tasks" />
@@ -327,19 +365,12 @@ onMounted(refresh)
               <button class="primary-button" @click="refresh">Apply filters</button>
             </div>
           </section>
-          <TaskTable
-            :tasks="filteredTasks"
-            @edit="editTarget = $event; showTaskForm = true"
-            @complete="appStore.completeTask($event).then(refresh)"
-            @skip="appStore.skipTask($event).then(refresh)"
-            @remove="appStore.deleteTask($event).then(refresh)"
-          />
-        </div>
 
-        <aside class="dashboard-right-column">
           <PlannerPanel :items="appStore.planner" />
         </aside>
       </section>
+
+      <p v-if="error" class="error-text">{{ error }}</p>
     </main>
 
     <div v-if="isTaskModalOpen" class="dashboard-modal-backdrop" @click.self="closeTaskModal">

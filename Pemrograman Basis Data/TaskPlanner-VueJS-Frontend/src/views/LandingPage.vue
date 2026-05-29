@@ -1,58 +1,26 @@
 <script setup lang="ts">
-import { ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import {
   ArrowRight,
   Brain,
-  Sparkles,
-  Bot,
-  MessageCircle,
-  Users,
-  BarChart3,
+  CalendarDays,
+  CheckCircle2,
   LayoutDashboard,
-  ChevronLeft,
-  ChevronRight,
+  MessageCircle,
+  Play,
+  Sparkles,
+  BarChart3,
   House,
   LogIn,
   UserPlus,
 } from '@lucide/vue'
 
-
 const stats = [
-  { value: '98%', label: 'Task completion' },
-  { value: '2hr+', label: 'Time saved weekly' },
-  { value: '24/7', label: 'Planning support' },
-  { value: 'AI', label: 'Parsing assistance' },
+  { value: '98%', label: 'Task completion', tone: 'default' },
+  { value: '2hr+', label: 'Time saved weekly', tone: 'primary' },
+  { value: '50k+', label: 'Active users', tone: 'default' },
+  { value: '4.9/5', label: 'Satisfaction', tone: 'secondary' },
 ]
-
-const collectionImages = [
-  '/collection/62shots_so.png',
-  '/collection/356shots_so.png',
-  '/collection/400shots_so.png',
-  '/collection/554shots_so.png',
-  '/collection/594shots_so.png',
-  '/collection/632shots_so.png',
-  '/collection/635shots_so.png',
-  '/collection/767shots_so.png',
-]
-
-const currentCollectionSlide = ref(0)
-
-function goToCollectionSlide(index: number) {
-  currentCollectionSlide.value = index
-}
-
-function goToPrevCollectionSlide() {
-  currentCollectionSlide.value = currentCollectionSlide.value === 0
-    ? collectionImages.length - 1
-    : currentCollectionSlide.value - 1
-}
-
-function goToNextCollectionSlide() {
-  currentCollectionSlide.value = currentCollectionSlide.value === collectionImages.length - 1
-    ? 0
-    : currentCollectionSlide.value + 1
-}
 </script>
 
 <template>
@@ -68,7 +36,7 @@ function goToNextCollectionSlide() {
             </RouterLink>
             <nav class="next-landing-nav">
               <a href="#features">Features</a>
-              <a href="#start-now">Try now</a>
+              <a href="#pricing">Pricing</a>
             </nav>
           </div>
           <div class="next-header-actions">
@@ -81,7 +49,7 @@ function goToNextCollectionSlide() {
       <section class="next-hero-section">
         <div class="next-hero-badge">
           <Sparkles :size="14" />
-          <span>Smarter planning for your daily flow</span>
+          <span>AI assistant for smarter daily planning</span>
         </div>
 
         <h1 class="next-hero-title">
@@ -95,19 +63,24 @@ function goToNextCollectionSlide() {
           assistance built for modern daily productivity.
         </p>
 
-        <div class="next-hero-actions">
-          <RouterLink to="/register" class="next-primary-hero-button">
+        <div class="next-hero-actions next-hero-actions-row">
+          <RouterLink to="/register" class="next-primary-hero-button next-primary-dark-hero-button">
             <span>Get started free</span>
           </RouterLink>
-          <RouterLink to="/login" class="next-demo-button">
-            Sign in <ArrowRight :size="18" />
-          </RouterLink>
+          <a href="#demo" class="next-demo-button">
+            View demo <ArrowRight :size="18" />
+          </a>
         </div>
 
-        <div class="next-video-shell">
+        <div id="demo" class="next-video-shell">
           <div class="next-video-glow"></div>
-          <div class="next-video-frame">
-            <img src="/opt-hero/1.png" alt="Hero preview" class="next-hero-image" />
+          <div class="next-video-frame next-demo-frame">
+            <img src="/opt-hero/1.png" alt="Hero preview" class="next-hero-image next-hero-image-clean" />
+            <div class="next-video-overlay-button">
+              <div class="next-video-play-badge">
+                <Play :size="22" />
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -134,21 +107,15 @@ function goToNextCollectionSlide() {
           </article>
 
           <article class="next-feature-card large">
-            <div class="next-icon-box emerald"><LayoutDashboard :size="20" /></div>
-            <h3>Focused dashboard workflow</h3>
-            <p>Track tasks, review reminders, and stay on top of your schedule from a clean workspace designed for daily momentum.</p>
-            <div class="next-dashboard-surface">
-              <div class="next-dashboard-surface-card large"></div>
-              <div class="next-dashboard-surface-row">
-                <span></span>
-                <span></span>
-                <span></span>
-              </div>
-              <div class="next-dashboard-surface-grid">
-                <span></span>
-                <span></span>
-                <span></span>
-                <span></span>
+            <div class="next-icon-box emerald"><CalendarDays :size="20" /></div>
+            <h3>Calendar-friendly scheduling</h3>
+            <p>Stay on top of time blocks, reminders, and upcoming deadlines from a clean planning experience that feels focused.</p>
+            <div class="next-calendar-surface">
+              <div class="next-calendar-icon-shell">
+                <CalendarDays :size="58" />
+                <div class="next-calendar-check-badge">
+                  <CheckCircle2 :size="18" />
+                </div>
               </div>
             </div>
           </article>
@@ -173,73 +140,12 @@ function goToNextCollectionSlide() {
             </div>
           </article>
         </div>
-
-        <div class="next-feature-row reverse-on">
-          <article class="next-feature-row-card reverse">
-            <div class="next-row-copy">
-              <div class="next-icon-box whatsapp"><MessageCircle :size="20" /></div>
-              <h3>Conversational task flow</h3>
-              <p>Use a chat-like experience to shape ideas into actionable tasks and keep your planning process feeling effortless.</p>
-            </div>
-            <div class="next-chat-surface">
-              <div class="chat-message left">
-                <div class="chat-avatar user"><Users :size="14" /></div>
-                <div class="chat-bubble">Create a high priority report task for tomorrow morning.</div>
-              </div>
-              <div class="chat-message right">
-                <div class="chat-avatar bot"><Bot :size="14" /></div>
-                <div class="chat-bubble bot">Task draft parsed. You can review and save it from the AI helper page.</div>
-              </div>
-            </div>
-          </article>
-        </div>
       </section>
 
-      <section class="next-collection-section">
-        <div class="next-collection-heading">
-          <h2>Our Feature Collection</h2>
-          <p>Explore the product moments that make Smart Task Planner feel intuitive, focused, and ready for everyday use.</p>
-        </div>
-        <div class="next-collection-carousel">
-          <div class="next-collection-track" :style="{ transform: `translateX(-${currentCollectionSlide * 100}%)` }">
-            <article v-for="image in collectionImages" :key="image" class="next-collection-slide">
-              <div class="next-collection-card">
-                <img :src="image" alt="Feature collection preview" class="next-collection-image" />
-              </div>
-            </article>
-          </div>
-
-          <button type="button" class="next-collection-nav prev" aria-label="Previous slide" @click="goToPrevCollectionSlide">
-            <ChevronLeft :size="22" />
-          </button>
-          <button type="button" class="next-collection-nav next" aria-label="Next slide" @click="goToNextCollectionSlide">
-            <ChevronRight :size="22" />
-          </button>
-        </div>
-
-        <div class="next-collection-dots">
-          <button
-            v-for="(_, index) in collectionImages"
-            :key="`dot-${index}`"
-            type="button"
-            :class="['next-collection-dot', { active: index === currentCollectionSlide }]"
-            :aria-label="`Go to slide ${index + 1}`"
-            @click="goToCollectionSlide(index)"
-          />
-        </div>
-      </section>
-
-      <section class="next-banner-cta" id="start-now">
-        <div class="pill">Try it now</div>
-        <h2>Make task planning simpler for everyone</h2>
-        <p>Capture tasks faster, organize priorities clearly, and keep your day on track in one simple workspace.</p>
-        <RouterLink to="/register" class="next-dark-button">Try Smart Task Planner</RouterLink>
-      </section>
-
-      <section class="next-stats-section">
+      <section id="pricing" class="next-stats-section">
         <div class="next-stats-grid">
           <div v-for="stat in stats" :key="stat.label" class="next-stat-item">
-            <div class="next-stat-value">{{ stat.value }}</div>
+            <div :class="['next-stat-value', `tone-${stat.tone}`]">{{ stat.value }}</div>
             <div class="next-stat-label">{{ stat.label }}</div>
           </div>
         </div>
@@ -266,8 +172,8 @@ function goToNextCollectionSlide() {
             <h4>Product</h4>
             <ul>
               <li><a href="#features">Features</a></li>
-              <li><a href="#start-now">Try Now</a></li>
-              <li><a href="#features">How It Works</a></li>
+              <li><a href="#pricing">Pricing</a></li>
+              <li><RouterLink to="/dashboard">Dashboard</RouterLink></li>
             </ul>
           </div>
           <div>
@@ -275,23 +181,23 @@ function goToNextCollectionSlide() {
             <ul>
               <li><RouterLink to="/login">Sign in</RouterLink></li>
               <li><RouterLink to="/register">Create account</RouterLink></li>
-              <li><a href="#start-now">Get Started</a></li>
+              <li><RouterLink to="/overview">Overview</RouterLink></li>
             </ul>
           </div>
           <div>
-            <h4>Contact</h4>
+            <h4>Company</h4>
             <ul>
-              <li><a href="mailto:hello@smarttaskplanner.app">hello@smarttaskplanner.app</a></li>
-              <li><a href="mailto:support@smarttaskplanner.app">support@smarttaskplanner.app</a></li>
-              <li><a href="#start-now">Start Planning</a></li>
+              <li><a href="#features">About us</a></li>
+              <li><a href="#pricing">Terms</a></li>
+              <li><a href="#pricing">Privacy</a></li>
             </ul>
           </div>
         </div>
         <div class="next-footer-bottom">
           <span>© 2026 Smart Task Planner. All rights reserved.</span>
           <div>
-            <a href="#features">Overview</a>
-            <a href="mailto:hello@smarttaskplanner.app">Contact</a>
+            <a href="#pricing">Privacy Policy</a>
+            <a href="#pricing">Terms of Service</a>
           </div>
         </div>
       </footer>
