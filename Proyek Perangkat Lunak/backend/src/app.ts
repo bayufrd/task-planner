@@ -1,6 +1,7 @@
 import express, { Application } from 'express';
 import cors from 'cors';
 import { corsOptions } from './config/cors';
+import { setupSwagger } from './config/swagger';
 import { errorHandler } from './middleware/error-handler';
 import authRoutes from './modules/auth/auth.routes';
 import taskRoutes from './modules/tasks/task.routes';
@@ -20,9 +21,11 @@ export const createApp = (): Application => {
   app.use(express.urlencoded({ extended: true }));
 
   // Health check
-  app.get('/health', (_req, res) => {
+  app.get('/api/health', (_req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
   });
+
+  setupSwagger(app);
 
   // Routes
   app.use('/internal/wa', whatsappInboundRoutes);

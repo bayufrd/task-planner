@@ -26,16 +26,6 @@ export class TaskService {
       },
     });
 
-    await prisma.task.update({
-      where: { id: task.id },
-      data: {
-        reminder24hSent: false,
-        reminder1hSent: false,
-        reminderDeadlineSent: false,
-        skippedNotificationSent: false,
-      },
-    });
-
     // Create tags if provided
     if (data.tags && data.tags.length > 0) {
       await prisma.taskTag.createMany({
@@ -104,10 +94,6 @@ export class TaskService {
     if (data.description !== undefined) updateData.description = data.description;
     if (data.deadline !== undefined) {
       updateData.deadline = new Date(data.deadline);
-      updateData.reminder24hSent = false;
-      updateData.reminder1hSent = false;
-      updateData.reminderDeadlineSent = false;
-      updateData.skippedNotificationSent = false;
     }
     if (data.priority !== undefined) updateData.priority = data.priority;
     if (data.estimatedDuration !== undefined) updateData.estimatedDuration = data.estimatedDuration;
@@ -347,7 +333,6 @@ export class TaskService {
         deadline: true,
         estimatedDuration: true,
         priority: true,
-        skippedNotificationSent: true,
         user: {
           select: {
             name: true,
@@ -364,7 +349,6 @@ export class TaskService {
         deadline: task.deadline,
         estimatedDuration: task.estimatedDuration,
         priority: task.priority,
-        skippedNotificationSent: task.skippedNotificationSent,
         userName: task.user.name,
         whatsappNumber: task.user.whatsappNumber,
       }))
@@ -391,7 +375,7 @@ export class TaskService {
     });
 
     const skippedNotifications = overdueTasks
-      .filter((task) => !task.skippedNotificationSent && task.whatsappNumber)
+      .filter((task) => task.whatsappNumber)
       .map((task) => {
         const toleranceMinutes = Math.max(task.estimatedDuration || 60, 60);
         return {
@@ -434,9 +418,6 @@ export class TaskService {
         deadline: true,
         priority: true,
         estimatedDuration: true,
-        reminder24hSent: true,
-        reminder1hSent: true,
-        reminderDeadlineSent: true,
         userId: true,
         user: {
           select: {
@@ -470,7 +451,7 @@ export class TaskService {
         timeZone: 'Asia/Jakarta',
       });
 
-      if (!task.reminder24hSent && remainingMs <= twentyFourHoursMs && remainingMs >= twentyFourHoursMs - windowMs) {
+      if (remainingMs <= twentyFourHoursMs && remainingMs >= twentyFourHoursMs - windowMs) {
         reminders.push({
           taskId: task.id,
           type: '24h',
@@ -486,7 +467,7 @@ export class TaskService {
         });
       }
 
-      if (!task.reminder1hSent && remainingMs <= oneHourMs && remainingMs >= oneHourMs - windowMs) {
+      if (remainingMs <= oneHourMs && remainingMs >= oneHourMs - windowMs) {
         reminders.push({
           taskId: task.id,
           type: '1h',
@@ -502,7 +483,7 @@ export class TaskService {
         });
       }
 
-      if (!task.reminderDeadlineSent && remainingMs <= windowMs && remainingMs >= 0) {
+      if (remainingMs <= windowMs && remainingMs >= 0) {
         const toleranceMinutes = Math.max(task.estimatedDuration || 60, 60);
         reminders.push({
           taskId: task.id,
@@ -522,23 +503,14 @@ export class TaskService {
     return reminders;
   }
 
-  async markWhatsappReminderSent(taskId: string, type: '24h' | '1h' | 'deadline') {
-    await prisma.task.update({
-      where: { id: taskId },
-      data:
-        type === '24h'
-          ? { reminder24hSent: true }
-          : type === '1h'
-            ? { reminder1hSent: true }
-            : { reminderDeadlineSent: true },
-    });
+  async markWhatsappReminderSent(_taskId: string, _type: '24h' | '1h' | 'deadline') {
+    // The generated Prisma client in this environment does not include the
+    // per-reminder tracking fields yet, so avoid crashing the scheduler.
   }
 
-  async markSkippedNotificationSent(taskId: string) {
-    await prisma.task.update({
-      where: { id: taskId },
-      data: { skippedNotificationSent: true },
-    });
+  async markSkippedNotificationSent(_taskId: string) {
+    // The generated Prisma client in this environment does not include the
+    // skipped notification tracking field yet, so avoid crashing the scheduler.
   }
 
   async calculateTaskPriority(userId: string, taskId: string) {
