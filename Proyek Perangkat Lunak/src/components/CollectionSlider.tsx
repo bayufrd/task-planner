@@ -1,5 +1,6 @@
 "use client"
 
+import Image from 'next/image'
 import { useTheme } from '@/components/providers/ThemeProvider'
 import { useLanguage } from '@/components/providers/LanguageProvider'
 import { useEffect, useState } from 'react'
@@ -12,14 +13,14 @@ export const CollectionSlider = () => {
   const [currentSlide, setCurrentSlide] = useState(0)
   // Collection images from public/collection
   const collectionImages = [
-    '/collection/62shots_so.png',
-    '/collection/356shots_so.png',
-    '/collection/400shots_so.png',
-    '/collection/554shots_so.png',
-    '/collection/594shots_so.png',
-    '/collection/632shots_so.png',
-    '/collection/635shots_so.png',
-    '/collection/767shots_so.png'
+    '/collection/62shots_so.webp',
+    '/collection/356shots_so.webp',
+    '/collection/400shots_so.webp',
+    '/collection/554shots_so.webp',
+    '/collection/594shots_so.webp',
+    '/collection/632shots_so.webp',
+    '/collection/635shots_so.webp',
+    '/collection/767shots_so.webp'
   ]
 
   // Auto-slide effect
@@ -67,9 +68,13 @@ export const CollectionSlider = () => {
         <div className="flex transition-transform duration-500 ease-in-out" style={{ transform: calculateSlidePosition() }}>
           {collectionImages.map((image, index) => (
             <div key={index} className="w-full flex-shrink-0">
-              <img
+              <Image
                 src={image}
                 alt={`Collection ${index + 1}`}
+                width={1600}
+                height={900}
+                loading={index === 0 ? 'eager' : 'lazy'}
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 100vw, 1200px"
                 className="w-full h-[220px] sm:h-[320px] md:h-[420px] lg:h-[520px] object-cover rounded-xl"
               />
             </div>

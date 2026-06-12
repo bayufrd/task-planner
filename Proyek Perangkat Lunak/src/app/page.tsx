@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { signIn } from 'next-auth/react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
@@ -149,7 +150,13 @@ export default function LandingPage() {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
               <a href="/" className="flex items-center">
                 <div className="rounded-xl shadow-sm shadow-black/5 dark:shadow-black/10 bg-white/20 dark:bg-gray-800/20 backdrop-blur-sm p-0.5">
-                  <img src="/opt-logo/logo3.png" alt="TaskPlanner" className="h-10 w-auto rounded-xl" />
+                  <Image
+                    src="/opt-logo/logo3.webp"
+                    alt="TaskPlanner"
+                    width={120}
+                    height={40}
+                    className="h-10 w-auto rounded-xl"
+                  />
                 </div>
               </a>
             
@@ -243,9 +250,12 @@ export default function LandingPage() {
           <div className="mt-28 relative w-full max-w-5xl group">
             <div className="absolute -inset-10 bg-gradient-to-tr from-blue-300/20 to-emerald-300/20 rounded-full blur-3xl opacity-60"></div>
             <div className="relative bg-white border border-gray-200 p-1.5 rounded-[1.25rem] shadow-xl overflow-hidden">
-              <img
-                src="/opt-hero/1.png"
+              <Image
+                src="/opt-hero/1.webp"
                 alt="Hero preview"
+                width={1280}
+                height={720}
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 100vw, 1200px"
                 className="rounded-[1.25rem] w-full object-cover aspect-video grayscale-[20%] hover:grayscale-0 transition-all duration-700"
               />
             </div>

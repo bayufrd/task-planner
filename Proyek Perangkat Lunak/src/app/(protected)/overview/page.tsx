@@ -251,9 +251,12 @@ export default function OverviewPage() {
                   <div className="flex flex-col items-center text-center">
                     {/* Large Centered Animal Image */}
                     <div className="mb-4">
-                      <img
+                      <Image
                         src={animal.imagePath}
                         alt={animal.name}
+                        width={256}
+                        height={256}
+                        loading="lazy"
                         className="w-64 h-64 object-contain rounded-2xl border-4 border-white/30 shadow-2xl"
                       />
                     </div>
@@ -339,10 +342,9 @@ export default function OverviewPage() {
         <div className="mt-8 bg-white dark:bg-gray-900 rounded-xl p-6 border border-gray-200 dark:border-gray-800">
           <div className="relative w-full aspect-[21/9] sm:aspect-[3/1] rounded-xl overflow-hidden shadow-lg">
             <Image
-              src="/opt-hero/3.png"
+              src="/opt-hero/3.webp"
               alt="Overview Hero"
               fill
-              priority
               className="object-cover"
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 100vw, 1200px"
             />
@@ -477,9 +479,12 @@ export default function OverviewPage() {
               return (
                 <div className="flex flex-col md:flex-row items-center gap-6">
                   {/* Animal Avatar */}
-                  <img
+                  <Image
                     src={animal.imagePath}
                     alt={animal.name}
+                    width={192}
+                    height={192}
+                    loading="lazy"
                     className="w-48 h-48 object-contain rounded-full border-4 border-gray-200 dark:border-gray-700 shadow-lg"
                   />
                   

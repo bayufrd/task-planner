@@ -82,11 +82,10 @@ export default function LandingPage() {
               <Link href="/" className="flex items-center" aria-label="Go to home">
                 <div className="rounded-xl shadow-sm shadow-black/5 dark:shadow-black/10 bg-white/20 dark:bg-gray-800/20 backdrop-blur-sm p-0.5">
                   <Image
-                    src="/opt-logo/logo3.png"
+                    src="/opt-logo/logo3.webp"
                     alt="Smart Task Planner"
                     width={160}
                     height={48}
-                    priority
                     className="h-11 w-auto rounded-xl"
                   />
                 </div>
@@ -393,7 +392,7 @@ export default function LandingPage() {
             <div className="col-span-1">
               <div className="flex items-center gap-2 mb-6">
                 <Image
-                  src="/opt-logo/logo3.png"
+                  src="/opt-logo/logo3.webp"
                   alt="Smart Task Planner"
                   width={140}
                   height={40}

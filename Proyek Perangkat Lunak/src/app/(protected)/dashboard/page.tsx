@@ -230,10 +230,9 @@ export default function Dashboard() {
           <div className="max-w-6xl mx-auto">
             <div className="relative w-full aspect-[21/9] sm:aspect-[3/1] rounded-2xl overflow-hidden shadow-lg border border-gray-200/50 dark:border-gray-800/50">
               <Image
-                src="/opt-hero/2.png"
+                src="/opt-hero/2.webp"
                 alt="Dashboard Hero"
                 fill
-                priority
                 className="object-cover"
                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 100vw, 1200px"
               />

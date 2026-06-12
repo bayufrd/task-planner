@@ -43,11 +43,10 @@ export default function Header({
           <Link href="/dashboard" className="flex items-center" aria-label="Go to dashboard">
             <div className="rounded-xl shadow-sm shadow-black/5 dark:shadow-black/10 bg-white/20 dark:bg-gray-800/20 backdrop-blur-sm p-0.5">
               <Image
-                src="/opt-logo/logo3.png"
+                src="/opt-logo/logo3.webp"
                 alt="Smart Task Planner"
                 width={160}
                 height={48}
-                priority
                 className="h-11 w-auto rounded-xl"
               />
             </div>

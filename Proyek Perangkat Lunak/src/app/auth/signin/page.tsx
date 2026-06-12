@@ -152,7 +152,7 @@ function SignInContent() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
           <Link href="/" className="flex items-center">
             <div className="rounded-xl shadow-sm shadow-black/5 dark:shadow-black/10 bg-white/20 dark:bg-gray-800/20 backdrop-blur-sm p-0.5">
-              <Image src="/opt-logo/logo3.png" alt="TaskPlanner Logo" width={120} height={40} className="h-10 w-auto rounded-xl" priority />
+              <Image src="/opt-logo/logo3.webp" alt="TaskPlanner Logo" width={120} height={40} className="h-10 w-auto rounded-xl" />
             </div>
           </Link>
 
@@ -187,12 +187,11 @@ function SignInContent() {
               <div className="flex justify-center">
                 <div className="rounded-xl p-1 shadow-md shadow-black/10 dark:shadow-black/30 bg-white/20 dark:bg-gray-800/20 backdrop-blur-sm">
                   <Image
-                    src="/opt-logo/logo1.png"
+                    src="/opt-logo/logo1.webp"
                     alt="TaskPlanner Logo"
                     width={160}
                     height={160}
                     className="w-28 h-auto sm:w-32 md:w-36 rounded-lg"
-                    priority
                   />
                 </div>
               </div>
