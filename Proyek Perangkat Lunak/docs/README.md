@@ -5,19 +5,19 @@
 ### 👤 For Users
 - [Getting Started](#getting-started)
 - [Features](../README.md#-features)
-- [Installation & Deployment](./DEPLOYMENT.md)
+- [Installation & Deployment](./setup/DEPLOYMENT.md)
 
 ### 👨‍💻 For Developers (Phase 0)
-- [Development Setup](./phase0/DEVELOPMENT.md)
-- [Architecture & Design](./phase0/ARCHITECTURE.md)
-- [Project Checklist](./phase0/DEVELOPMENT_CHECKLIST.md)
+- [Development Setup](./project/FINAL_SUMMARY.md)
+- [Architecture & Design](./APP-express.md)
+- [Project Checklist](./project/PROJECT_STATUS.md)
 
 ### 🎨 For UI Design
-- [Google Stitch UI Prompt](./STITCH_UI_PROMPT.md)
+- [Google Stitch UI Prompt](./design/STITCH_UI_PROMPT.md)
 
 ### 🗂️ Project Structure
-- [File Manifest](./phase0/FILE_MANIFEST.md)
-- [Database Setup](./phase0/DATABASE_SETUP.md)
+- [File Manifest](./project/INDEX.md)
+- [Database Setup](./setup/SETUP_DATABASE.md)
 
 ---
 
@@ -31,7 +31,7 @@
 
 ### Quick Installation
 
-See [DEPLOYMENT.md](./DEPLOYMENT.md) for production setup.
+See [DEPLOYMENT.md](./setup/DEPLOYMENT.md) for production setup.
 
 ---
 

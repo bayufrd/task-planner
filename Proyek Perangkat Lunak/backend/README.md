@@ -154,7 +154,7 @@ backend/
 ### Internal WhatsApp
 
 - [x] `POST /internal/wa/inbound`
-- [x] Dokumentasi detail: [`backend/docs/WHATSAPP_INBOUND.md`](backend/docs/WHATSAPP_INBOUND.md)
+- [x] Dokumentasi detail: [`docs/api-external/WHATSAPP_INBOUND.md`](../docs/api-external/WHATSAPP_INBOUND.md)
 
 ## Task Status Rules
 
@@ -210,7 +210,7 @@ Ringkasan endpoint [`POST /internal/wa/inbound`](backend/src/app.ts:225):
 - menghubungkan nomor WhatsApp ke user Task Planner bila valid,
 - mengirim balasan WhatsApp untuk skenario sukses dan gagal.
 
-Dokumentasi lengkap payload, response, flow registrasi, contoh cURL, dan skenario error tersedia di [`backend/docs/WHATSAPP_INBOUND.md`](backend/docs/WHATSAPP_INBOUND.md).
+Dokumentasi lengkap payload, response, flow registrasi, contoh cURL, dan skenario error tersedia di [`docs/api-external/WHATSAPP_INBOUND.md`](../docs/api-external/WHATSAPP_INBOUND.md).
 
 ## Setup dan Menjalankan Backend
 
