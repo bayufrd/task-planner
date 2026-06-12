@@ -26,10 +26,15 @@ export class TaskService {
       },
     });
 
-    await prisma.$executeRawUnsafe(
-      'UPDATE `Task` SET `reminder24hSent` = false, `reminder1hSent` = false, `reminderDeadlineSent` = false, `skippedNotificationSent` = false WHERE `id` = ?',
-      task.id
-    );
+    await prisma.task.update({
+      where: { id: task.id },
+      data: {
+        reminder24hSent: false,
+        reminder1hSent: false,
+        reminderDeadlineSent: false,
+        skippedNotificationSent: false,
+      },
+    });
 
     // Create tags if provided
     if (data.tags && data.tags.length > 0) {
@@ -330,40 +335,44 @@ export class TaskService {
     const minimumToleranceMs = 60 * 60 * 1000;
     const minimumOverdueDeadline = new Date(now.getTime() - minimumToleranceMs);
 
-    const candidates = await prisma.$queryRawUnsafe<Array<{
-      id: string;
-      title: string;
-      deadline: Date;
-      estimatedDuration: number | null;
-      priority: string;
-      skippedNotificationSent: boolean;
-      userName: string | null;
-      whatsappNumber: string | null;
-    }>>(
-      `
-        SELECT
-          t.id,
-          t.title,
-          t.deadline,
-          t.estimatedDuration,
-          t.priority,
-          t.skippedNotificationSent,
-          u.name AS userName,
-          u.whatsappNumber AS whatsappNumber
-        FROM Task t
-        LEFT JOIN User u ON u.id = t.userId
-        WHERE t.status = 'PENDING'
-          AND t.deletedAt IS NULL
-          AND t.deadline <= ?
-      `,
-      minimumOverdueDeadline
-    );
-
-    const overdueTasks = candidates.filter((task) => {
-      const toleranceMinutes = Math.max(task.estimatedDuration || 60, 60);
-      const skippedAt = new Date(task.deadline).getTime() + toleranceMinutes * 60 * 1000;
-      return skippedAt <= now.getTime();
+    const candidates = await prisma.task.findMany({
+      where: {
+        status: 'PENDING',
+        deletedAt: null,
+        deadline: { lte: minimumOverdueDeadline },
+      },
+      select: {
+        id: true,
+        title: true,
+        deadline: true,
+        estimatedDuration: true,
+        priority: true,
+        skippedNotificationSent: true,
+        user: {
+          select: {
+            name: true,
+            whatsappNumber: true,
+          },
+        },
+      },
     });
+
+    const overdueTasks = candidates
+      .map((task) => ({
+        id: task.id,
+        title: task.title,
+        deadline: task.deadline,
+        estimatedDuration: task.estimatedDuration,
+        priority: task.priority,
+        skippedNotificationSent: task.skippedNotificationSent,
+        userName: task.user.name,
+        whatsappNumber: task.user.whatsappNumber,
+      }))
+      .filter((task) => {
+        const toleranceMinutes = Math.max(task.estimatedDuration || 60, 60);
+        const skippedAt = new Date(task.deadline).getTime() + toleranceMinutes * 60 * 1000;
+        return skippedAt <= now.getTime();
+      });
 
     const overdueTaskIds = overdueTasks.map((task) => task.id);
 
@@ -407,44 +416,39 @@ export class TaskService {
     const twentyFourHoursMs = 24 * oneHourMs;
     const windowMs = 5 * 60 * 1000;
 
-    const candidates = await prisma.$queryRawUnsafe<Array<{
-      id: string;
-      title: string;
-      deadline: Date;
-      priority: string;
-      estimatedDuration: number | null;
-      reminder24hSent: boolean;
-      reminder1hSent: boolean;
-      reminderDeadlineSent: boolean;
-      userId: string;
-      userName: string | null;
-      whatsappNumber: string | null;
-    }>>(
-      `
-        SELECT
-          t.id,
-          t.title,
-          t.deadline,
-          t.priority,
-          t.estimatedDuration,
-          t.reminder24hSent,
-          t.reminder1hSent,
-          t.reminderDeadlineSent,
-          t.userId,
-          u.name AS userName,
-          u.whatsappNumber AS whatsappNumber
-        FROM Task t
-        INNER JOIN User u ON u.id = t.userId
-        WHERE t.status = 'PENDING'
-          AND t.deletedAt IS NULL
-          AND t.deadline >= ?
-          AND t.deadline <= ?
-          AND u.whatsappNumber IS NOT NULL
-        ORDER BY t.deadline ASC
-      `,
-      new Date(now.getTime() - windowMs),
-      new Date(now.getTime() + twentyFourHoursMs + windowMs)
-    );
+    const candidates = await prisma.task.findMany({
+      where: {
+        status: 'PENDING',
+        deletedAt: null,
+        deadline: {
+          gte: new Date(now.getTime() - windowMs),
+          lte: new Date(now.getTime() + twentyFourHoursMs + windowMs),
+        },
+        user: {
+          whatsappNumber: { not: null },
+        },
+      },
+      select: {
+        id: true,
+        title: true,
+        deadline: true,
+        priority: true,
+        estimatedDuration: true,
+        reminder24hSent: true,
+        reminder1hSent: true,
+        reminderDeadlineSent: true,
+        userId: true,
+        user: {
+          select: {
+            name: true,
+            whatsappNumber: true,
+          },
+        },
+      },
+      orderBy: {
+        deadline: 'asc',
+      },
+    });
 
     const reminders: Array<{
       taskId: string;
@@ -454,12 +458,12 @@ export class TaskService {
     }> = [];
 
     for (const task of candidates) {
-      const whatsappNumber = task.whatsappNumber?.trim();
+      const whatsappNumber = task.user.whatsappNumber?.trim();
       if (!whatsappNumber) continue;
 
       const deadline = new Date(task.deadline);
       const remainingMs = deadline.getTime() - now.getTime();
-      const userName = task.userName ? `, ${task.userName}` : '';
+      const userName = task.user.name ? `, ${task.user.name}` : '';
       const deadlineLabel = deadline.toLocaleString('id-ID', {
         dateStyle: 'full',
         timeStyle: 'short',
@@ -519,21 +523,22 @@ export class TaskService {
   }
 
   async markWhatsappReminderSent(taskId: string, type: '24h' | '1h' | 'deadline') {
-    await prisma.$executeRawUnsafe(
-      type === '24h'
-        ? 'UPDATE `Task` SET `reminder24hSent` = true WHERE `id` = ?'
-        : type === '1h'
-          ? 'UPDATE `Task` SET `reminder1hSent` = true WHERE `id` = ?'
-          : 'UPDATE `Task` SET `reminderDeadlineSent` = true WHERE `id` = ?',
-      taskId
-    );
+    await prisma.task.update({
+      where: { id: taskId },
+      data:
+        type === '24h'
+          ? { reminder24hSent: true }
+          : type === '1h'
+            ? { reminder1hSent: true }
+            : { reminderDeadlineSent: true },
+    });
   }
 
   async markSkippedNotificationSent(taskId: string) {
-    await prisma.$executeRawUnsafe(
-      'UPDATE `Task` SET `skippedNotificationSent` = true WHERE `id` = ?',
-      taskId
-    );
+    await prisma.task.update({
+      where: { id: taskId },
+      data: { skippedNotificationSent: true },
+    });
   }
 
   async calculateTaskPriority(userId: string, taskId: string) {
