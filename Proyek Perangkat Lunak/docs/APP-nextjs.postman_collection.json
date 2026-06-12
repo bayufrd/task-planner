@@ -1,0 +1,1005 @@
+{
+  "info": {
+    "name": "Smart Task Planner - Next.js Integration",
+    "description": "Postman collection for API consumption paths that are used by or relevant to the Next.js frontend. Source of truth is backend swagger in `backend/src/config/swagger.ts`, then filtered and grouped by frontend integration context.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8000",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "taskId",
+      "value": "cm_task_123",
+      "type": "string"
+    },
+    {
+      "key": "reminderId",
+      "value": "cm_reminder_123",
+      "type": "string"
+    },
+    {
+      "key": "calendarId",
+      "value": "cm_calendar_123",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "System",
+      "description": "Health and smoke-check requests relevant to frontend/backend connectivity.",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "health"
+              ]
+            },
+            "description": "Expected response: `{ status: \"ok\", timestamp: \"...\" }`. Useful before running frontend integration tests or validating deployment wiring."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Auth - Frontend Entry Flows",
+      "description": "Requests used directly by sign-in, sign-up, and auth sync flows in the Next.js frontend.",
+      "item": [
+        {
+          "name": "Register User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Bayu Farid\",\n  \"email\": \"bayu@example.com\",\n  \"password\": \"secret123\",\n  \"captchaToken\": \"cf-turnstile-token\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ]
+            },
+            "description": "Used by the Next.js sign-up page. Expected success: registration accepted and account created. Typical frontend follow-up is redirect to sign-in with `registered=true`."
+          },
+          "response": []
+        },
+        {
+          "name": "Login User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"bayu@example.com\",\n  \"password\": \"secret123\",\n  \"captchaToken\": \"cf-turnstile-token\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Used by the Next.js sign-in page. Response is expected to include backend JWT and user payload that the frontend stores in cookie/localStorage for protected pages."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Current User",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "me"
+              ]
+            },
+            "description": "Protected profile endpoint. Relevant for session verification and manual auth debugging."
+          },
+          "response": []
+        },
+        {
+          "name": "Logout Current User",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/logout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "logout"
+              ]
+            },
+            "description": "Backend logout endpoint. The Next.js frontend also clears local cookie/localStorage state on logout."
+          },
+          "response": []
+        },
+        {
+          "name": "Start Google OAuth",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/google",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "google"
+              ]
+            },
+            "description": "Backend OAuth entrypoint. Not the primary browser flow when NextAuth is used, but still relevant for integration parity and backend auth testing."
+          },
+          "response": []
+        },
+        {
+          "name": "Google OAuth Callback",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/google/callback",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "google",
+                "callback"
+              ]
+            },
+            "description": "OAuth callback endpoint documented for completeness. Normally driven by provider redirect rather than manual invocation."
+          },
+          "response": []
+        },
+        {
+          "name": "Sync NextAuth Session To Backend JWT",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"googleAccessToken\": \"ya29.mock-access-token\",\n  \"email\": \"bayu@example.com\",\n  \"name\": \"Bayu Farid\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/sync",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "sync"
+              ]
+            },
+            "description": "Critical bridge used by protected layout after Google sign-in. Expected response should include backend JWT and normalized user object so the Next.js app can call protected REST endpoints."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Tasks - Core Dashboard Flows",
+      "description": "Primary task endpoints consumed directly by dashboard, task modal flows, task cards, and task analytics helpers.",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{token}}",
+            "type": "string"
+          }
+        ]
+      },
+      "item": [
+        {
+          "name": "List Tasks",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/tasks?limit=100&page=1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "tasks"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "100"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "status",
+                  "value": "PENDING",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Used by dashboard task loading. Frontend normalizes backend `PENDING` to UI status `TODO`."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Task",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Meeting dengan tim produk\",\n  \"description\": \"Bahas roadmap sprint minggu depan\",\n  \"deadline\": \"2026-06-13T14:00:00.000Z\",\n  \"priority\": \"HIGH\",\n  \"estimatedDuration\": 90,\n  \"reminderTime\": 60,\n  \"tags\": [\"kerja\", \"meeting\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/tasks",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "tasks"
+              ]
+            },
+            "description": "Used by task creation flows such as task modal and command-driven creation helpers."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Task Statistics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/tasks/stats",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "tasks",
+                "stats"
+              ]
+            },
+            "description": "Used on dashboard stat cards and overview summary metrics. Expected shape includes `pending`, `done`, and `skipped`."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Daily Task Statistics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/tasks/stats/daily?days=30",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "tasks",
+                "stats",
+                "daily"
+              ],
+              "query": [
+                {
+                  "key": "days",
+                  "value": "30"
+                }
+              ]
+            },
+            "description": "Used by the Next.js overview page for 30-day chart data and AI overview-analysis input."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Weekly Task Statistics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/tasks/stats/weekly?weeks=12",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "tasks",
+                "stats",
+                "weekly"
+              ],
+              "query": [
+                {
+                  "key": "weeks",
+                  "value": "12"
+                }
+              ]
+            },
+            "description": "Used by overview analytics for weekly trend charting."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Task By Id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/tasks/{{taskId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "tasks",
+                "{{taskId}}"
+              ]
+            },
+            "description": "Task detail endpoint useful for edit/debug flows and future detail views."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Task",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Meeting client revisi\",\n  \"description\": \"Bawa hasil revisi proposal\",\n  \"deadline\": \"2026-06-13T16:00:00.000Z\",\n  \"priority\": \"MEDIUM\",\n  \"estimatedDuration\": 120,\n  \"reminderTime\": 30,\n  \"status\": \"PENDING\",\n  \"tags\": [\"revisi\", \"client\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/tasks/{{taskId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "tasks",
+                "{{taskId}}"
+              ]
+            },
+            "description": "Used by task edit modal. Frontend generally updates local Zustand state after backend success."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Task Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"DONE\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/tasks/{{taskId}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "tasks",
+                "{{taskId}}",
+                "status"
+              ]
+            },
+            "description": "Used by helper actions such as complete/skip from cards or dashboard interactions. Allowed values: `PENDING`, `DONE`, `SKIPPED`."
+          },
+          "response": []
+        },
+        {
+          "name": "Calculate Task Priority",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/tasks/{{taskId}}/priority",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "tasks",
+                "{{taskId}}",
+                "priority"
+              ]
+            },
+            "description": "Relevant to AI-assisted prioritization and backend score recalculation. Not always visible in UI, but part of core task domain."
+          },
+          "response": []
+        },
+        {
+          "name": "Skip Task",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/tasks/{{taskId}}/skip",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "tasks",
+                "{{taskId}}",
+                "skip"
+              ]
+            },
+            "description": "Dedicated skip endpoint documented in swagger and relevant to skipped-task flow."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Task",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/tasks/{{taskId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "tasks",
+                "{{taskId}}"
+              ]
+            },
+            "description": "Used by task deletion flow. Backend performs soft-delete semantics according to backend documentation."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "AI - Next.js Assisted Features",
+      "description": "Endpoints used by AI-assisted task parsing and overview analysis features surfaced in the Next.js app.",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{token}}",
+            "type": "string"
+          }
+        ]
+      },
+      "item": [
+        {
+          "name": "Parse Natural Language Task",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"command\": \"besok jam 9 malam meeting dengan tim marketing prioritas tinggi\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/ai/parse-task",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ai",
+                "parse-task"
+              ]
+            },
+            "description": "Used by command-style task creation flows. Expected response should map to parsed task payload: title, deadline, priority, estimatedDuration, tags, reminderTime."
+          },
+          "response": []
+        },
+        {
+          "name": "Generate Overview Analysis",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"stats\": {\n    \"pending\": 8,\n    \"done\": 12,\n    \"skipped\": 2\n  },\n  \"dailyData\": [\n    {\n      \"date\": \"2026-06-12\",\n      \"count\": 3\n    },\n    {\n      \"date\": \"2026-06-11\",\n      \"count\": 2\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/ai/overview-analysis",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ai",
+                "overview-analysis"
+              ]
+            },
+            "description": "Used directly by the overview page after task stats load. Response is expected to drive AI score, insights, and advice cards."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Reminders - Integration Relevant",
+      "description": "Not prominently surfaced in the inspected Next.js routes, but still part of the system contract for task scheduling and reminder workflows.",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{token}}",
+            "type": "string"
+          }
+        ]
+      },
+      "item": [
+        {
+          "name": "List Reminders",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/reminders?upcoming=true&sent=false",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "reminders"
+              ],
+              "query": [
+                {
+                  "key": "upcoming",
+                  "value": "true"
+                },
+                {
+                  "key": "sent",
+                  "value": "false"
+                }
+              ]
+            },
+            "description": "Useful for validating reminder data available to frontend-facing scheduling features."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Reminder",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"taskId\": \"{{taskId}}\",\n  \"remindAt\": \"2026-06-13T13:00:00.000Z\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/reminders",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "reminders"
+              ]
+            },
+            "description": "Reminder creation endpoint derived from swagger schema."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Due Reminders",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/reminders/due",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "reminders",
+                "due"
+              ]
+            },
+            "description": "Relevant for scheduler and reminder verification."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Reminder By Id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/reminders/{{reminderId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "reminders",
+                "{{reminderId}}"
+              ]
+            },
+            "description": "Reminder detail endpoint."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Reminder",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"remindAt\": \"2026-06-13T12:30:00.000Z\",\n  \"sent\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/reminders/{{reminderId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "reminders",
+                "{{reminderId}}"
+              ]
+            },
+            "description": "Reminder update endpoint."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Reminder",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/reminders/{{reminderId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "reminders",
+                "{{reminderId}}"
+              ]
+            },
+            "description": "Reminder delete endpoint."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Calendars - System Integration",
+      "description": "Calendar endpoints are important for the system and referenced by frontend constants/docs, even though current inspected UI does not exercise all of them directly.",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{token}}",
+            "type": "string"
+          }
+        ]
+      },
+      "item": [
+        {
+          "name": "List Calendars",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/calendars",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "calendars"
+              ]
+            },
+            "description": "Authoritative backend calendar list endpoint. Note that some frontend constants still reference `/api/calendar`, but swagger and active backend use `/api/calendars`."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Calendar",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"calendarId\": \"primary\",\n  \"name\": \"Kalender Kerja\",\n  \"description\": \"Sinkronisasi jadwal kantor\",\n  \"type\": \"personal\",\n  \"color\": \"#0ea5e9\",\n  \"isDefault\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/calendars",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "calendars"
+              ]
+            },
+            "description": "Calendar creation endpoint."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Default Calendar",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/calendars/default",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "calendars",
+                "default"
+              ]
+            },
+            "description": "Useful for default calendar binding in scheduling features."
+          },
+          "response": []
+        },
+        {
+          "name": "Sync Calendar Data",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"calendarId\": \"primary\",\n  \"taskIds\": [\"cm_task_123\", \"cm_task_456\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/calendars/sync",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "calendars",
+                "sync"
+              ]
+            },
+            "description": "Sync endpoint for pushing selected tasks into calendar integration workflows."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Calendar By Id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/calendars/{{calendarId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "calendars",
+                "{{calendarId}}"
+              ]
+            },
+            "description": "Calendar detail endpoint."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Calendar",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Kalender Meeting\",\n  \"description\": \"Kalender khusus meeting\",\n  \"type\": \"work\",\n  \"color\": \"#22c55e\",\n  \"isDefault\": false,\n  \"isSynced\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/calendars/{{calendarId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "calendars",
+                "{{calendarId}}"
+              ]
+            },
+            "description": "Calendar update endpoint."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Calendar",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/calendars/{{calendarId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "calendars",
+                "{{calendarId}}"
+              ]
+            },
+            "description": "Calendar delete endpoint."
+          },
+          "response": []
+        },
+        {
+          "name": "Refresh Calendar Manually",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/calendars/{{calendarId}}/refresh",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "calendars",
+                "{{calendarId}}",
+                "refresh"
+              ]
+            },
+            "description": "Manual refresh operation documented in swagger and important for sync diagnostics."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "WhatsApp - Internal Integration",
+      "description": "Not a primary public frontend API, but relevant to the protected `connectwhatsapp` feature and overall system integration documentation.",
+      "item": [
+        {
+          "name": "Internal WhatsApp Inbound Webhook",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"source\": \"whatsapp\",\n  \"service\": \"internal-bot\",\n  \"command\": \"task tambah meeting besok jam 10 malam #urgent\",\n  \"rawMessage\": \"task tambah meeting besok jam 10 malam #urgent\",\n  \"user\": {\n    \"id\": \"wa-user-1\",\n    \"name\": \"Bayu\",\n    \"phone\": \"6281234567890\"\n  },\n  \"message\": {\n    \"text\": \"task tambah meeting besok jam 10 malam #urgent\"\n  },\n  \"context\": {}\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/internal/wa",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "internal",
+                "wa"
+              ]
+            },
+            "description": "Internal service integration endpoint. Included because the Next.js app exposes WhatsApp connection guidance and this endpoint is part of the end-to-end task creation ecosystem."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
