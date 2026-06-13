@@ -17,7 +17,8 @@ Endpoint [`POST /internal/wa/inbound`](../../backend/src/app.ts:225) digunakan u
 - menjadikan nomor WhatsApp sebagai identitas penghubung ke `user_id` Task Planner,
 - menjadi gateway untuk intent AI WhatsApp seperti tambah task, edit, done, overview, dan list task,
 - mengirim pesan balasan WhatsApp sesuai kondisi sukses/gagal,
-- mengembalikan payload normalized untuk logging atau integrasi service lain.
+- mengembalikan payload normalized untuk logging atau integrasi service lain,
+- mengembalikan message sinkron yang sama dengan balasan WhatsApp pada response HTTP sukses.
 
 ## Lokasi Implementasi
 
@@ -313,13 +314,26 @@ Sumber pesan ada di [`sendWhatsappRegistrationSuccess()`](../../backend/src/app.
         "updatedAt": "2026-05-19T04:00:00.000Z"
       }
     },
+    "reply": {
+      "message": "Halo Bayu Farid! Nomor WhatsApp Anda sudah berhasil terhubung ke Smart Task Planner by Dastrevas AI.\n\nMulai sekarang Anda bisa kirim perintah dengan awalan *task* untuk mengelola tugas langsung dari WhatsApp.\n\nContoh cepat:\n- task tambah meeting besok jam 10 malam #urgent\n- task tanggal 10 ada meeting jam 9 malam di apartement #kerjaan\n\nAI kami dari dastrevas.com akan membantu membaca pesan Anda dan mengubahnya menjadi task dengan lebih akurat.\n\nBerikut bantuan command yang bisa Anda gunakan:\nBantuan command Smart Task Planner via WhatsApp:\n- daftar akun WA: user_id daftar\n- lihat bantuan: task bantuan\n- contoh tambah task: task tambah meeting besok jam 10 malam #urgent\n- contoh tambah task lain: task tanggal 10 ada meeting jam 9 malam di apartement #kerjaan\n- daftar web: https://taskplanner.dastrevas.com/auth/signup?callbackUrl=%2Fdashboard\n- lihat task aktif: task lihat jadwal\n- lihat task besok: task lihat jadwal besok\n- selesaikan task: task selesai meeting client\n- overview: task overview",
+      "type": "registration-success",
+      "channel": "double-response",
+      "source": "app-sync-response"
+    },
+    "outbound": {
+      "attempted": true,
+      "sent": true,
+      "provider": "whatsapp-external",
+      "number": "6281234567890"
+    },
     "registrationNotification": {
       "sent": true,
       "number": "6281234567890",
-      "type": "registration-success"
+      "type": "registration-success",
+      "message": "Halo Bayu Farid! Nomor WhatsApp Anda sudah berhasil terhubung ke Smart Task Planner by Dastrevas AI.\n\nMulai sekarang Anda bisa kirim perintah dengan awalan *task* untuk mengelola tugas langsung dari WhatsApp.\n\nContoh cepat:\n- task tambah meeting besok jam 10 malam #urgent\n- task tanggal 10 ada meeting jam 9 malam di apartement #kerjaan\n\nAI kami dari dastrevas.com akan membantu membaca pesan Anda dan mengubahnya menjadi task dengan lebih akurat.\n\nBerikut bantuan command yang bisa Anda gunakan:\nBantuan command Smart Task Planner via WhatsApp:\n- daftar akun WA: user_id daftar\n- lihat bantuan: task bantuan\n- contoh tambah task: task tambah meeting besok jam 10 malam #urgent\n- contoh tambah task lain: task tanggal 10 ada meeting jam 9 malam di apartement #kerjaan\n- daftar web: https://taskplanner.dastrevas.com/auth/signup?callbackUrl=%2Fdashboard\n- lihat task aktif: task lihat jadwal\n- lihat task besok: task lihat jadwal besok\n- selesaikan task: task selesai meeting client\n- overview: task overview"
     }
   },
-  "message": "WhatsApp registration captured and saved"
+  "message": "Halo Bayu Farid! Nomor WhatsApp Anda sudah berhasil terhubung ke Smart Task Planner by Dastrevas AI.\n\nMulai sekarang Anda bisa kirim perintah dengan awalan *task* untuk mengelola tugas langsung dari WhatsApp.\n\nContoh cepat:\n- task tambah meeting besok jam 10 malam #urgent\n- task tanggal 10 ada meeting jam 9 malam di apartement #kerjaan\n\nAI kami dari dastrevas.com akan membantu membaca pesan Anda dan mengubahnya menjadi task dengan lebih akurat.\n\nBerikut bantuan command yang bisa Anda gunakan:\nBantuan command Smart Task Planner via WhatsApp:\n- daftar akun WA: user_id daftar\n- lihat bantuan: task bantuan\n- contoh tambah task: task tambah meeting besok jam 10 malam #urgent\n- contoh tambah task lain: task tanggal 10 ada meeting jam 9 malam di apartement #kerjaan\n- daftar web: https://taskplanner.dastrevas.com/auth/signup?callbackUrl=%2Fdashboard\n- lihat task aktif: task lihat jadwal\n- lihat task besok: task lihat jadwal besok\n- selesaikan task: task selesai meeting client\n- overview: task overview"
 }
 ```
 
@@ -367,7 +381,7 @@ Endpoint tetap mengembalikan HTTP `201` dengan payload sukses terstruktur, namun
       "message": "user id tidak terdaftar pada Task Planner silahkan daftar dengan mengunjungi https://taskplanner.dastrevas.com/auth/signup?callbackUrl=%2Fdashboard"
     }
   },
-  "message": "WhatsApp registration captured and saved"
+  "message": "user id tidak terdaftar pada Task Planner silahkan daftar dengan mengunjungi https://taskplanner.dastrevas.com/auth/signup?callbackUrl=%2Fdashboard"
 }
 ```
 
@@ -420,7 +434,7 @@ Endpoint tetap mengembalikan HTTP `201`.
       "message": "user untuk clx123abc atas nama Bayu Farid sudah terdaftar"
     }
   },
-  "message": "WhatsApp registration captured and saved"
+  "message": "user untuk clx123abc atas nama Bayu Farid sudah terdaftar"
 }
 ```
 
@@ -938,15 +952,21 @@ Jika command **bukan** format `user_id daftar`, maka endpoint saat ini akan:
 - mengirim balasan ke endpoint WhatsApp reply,
 - mengembalikan payload normalized dengan `intent`, `operation`, dan `whatsappReply`.
 
-Message HTTP sukses sekarang menggunakan text:
+Message HTTP sukses sekarang menggunakan isi balasan yang sama dengan pesan WhatsApp outbound.
+
+Contoh untuk create task:
 
 ```text
-WhatsApp inbound command processed
+✅ Task berhasil dibuat untuk Bayu:
+📝 Meeting dengan tim produk
+🕒 13 Jun 2026, 21.00
+⚡ HIGH
+📌 PENDING
 ```
 
 ## Struktur Response Normalized
 
-Semua request sukses menggunakan format [`sendSuccess()`](../../backend/src/lib/response.ts).
+Semua request sukses menggunakan format [`sendSuccess()`](../../backend/src/lib/response.ts), tetapi top-level `message` sekarang diisi dengan balasan sinkron final untuk caller.
 
 ### Top-level response
 
@@ -956,28 +976,48 @@ Semua request sukses menggunakan format [`sendSuccess()`](../../backend/src/lib/
   "data": {
     "source": "whatsapp",
     "service": "internal-wa",
-    "command": "clx123abc daftar",
-    "rawMessage": "clx123abc daftar",
-    "registrationCommand": true,
-    "taskPlannerUserId": "clx123abc",
+    "command": "task tambah meeting besok jam 10 malam",
+    "rawMessage": "task tambah meeting besok jam 10 malam",
+    "registrationCommand": false,
+    "taskPlannerUserId": null,
     "user": {},
     "message": {},
     "context": {},
     "receivedAt": "2026-05-19T04:00:00.000Z",
-    "registration": {},
-    "registrationNotification": {}
+    "reply": {
+      "message": "✅ Task berhasil dibuat untuk Bayu:\n📝 Meeting...",
+      "type": "create_task",
+      "channel": "double-response",
+      "source": "app-sync-response"
+    },
+    "outbound": {
+      "attempted": true,
+      "sent": true,
+      "provider": "whatsapp-external",
+      "number": "6281234567890"
+    },
+    "registration": null,
+    "registrationNotification": null,
+    "intent": "CREATE_TASK",
+    "operation": {},
+    "whatsappReply": {}
   },
-  "message": "WhatsApp registration captured and saved"
+  "message": "✅ Task berhasil dibuat untuk Bayu:\n📝 Meeting..."
 }
 ```
 
 ### Arti field penting
 
+- `message`: canonical synchronous reply untuk caller, isinya sama dengan balasan WhatsApp final
 - `registrationCommand`: apakah command cocok flow `user_id daftar`
 - `taskPlannerUserId`: hasil parsing token pertama command
+- `reply.message`: mirror dari top-level `message`
+- `reply.type`: tipe balasan seperti `create_task`, `registration-success`, `number-not-registered`
+- `outbound.attempted`: apakah app mencoba trigger outbound ke provider WhatsApp external
+- `outbound.sent`: apakah trigger outbound berhasil
 - `intent`: hasil deteksi intent internal WhatsApp
 - `operation`: hasil eksekusi internal untuk create/list/done/overview/unknown
-- `whatsappReply.sent`: apakah pengiriman WhatsApp balasan berhasil
+- `whatsappReply.sent`: apakah pengiriman WhatsApp balasan non-registrasi berhasil
 - `registration.linked`: apakah nomor berhasil dihubungkan ke user
 - `registration.reason`: alasan gagal link jika ada
 - `registrationNotification.sent`: apakah pengiriman WhatsApp balasan registrasi berhasil

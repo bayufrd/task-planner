@@ -98,8 +98,8 @@ const buildWhatsappHelpMessage = (isRegistered: boolean): string => {
   ].join('\n');
 };
 
-const sendWhatsappRegistrationSuccess = async (number: string, name: string): Promise<void> => {
-  const successMessage = [
+const buildWhatsappRegistrationSuccessMessage = (name: string): string => {
+  return [
     `Halo ${name}! Nomor WhatsApp Anda sudah berhasil terhubung ke Smart Task Planner by Dastrevas AI.`,
     '',
     'Mulai sekarang Anda bisa kirim perintah dengan awalan *task* untuk mengelola tugas langsung dari WhatsApp.',
@@ -113,8 +113,12 @@ const sendWhatsappRegistrationSuccess = async (number: string, name: string): Pr
     'Berikut bantuan command yang bisa Anda gunakan:',
     buildWhatsappHelpMessage(true),
   ].join('\n');
+};
 
+const sendWhatsappRegistrationSuccess = async (number: string, name: string): Promise<string> => {
+  const successMessage = buildWhatsappRegistrationSuccessMessage(name);
   await sendWhatsappMessage(number, successMessage);
+  return successMessage;
 };
 
 const formatTaskLine = (task: {
@@ -525,7 +529,7 @@ const handleWhatsappInbound = async (req: Request, res: Response): Promise<void>
   });
 
   let registration = null;
-  let registrationNotification = null;
+  let registrationNotification: null | { sent: boolean; number: string; type: string; message?: string } = null;
   let whatsappReply: null | { sent: boolean; number: string; message: string; type: string } = null;
   let operation: Record<string, unknown> | null = null;
 
@@ -662,6 +666,10 @@ const handleWhatsappInbound = async (req: Request, res: Response): Promise<void>
         user: updatedUser,
       };
 
+      const registrationSuccessMessage = buildWhatsappRegistrationSuccessMessage(
+        updatedUser.name || req.body?.user?.name || 'User'
+      );
+
       try {
         await sendWhatsappRegistrationSuccess(
           safeWhatsappNumber,
@@ -672,6 +680,7 @@ const handleWhatsappInbound = async (req: Request, res: Response): Promise<void>
           sent: true,
           number: safeWhatsappNumber,
           type: 'registration-success',
+          message: registrationSuccessMessage,
         };
       } catch (error) {
         console.error('[WA Registration] Failed to send confirmation message:', error);
@@ -679,6 +688,7 @@ const handleWhatsappInbound = async (req: Request, res: Response): Promise<void>
           sent: false,
           number: safeWhatsappNumber,
           type: 'registration-success',
+          message: registrationSuccessMessage,
         };
       }
     }
@@ -987,6 +997,12 @@ const handleWhatsappInbound = async (req: Request, res: Response): Promise<void>
     }
   }
 
+  const finalMessage = whatsappReply?.message || registrationNotification?.message || null;
+  const finalReplyType = whatsappReply?.type || registrationNotification?.type || null;
+  const outboundAttempted = Boolean(whatsappReply || registrationNotification);
+  const outboundSent = whatsappReply?.sent ?? registrationNotification?.sent ?? false;
+  const outboundNumber = whatsappReply?.number || registrationNotification?.number || null;
+
   const normalizedPayload = {
     source,
     service,
@@ -1013,6 +1029,20 @@ const handleWhatsappInbound = async (req: Request, res: Response): Promise<void>
       senderIsAdmin: Boolean(req.body?.context?.senderIsAdmin),
     },
     receivedAt: new Date().toISOString(),
+    reply: finalMessage
+      ? {
+          message: finalMessage,
+          type: finalReplyType,
+          channel: 'double-response',
+          source: 'app-sync-response',
+        }
+      : null,
+    outbound: {
+      attempted: outboundAttempted,
+      sent: outboundSent,
+      provider: 'whatsapp-external',
+      number: outboundNumber,
+    },
     registration,
     registrationNotification,
     intent,
@@ -1032,7 +1062,7 @@ const handleWhatsappInbound = async (req: Request, res: Response): Promise<void>
   sendSuccess(
     res,
     normalizedPayload,
-    registrationCommand ? 'WhatsApp registration captured and saved' : 'WhatsApp inbound command processed',
+    finalMessage || (registrationCommand ? 'WhatsApp registration captured and saved' : 'WhatsApp inbound command processed'),
     201
   );
 };
