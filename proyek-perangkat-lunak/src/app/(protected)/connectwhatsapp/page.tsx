@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 import { useSession } from 'next-auth/react'
@@ -85,9 +86,12 @@ export default function ConnectWhatsappPage() {
                   Scan QR ini dari perangkat lain untuk langsung membuka chat WhatsApp dengan format pesan yang sudah terisi.
                 </p>
                 <div className="mt-4 inline-flex rounded-2xl bg-white p-3 shadow-sm ring-1 ring-gray-200 dark:ring-gray-800">
-                  <img
+                  <Image
                     src={qrCodeUrl}
                     alt="WhatsApp QR Code"
+                    width={240}
+                    height={240}
+                    unoptimized
                     className="h-52 w-52 rounded-xl sm:h-60 sm:w-60"
                   />
                 </div>

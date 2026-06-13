@@ -114,42 +114,6 @@ const resolveWhatsappNumber = (req: Request) => {
   };
 };
 
-const sendWhatsappMessage = async (number: string, message: string): Promise<void> => {
-  if (!env.WHATSAPP_BOT_URL) {
-    console.log('[WA Outbound] Skipped because WHATSAPP_BOT_URL is empty');
-    return;
-  }
-
-  console.log('[WA Outbound] Sending message', {
-    number,
-    preview: message.slice(0, 200),
-    endpoint: `${env.WHATSAPP_BOT_URL}/api/whatsapp/send-personal`,
-  });
-
-  const response = await fetch(`${env.WHATSAPP_BOT_URL}/api/whatsapp/send-personal`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${env.TOKEN_WHATSAPP}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      number,
-      message,
-    }),
-  });
-
-  console.log('[WA Outbound] Response received', {
-    number,
-    status: response.status,
-    statusText: response.statusText,
-    ok: response.ok,
-  });
-
-  if (!response.ok) {
-    throw new Error(`Failed to send WhatsApp message: ${response.status} ${response.statusText}`);
-  }
-};
-
 const buildWhatsappHelpMessage = (isRegistered: boolean): string => {
   const publicHelp = [
     'Bantuan command Smart Task Planner via WhatsApp:',

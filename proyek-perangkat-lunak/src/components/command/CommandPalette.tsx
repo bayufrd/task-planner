@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useTaskStore } from '@/lib/utils/store'
 import { useLanguage } from '@/components/providers/LanguageProvider'
 import { useNotification } from '@/lib/hooks/useNotification'
@@ -41,8 +41,26 @@ export default function CommandPalette({ isOpen, onClose, onOpen }: CommandPalet
     }
   }, [isOpen])
 
+  // Navigate through command history with arrow keys
+  const navigateHistory = useCallback((direction: 'up' | 'down') => {
+    if (history.length === 0) return
+
+    let newIndex = historyIndex
+    if (direction === 'up') {
+      newIndex = Math.min(newIndex + 1, history.length - 1)
+    } else {
+      newIndex = Math.max(newIndex - 1, -1)
+    }
+
+    setHistoryIndex(newIndex)
+    if (newIndex === -1) {
+      setInput('')
+    } else {
+      setInput(history[history.length - 1 - newIndex])
+    }
+  }, [history, historyIndex])
+
   // Handle keyboard shortcuts
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
@@ -66,26 +84,7 @@ export default function CommandPalette({ isOpen, onClose, onOpen }: CommandPalet
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [isOpen, onClose, onOpen, history, historyIndex])
-
-  // Navigate through command history with arrow keys
-  const navigateHistory = (direction: 'up' | 'down') => {
-    if (history.length === 0) return
-
-    let newIndex = historyIndex
-    if (direction === 'up') {
-      newIndex = Math.min(newIndex + 1, history.length - 1)
-    } else {
-      newIndex = Math.max(newIndex - 1, -1)
-    }
-
-    setHistoryIndex(newIndex)
-    if (newIndex === -1) {
-      setInput('')
-    } else {
-      setInput(history[history.length - 1 - newIndex])
-    }
-  }
+  }, [isOpen, navigateHistory, onClose, onOpen])
 
   // Save command to history
   const addToHistory = (command: string) => {

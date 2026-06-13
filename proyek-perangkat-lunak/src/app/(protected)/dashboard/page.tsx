@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Image from 'next/image'
 import { useSession } from 'next-auth/react'
 import { useTaskStore } from '@/lib/utils/store'
@@ -31,7 +31,7 @@ export default function Dashboard() {
   const [stats, setStats] = useState<TaskStats>({ pending: 0, done: 0, skipped: 0 })
 
   // Load task stats from backend
-  const loadStats = async () => {
+  const loadStats = useCallback(async () => {
     const token = localStorage.getItem('auth-token')
     
     // We need the Express token to call the backend
@@ -57,9 +57,9 @@ export default function Dashboard() {
     } catch (error) {
       console.error('[Dashboard] Error loading stats:', error)
     }
-  }
+  }, [])
 
-  const loadTasks = async () => {
+  const loadTasks = useCallback(async () => {
     // Support both NextAuth (Google OAuth) and Express token login
     const token = localStorage.getItem('auth-token')
 
@@ -132,7 +132,7 @@ export default function Dashboard() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [setTasks, status])
 
   // Load tasks on mount — works for both NextAuth and Express token login
   useEffect(() => {
@@ -140,7 +140,7 @@ export default function Dashboard() {
       loadTasks()
       loadStats()
     }
-  }, [session?.user?.id])
+  }, [loadStats, loadTasks, session?.user?.id])
 
   // Reload tasks when token changes (e.g., after Express login)
   useEffect(() => {
@@ -149,7 +149,7 @@ export default function Dashboard() {
       loadTasks()
       loadStats()
     }
-  }, [])
+  }, [loadStats, loadTasks])
 
   // Listen for cross-component task change events (create/update/delete/skip)
   useEffect(() => {
@@ -160,7 +160,7 @@ export default function Dashboard() {
 
     window.addEventListener('tasks:changed', handleTasksChanged)
     return () => window.removeEventListener('tasks:changed', handleTasksChanged)
-  }, [])
+  }, [loadStats, loadTasks])
 
   // Global keyboard listener for Ctrl+K
   useEffect(() => {
