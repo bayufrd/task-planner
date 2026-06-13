@@ -137,8 +137,61 @@ const buildWhatsappHelpMessage = (isRegistered: boolean): string => {
     '- lihat task aktif: task lihat jadwal',
     '- lihat task besok: task lihat jadwal besok',
     '- selesaikan task: task selesai meeting client',
+    '- edit task: task ubah meeting besok jam 9 jadi jam 10',
+    '- hapus task: task hapus meeting client',
     '- overview: task overview',
   ].join('\n');
+};
+
+const buildWhatsappEditGuideMessage = () =>
+  [
+    '✏️ Format edit task:',
+    '- task ubah meeting besok jam 9 jadi jam 10',
+    '- task edit laporan minggu ini jadi prioritas high',
+    '- task reschedule presentasi besok ke lusa jam 3 sore',
+    '',
+    'Tips:',
+    '- sebutkan nama task yang ingin diubah',
+    '- tulis perubahan dengan jelas: jam, tanggal, prioritas, atau judul baru',
+  ].join('\n');
+
+const buildWhatsappDeleteGuideMessage = () =>
+  [
+    '🗑️ Format hapus task:',
+    '- task hapus meeting client',
+    '- task delete laporan besok jam 10',
+    '- task remove presentasi senin pagi',
+    '',
+    'Tips:',
+    '- sebutkan nama task sejelas mungkin',
+    '- tambahkan petunjuk tanggal/jam bila ada task yang mirip',
+  ].join('\n');
+
+const buildWhatsappListGuideMessage = () =>
+  [
+    '📋 Format melihat task:',
+    '- task daftar',
+    '- task jadwal besok',
+    '- task agenda hari ini',
+    '- task lihat tanggal 20',
+  ].join('\n');
+
+const buildIntentGuideMessage = (intent: WhatsappIntent, isRegistered: boolean) => {
+  if (intent === 'UPDATE_TASK') return buildWhatsappEditGuideMessage();
+  if (intent === 'DELETE_TASK') return buildWhatsappDeleteGuideMessage();
+  if (intent === 'LIST_TASKS' || intent === 'LIST_BY_DATE') return buildWhatsappListGuideMessage();
+  return buildWhatsappHelpMessage(isRegistered);
+};
+
+const isHelpLikeQuestion = (command: string) => {
+  const normalized = normalizeCommandText(command).toLowerCase();
+  return /^(bantuan|help|menu|command|commands)$/.test(normalized)
+    || /(cara|gimana|bagaimana|format|contoh|petunjuk|panduan).*(edit|ubah|update|reschedule)/.test(normalized)
+    || /(edit|ubah|update|reschedule).*(cara|gimana|bagaimana|format|contoh|petunjuk|panduan)/.test(normalized)
+    || /(cara|gimana|bagaimana|format|contoh|petunjuk|panduan).*(hapus|delete|remove)/.test(normalized)
+    || /(hapus|delete|remove).*(cara|gimana|bagaimana|format|contoh|petunjuk|panduan)/.test(normalized)
+    || /(cara|gimana|bagaimana|format|contoh|petunjuk|panduan).*(jadwal|daftar|list|agenda)/.test(normalized)
+    || /(jadwal|daftar|list|agenda).*(cara|gimana|bagaimana|format|contoh|petunjuk|panduan)/.test(normalized);
 };
 
 const buildWhatsappRegistrationSuccessMessage = (name: string): string => {
@@ -234,6 +287,8 @@ const taskMatchesDateTokens = (task: { deadline: Date }, tokens: string[]): bool
   const year = deadline.getFullYear();
   const monthLong = deadline.toLocaleString('id-ID', { month: 'long' }).toLowerCase();
   const monthShort = deadline.toLocaleString('id-ID', { month: 'short' }).toLowerCase().replace('.', '');
+  const hour = deadline.getHours();
+  const minute = deadline.getMinutes();
   const baseToday = new Date();
   baseToday.setHours(0, 0, 0, 0);
   const taskDay = new Date(deadline);
@@ -246,6 +301,20 @@ const taskMatchesDateTokens = (task: { deadline: Date }, tokens: string[]): bool
     if (token === 'lusa') return diffDays === 2;
     if (/^tanggal\s+\d{1,2}$/i.test(token)) {
       return day === Number(token.replace(/\D/g, ''));
+    }
+    if (/^(jam|pukul)\s+/i.test(token)) {
+      const match = token.match(/(?:jam|pukul)\s+(\d{1,2})(?:[.:](\d{2}))?(?:\s*(pagi|siang|sore|malam))?/i);
+      if (!match) return false;
+
+      let parsedHour = Number(match[1]);
+      const parsedMinute = match[2] ? Number(match[2]) : 0;
+      const meridiem = match[3]?.toLowerCase();
+
+      if (meridiem === 'siang' && parsedHour < 11) parsedHour += 12;
+      if ((meridiem === 'sore' || meridiem === 'malam') && parsedHour < 12) parsedHour += 12;
+      if (meridiem === 'pagi' && parsedHour === 12) parsedHour = 0;
+
+      return hour === parsedHour && minute === parsedMinute;
     }
 
     const compact = token.replace(/\s+/g, ' ').trim();
@@ -285,7 +354,7 @@ const detectWhatsappIntent = (command: string): WhatsappIntent => {
   const normalizedWithoutPrefix = normalized.replace(/^task\s+/i, '').trim();
 
   if (/^(\S+)\s+daftar$/i.test(command)) return 'REGISTER';
-  if (/^(bantuan|help|menu|command|commands)$/i.test(normalizedWithoutPrefix)) return 'HELP';
+  if (isHelpLikeQuestion(normalizedWithoutPrefix)) return 'HELP';
   if (/^(overview|ringkasan|summary)$/i.test(normalizedWithoutPrefix)) return 'OVERVIEW';
   if (/^(lihat|list|daftar|jadwal|agenda).*(tanggal|besok|lusa|hari ini|today)/i.test(normalizedWithoutPrefix)) return 'LIST_BY_DATE';
   if (/^(lihat|list|daftar|jadwal|agenda)/i.test(normalizedWithoutPrefix)) return 'LIST_TASKS';
@@ -778,6 +847,8 @@ const handleWhatsappInbound = async (req: Request, res: Response): Promise<void>
         confidence: 0.4,
         replyStyle: 'NORMAL',
       };
+
+      const explicitHelpRequest = isHelpLikeQuestion(command);
       const actions = resolvedPlan?.actions?.length ? resolvedPlan.actions : [fallbackAction];
       const replies: string[] = [];
       const operationResults: Array<Record<string, unknown>> = [];
@@ -886,41 +957,52 @@ const handleWhatsappInbound = async (req: Request, res: Response): Promise<void>
             };
           }
         } else if (action === 'UPDATE_TASK') {
-          const match = await findBestTaskMatch(linkedUser.id, resolvedAction.targetText, resolvedAction.dateHint);
-          const updateInput = sanitizeTaskUpdateInput(resolvedAction.updates);
-
-          if (!match.bestMatch) {
-            actionReply = buildTaskNotFoundMessage('diedit', resolvedAction.targetText, resolvedAction.dateHint);
+          if (explicitHelpRequest) {
+            actionReply = buildWhatsappEditGuideMessage();
             actionOperation = {
-              type: 'UPDATE_TASK',
-              success: false,
-              userId: linkedUser.id,
-              resolvedAction,
-              reason: 'TASK_NOT_FOUND',
-            };
-          } else if (Object.keys(updateInput).length === 0) {
-            actionReply = '⚠️ AI belum menemukan perubahan task yang jelas. Coba tulis misalnya: ubah meeting besok jam 9 jadi jam 10 pagi.';
-            actionOperation = {
-              type: 'UPDATE_TASK',
-              success: false,
-              userId: linkedUser.id,
-              resolvedAction,
-              reason: 'EMPTY_UPDATE',
-            };
-          } else {
-            const updatedTask = await taskService.updateTask(linkedUser.id, match.bestMatch.id, updateInput as any);
-            actionReply = [
-              `✏️ Task berhasil diperbarui${linkedUser.name ? ` untuk ${linkedUser.name}` : ''}:`,
-              formatTaskSuccessLine(updatedTask),
-            ].join('\n');
-            actionOperation = {
-              type: 'UPDATE_TASK',
+              type: 'HELP',
               success: true,
               userId: linkedUser.id,
               resolvedAction,
-              task: updatedTask,
-              updates: updateInput,
+              reason: 'EDIT_GUIDE',
             };
+          } else {
+            const match = await findBestTaskMatch(linkedUser.id, resolvedAction.targetText, resolvedAction.dateHint);
+            const updateInput = sanitizeTaskUpdateInput(resolvedAction.updates);
+
+            if (!match.bestMatch) {
+              actionReply = buildTaskNotFoundMessage('diedit', resolvedAction.targetText, resolvedAction.dateHint);
+              actionOperation = {
+                type: 'UPDATE_TASK',
+                success: false,
+                userId: linkedUser.id,
+                resolvedAction,
+                reason: 'TASK_NOT_FOUND',
+              };
+            } else if (Object.keys(updateInput).length === 0) {
+              actionReply = buildWhatsappEditGuideMessage();
+              actionOperation = {
+                type: 'UPDATE_TASK',
+                success: false,
+                userId: linkedUser.id,
+                resolvedAction,
+                reason: 'EMPTY_UPDATE',
+              };
+            } else {
+              const updatedTask = await taskService.updateTask(linkedUser.id, match.bestMatch.id, updateInput as any);
+              actionReply = [
+                `✏️ Task berhasil diperbarui${linkedUser.name ? ` untuk ${linkedUser.name}` : ''}:`,
+                formatTaskSuccessLine(updatedTask),
+              ].join('\n');
+              actionOperation = {
+                type: 'UPDATE_TASK',
+                success: true,
+                userId: linkedUser.id,
+                resolvedAction,
+                task: updatedTask,
+                updates: updateInput,
+              };
+            }
           }
         } else if (action === 'CREATE_TASK') {
           const taskCommand = normalizeCommandText(command);
@@ -952,13 +1034,13 @@ const handleWhatsappInbound = async (req: Request, res: Response): Promise<void>
             task: createdTask,
           };
         } else {
-          actionReply = buildWhatsappHelpMessage(true);
+          actionReply = buildIntentGuideMessage(intent, true);
           actionOperation = {
             type: action === 'HELP' ? 'HELP' : 'UNKNOWN',
             success: true,
             userId: linkedUser.id,
             resolvedAction,
-            reason: 'HELP_MENU',
+            reason: explicitHelpRequest ? 'HELP_QUERY' : 'HELP_MENU',
           };
         }
 
