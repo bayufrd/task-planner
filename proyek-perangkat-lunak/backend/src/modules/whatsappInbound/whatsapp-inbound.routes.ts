@@ -194,12 +194,6 @@ const buildWhatsappRegistrationSuccessMessage = (name: string): string => {
   ].join('\n');
 };
 
-const sendWhatsappRegistrationSuccess = async (number: string, name: string): Promise<string> => {
-  const successMessage = buildWhatsappRegistrationSuccessMessage(name);
-  await sendWhatsappMessage(number, successMessage);
-  return successMessage;
-};
-
 const formatTaskLine = (task: {
   title: string;
   deadline: Date;
