@@ -11,7 +11,7 @@
 
 ## KATA PENGANTAR
 
-Rasa syukur yang mendalam penulis panjatkan ke hadirat Tuhan Yang Maha Esa, karena atas limpahan rahmat dan penyertaan-Nya, laporan Tugas Besar dengan judul **Smart Task Planner** ini dapat rampung dengan baik. Penyusunan laporan ini ditujukan untuk memenuhi komponen penilaian Ujian Akhir Semester (UAS) untuk mata kuliah Pemrograman Basis Data di Program Studi Teknik Informatika.
+Rasa syukur yang mendalam penulis panjatkan ke hadirat Tuhan Yang Maha Esa, karena atas limpahan rahmat dan penyertaan-Nya, laporan Tugas Besar dengan judul **Smart Task Planner** ini dapat rampung dengan baik. Penyusunan laporan ini ditujukan untuk memenuhi komponen penilaian Ujian Akhir Semester (UAS) untuk mata kuliah pemrograman-basis-data di Program Studi Teknik Informatika.
 
 Selama proses pengerjaan proyek hingga laporan ini selesai, penulis banyak menerima bantuan, bimbingan, serta dorongan semangat dari berbagai pihak. Oleh sebab itu, dengan segala kerendahan hati penulis ingin menyampaikan apresiasi dan terima kasih yang tulus kepada:
 
@@ -38,7 +38,7 @@ Fokus utama laporan ini adalah implementasi aspek pemrograman basis data, melipu
 
 Hasil implementasi menunjukkan bahwa aplikasi telah memenuhi inti kebutuhan CRUD dan dokumentasi teknis dengan pendekatan basis data yang cukup jelas dan terukur. Query disusun secara eksplisit sehingga alur akses data mudah dianalisis, sementara validasi pada sisi controller dan service membantu mencegah data tidak valid masuk ke database. Meskipun demikian, beberapa kebutuhan seperti transaksi multi-operasi eksplisit, benchmark performa formal, dan penyesuaian penuh terhadap Oracle masih menjadi catatan pengembangan lanjutan.
 
-**Kata kunci:** MySQL, JDBC, Spring Boot, Vue.js, CRUD, JWT, Pemrograman Basis Data.
+**Kata kunci:** MySQL, JDBC, Spring Boot, Vue.js, CRUD, JWT, pemrograman-basis-data.
 
 ---
 
@@ -58,7 +58,7 @@ Rumusan masalah pada proyek ini adalah sebagai berikut:
 2. Bagaimana mengimplementasikan operasi CRUD yang aman menggunakan JDBC dan query SQL manual?
 3. Bagaimana menerapkan validasi input, verifikasi data seperti email terdaftar, dan penanganan error agar integritas data tetap terjaga?
 4. Bagaimana frontend dapat terintegrasi dengan backend melalui REST API untuk memanfaatkan data yang berasal dari database?
-5. Sejauh mana implementasi aplikasi ini telah memenuhi kebutuhan tugas besar Pemrograman Basis Data?
+5. Sejauh mana implementasi aplikasi ini telah memenuhi kebutuhan tugas besar pemrograman-basis-data?
 
 ### 1.3 Tujuan
 
@@ -89,7 +89,7 @@ Basis data relasional merupakan sistem penyimpanan data yang mengorganisasi data
 
 ### 2.2 JDBC dan Spring JDBC
 
-Java Database Connectivity (JDBC) adalah API standar Java untuk berkomunikasi dengan database. Dalam proyek ini, backend menggunakan pendekatan SQL manual melalui `JdbcTemplate`, sehingga pengembang dapat mengontrol langsung bentuk query yang dijalankan. Pendekatan ini sangat relevan untuk mata kuliah Pemrograman Basis Data karena mahasiswa dapat melihat dengan jelas query `SELECT`, `INSERT`, `UPDATE`, dan `DELETE` yang benar-benar dieksekusi.
+Java Database Connectivity (JDBC) adalah API standar Java untuk berkomunikasi dengan database. Dalam proyek ini, backend menggunakan pendekatan SQL manual melalui `JdbcTemplate`, sehingga pengembang dapat mengontrol langsung bentuk query yang dijalankan. Pendekatan ini sangat relevan untuk mata kuliah pemrograman-basis-data karena mahasiswa dapat melihat dengan jelas query `SELECT`, `INSERT`, `UPDATE`, dan `DELETE` yang benar-benar dieksekusi.
 
 ### 2.3 REST API
 
@@ -289,7 +289,7 @@ Catatan: DDL di atas merupakan rekonstruksi teknis dari model dan query yang dit
 
 Aplikasi terdiri atas backend Java Spring Boot dan frontend Vue.js. Backend bertanggung jawab penuh terhadap autentikasi, validasi bisnis, dan akses basis data. Frontend berperan sebagai client yang mengirim request dan menampilkan hasil data dari backend.
 
-Dari sisi mata kuliah Pemrograman Basis Data, bagian terpenting proyek ini adalah bahwa query ke database tidak disembunyikan oleh ORM penuh. Sebaliknya, query ditulis secara eksplisit pada repository, misalnya query pencarian user berdasarkan email, query insert task, query update status task, dan query agregasi statistik. Hal ini membuat proses pembelajaran terhadap SQL dan alur akses data menjadi lebih nyata.
+Dari sisi mata kuliah pemrograman-basis-data, bagian terpenting proyek ini adalah bahwa query ke database tidak disembunyikan oleh ORM penuh. Sebaliknya, query ditulis secara eksplisit pada repository, misalnya query pencarian user berdasarkan email, query insert task, query update status task, dan query agregasi statistik. Hal ini membuat proses pembelajaran terhadap SQL dan alur akses data menjadi lebih nyata.
 
 ### 4.2 Implementasi Koneksi Database
 
@@ -312,7 +312,7 @@ Pendekatan ini memiliki beberapa kelebihan:
 2. Konfigurasi bisa diubah antar lingkungan tanpa mengedit program.
 3. Tetap konsisten dengan konsep JDBC karena backend memanfaatkan driver MySQL secara langsung.
 
-Kelas konfigurasi [`DatabaseConfig`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/config/DatabaseConfig.java) hanya memetakan properti datasource agar dapat digunakan sebagai komponen konfigurasi aplikasi.
+Kelas konfigurasi [`DatabaseConfig`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/config/DatabaseConfig.java) hanya memetakan properti datasource agar dapat digunakan sebagai komponen konfigurasi aplikasi.
 
 ### 4.3 Lapisan Controller, Service, dan Repository
 
@@ -831,7 +831,7 @@ Tabel berikut merangkum kesesuaian implementasi terhadap dokumen tugas:
 
 ### 5.1 Kesimpulan
 
-Berdasarkan hasil implementasi dan analisis, aplikasi **Smart Task Planner** telah berhasil menunjukkan penerapan konsep penting dalam Pemrograman Basis Data. Sistem memanfaatkan MySQL sebagai basis data relasional, JDBC melalui `JdbcTemplate` sebagai mekanisme akses data, serta Java Spring Boot sebagai kerangka pengelolaan service dan API. Operasi CRUD terhadap data task dapat dijalankan dengan baik, lengkap dengan pengelompokan data per pengguna, validasi input, dan pengamanan dasar melalui prepared statement serta JWT.
+Berdasarkan hasil implementasi dan analisis, aplikasi **Smart Task Planner** telah berhasil menunjukkan penerapan konsep penting dalam pemrograman-basis-data. Sistem memanfaatkan MySQL sebagai basis data relasional, JDBC melalui `JdbcTemplate` sebagai mekanisme akses data, serta Java Spring Boot sebagai kerangka pengelolaan service dan API. Operasi CRUD terhadap data task dapat dijalankan dengan baik, lengkap dengan pengelompokan data per pengguna, validasi input, dan pengamanan dasar melalui prepared statement serta JWT.
 
 Dari sisi implementasi database programming, proyek ini cukup kuat karena query SQL ditulis secara eksplisit dan mudah ditelusuri. Contoh nyata meliputi verifikasi email terdaftar pada register, insert user dan account, insert task, update task, delete task, serta query agregasi untuk statistik harian dan mingguan. Integrasi frontend Vue.js juga mendukung pembuktian bahwa data pada antarmuka benar-benar berasal dari proses backend yang terhubung ke database.
 

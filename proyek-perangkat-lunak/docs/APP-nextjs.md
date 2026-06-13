@@ -2,7 +2,7 @@
 
 ## 1. Ringkasan
 
-Frontend pada proyek ini adalah aplikasi web berbasis [`Next.js`](../package.json) dan [`TypeScript`](../package.json) yang berada langsung di folder [`Proyek Perangkat Lunak`](../README.md), dengan source utama pada folder [`src`](../src). Aplikasi ini berperan sebagai antarmuka utama pengguna untuk:
+Frontend pada proyek ini adalah aplikasi web berbasis [`Next.js`](../package.json) dan [`TypeScript`](../package.json) yang berada langsung di folder [`proyek-perangkat-lunak`](../README.md), dengan source utama pada folder [`src`](../src). Aplikasi ini berperan sebagai antarmuka utama pengguna untuk:
 
 - landing page dan onboarding,
 - autentikasi email/password dan Google OAuth,

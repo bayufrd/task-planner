@@ -2,7 +2,7 @@
 
 **AI-powered universal task management system with intelligent priority scheduling**
 
-[🌐 Live Demo](https://taskplanner.dastrevas.com) | [📚 Documentation](./Proyek%20Perangkat%20Lunak/Pemrograman%20Fullstack/task-planner/docs) | [🚀 Deployment Guide](./Proyek%20Perangkat%20Lunak/Pemrograman%20Fullstack/task-planner/docs/DEPLOYMENT.md) | [📦 GitLab Repo](https://gitlab.com/pemrograman-fullstack-kelompok-4-undira/task-planner.git)
+[🌐 Live Demo](https://taskplanner.dastrevas.com) | [📚 Documentation](./proyek-perangkat-lunak/pemrograman-fullstack/task-planner/docs) | [🚀 Deployment Guide](./proyek-perangkat-lunak/pemrograman-fullstack/task-planner/docs/DEPLOYMENT.md) | [📦 GitLab Repo](https://gitlab.com/pemrograman-fullstack-kelompok-4-undira/task-planner.git)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Next.js](https://img.shields.io/badge/Next.js-14.2-black)](https://nextjs.org)
@@ -15,21 +15,21 @@
 
 **Dua cabang repository:**
 
-1. **Pemrograman Fullstack/** - Individual Assignments
+1. **pemrograman-fullstack/** - Individual Assignments
    - Repository untuk individual coursework
    - Setiap mahasiswa membuat assignments sendiri
    
-2. **Proyek Perangkat Lunak/** - Group Assignment (Tugas Besar)
+2. **proyek-perangkat-lunak/** - Group Assignment (Tugas Besar)
    - Smart Task Planner - Fullstack Project
-   - GitLab: [Pemrograman Fullstack Kelompok 4 UNDIRA](https://gitlab.com/pemrograman-fullstack-kelompok-4-undira/task-planner.git)
+   - GitLab: [pemrograman-fullstack Kelompok 4 UNDIRA](https://gitlab.com/pemrograman-fullstack-kelompok-4-undira/task-planner.git)
 
 ```
 📦 Repository Root
  │
- ├── 📁 [Pemrograman Fullstack/](https://github.com/bayufrd/task-planner/tree/master/Pemrograman%20Fullstack)
+ ├── 📁 [pemrograman-fullstack/](https://github.com/bayufrd/task-planner/tree/master/pemrograman-fullstack)
  │   └── Individual Assignments & Coursework
  │
- ├── 📁 [Proyek Perangkat Lunak/](https://github.com/bayufrd/task-planner/tree/master/Proyek%20Perangkat%20Lunak)
+ ├── 📁 [proyek-perangkat-lunak/](https://github.com/bayufrd/task-planner/tree/master/proyek-perangkat-lunak)
  │   └── Smart Task Planner - Group Project
  │
  └── 📄 README.md (this file)
@@ -42,8 +42,8 @@
 Smart Task Planner is a fullstack web application designed for students, freelancers, and professionals who need intelligent task management with automatic priority scheduling. Unlike traditional to-do apps, Smart Task Planner uses a sophisticated 4-factor algorithm to automatically rank your tasks based on urgency, importance, reminders, and estimated duration.
 
 **Project Type**: TUGAS BESAR KELOMPOK - Fullstack Software Engineering  
-**Location**: `Proyek Perangkat Lunak/Pemrograman Fullstack/task-planner/`  
-**Repository**: [GitLab - Pemrograman Fullstack Kelompok 4 UNDIRA](https://gitlab.com/pemrograman-fullstack-kelompok-4-undira/task-planner.git)
+**Location**: `proyek-perangkat-lunak/pemrograman-fullstack/task-planner/`  
+**Repository**: [GitLab - pemrograman-fullstack Kelompok 4 UNDIRA](https://gitlab.com/pemrograman-fullstack-kelompok-4-undira/task-planner.git)
 
 ---
 
@@ -54,7 +54,7 @@ Smart Task Planner is a fullstack web application designed for students, freelan
 Navigate to the task planner project:
 
 ```bash
-cd "Proyek Perangkat Lunak/Pemrograman Fullstack/task-planner"
+cd "proyek-perangkat-lunak/pemrograman-fullstack/task-planner"
 npm install
 npm run dev
 ```
@@ -66,7 +66,7 @@ Visit [http://localhost:3000](http://localhost:3000) to access the application.
 Navigate to your individual project folder:
 
 ```bash
-cd "Pemrograman Fullstack"
+cd "pemrograman-fullstack"
 ```
 
 ---
@@ -75,9 +75,9 @@ cd "Pemrograman Fullstack"
 
 All project documentation is located inside the project folder:
 
-- **README**: `Proyek Perangkat Lunak/Pemrograman Fullstack/task-planner/README.md`
-- **Setup Guide**: `Proyek Perangkat Lunak/Pemrograman Fullstack/task-planner/docs/`
-- **Deployment**: `Proyek Perangkat Lunak/Pemrograman Fullstack/task-planner/docs/DEPLOYMENT.md`
+- **README**: `proyek-perangkat-lunak/pemrograman-fullstack/task-planner/README.md`
+- **Setup Guide**: `proyek-perangkat-lunak/pemrograman-fullstack/task-planner/docs/`
+- **Deployment**: `proyek-perangkat-lunak/pemrograman-fullstack/task-planner/docs/DEPLOYMENT.md`
 
 ---
 
@@ -90,11 +90,11 @@ All project documentation is located inside the project folder:
 
 ## 📝 License
 
-MIT License - See `Proyek Perangkat Lunak/Pemrograman Fullstack/task-planner/LICENSE` for details
+MIT License - See `proyek-perangkat-lunak/pemrograman-fullstack/task-planner/LICENSE` for details
 
 ---
 
-*Last Updated: April 2026 | UNDIRA - Pemrograman Fullstack Course*
+*Last Updated: April 2026 | UNDIRA - pemrograman-fullstack Course*
 
 ### 📋 Intelligent Task Management
 - **Auto-Priority Ranking**: AI-powered algorithm scores tasks using 4 weighted factors (Urgency: 40%, Priority: 35%, Reminders: 15%, Duration: 10%)

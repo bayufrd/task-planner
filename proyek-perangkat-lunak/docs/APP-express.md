@@ -2,7 +2,7 @@
 
 ## 1. Ringkasan
 
-Backend pada proyek ini adalah backend terpisah berbasis [`Express`](../backend/package.json) dan [`TypeScript`](../backend/package.json) yang berada di folder [`Proyek Perangkat Lunak/backend`](../backend). Backend ini berfungsi sebagai pusat API untuk autentikasi, manajemen task, reminder, integrasi kalender, AI task parsing, serta integrasi WhatsApp internal.
+Backend pada proyek ini adalah backend terpisah berbasis [`Express`](../backend/package.json) dan [`TypeScript`](../backend/package.json) yang berada di folder [`proyek-perangkat-lunak/backend`](../backend). Backend ini berfungsi sebagai pusat API untuk autentikasi, manajemen task, reminder, integrasi kalender, AI task parsing, serta integrasi WhatsApp internal.
 
 Dari implementasi saat ini, backend **bukan** menggunakan Java/Spring dan **bukan** menggunakan JDBC sebagai data access utama. Data access yang dipakai adalah [`Prisma ORM`](../backend/src/lib/prisma.ts:1) di atas database [`MySQL`](../backend/prisma/schema.prisma:8).
 
@@ -318,7 +318,7 @@ Implementasi ini bersifat **internal service integration**, bukan public API fro
 
 Environment dibaca dari file backend lokal melalui [`dotenv.config({ path: __dirname + '/../../.env' })`](../backend/src/config/env.ts:4).
 
-Ini berarti backend mengharapkan file `.env` berada di folder [`Proyek Perangkat Lunak/backend`](../backend), bukan di root workspace.
+Ini berarti backend mengharapkan file `.env` berada di folder [`proyek-perangkat-lunak/backend`](../backend), bukan di root workspace.
 
 Environment penting:
 
@@ -463,7 +463,7 @@ Kelebihan:
 
 Kalau kebutuhan akademik atau mata kuliah mengharuskan JDBC, maka solusinya bukan memaksa JDBC ke backend Express, tetapi membuat **service Java terpisah**.
 
-Menariknya, di repository ini memang sudah ada project Java backend terpisah di [`Pemrograman Basis Data/TaskPlanner-Java-Backend`](../../Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend).
+Menariknya, di repository ini memang sudah ada project Java backend terpisah di [`pemrograman-basis-data/TaskPlanner-Java-Backend`](../../pemrograman-basis-data/TaskPlanner-Java-Backend).
 
 Itu bisa menjadi basis bila ingin:
 
@@ -558,7 +558,7 @@ Rekomendasi untuk backend ini:
 
 ## 22. Kesimpulan Final
 
-Backend pada [`Proyek Perangkat Lunak/backend`](../backend) adalah **backend Express berbasis TypeScript** dengan **Prisma ORM** dan **database MySQL**.
+Backend pada [`proyek-perangkat-lunak/backend`](../backend) adalah **backend Express berbasis TypeScript** dengan **Prisma ORM** dan **database MySQL**.
 
 Ringkasan akhir:
 

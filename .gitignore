@@ -1,30 +1,30 @@
-# Project Structure - Full paths with Proyek Perangkat Lunak
-Proyek Perangkat Lunak/node_modules/
-Proyek Perangkat Lunak/backend/node_modules/
-Proyek Perangkat Lunak/backend/package-lock.json
-Proyek Perangkat Lunak/.pnp/
-Proyek Perangkat Lunak/.next/
-Proyek Perangkat Lunak/out/
-Proyek Perangkat Lunak/build/
-Proyek Perangkat Lunak/.env
-Proyek Perangkat Lunak/.env.local
-Proyek Perangkat Lunak/.env.production
-Proyek Perangkat Lunak/AGENTS.md
-Proyek Perangkat Lunak/reference/
+# Project Structure - Full paths with proyek-perangkat-lunak
+proyek-perangkat-lunak/node_modules/
+proyek-perangkat-lunak/backend/node_modules/
+proyek-perangkat-lunak/backend/package-lock.json
+proyek-perangkat-lunak/.pnp/
+proyek-perangkat-lunak/.next/
+proyek-perangkat-lunak/out/
+proyek-perangkat-lunak/build/
+proyek-perangkat-lunak/.env
+proyek-perangkat-lunak/.env.local
+proyek-perangkat-lunak/.env.production
+proyek-perangkat-lunak/AGENTS.md
+proyek-perangkat-lunak/reference/
 
-Pemrograman Fullstack/task-planner-tubes
+pemrograman-fullstack/task-planner-tubes
 
-# Java Backend - Pemrograman Basis Data/TaskPlanner-Java-Backend
-Pemrograman Basis Data/TaskPlanner-Java-Backend/target/
-Pemrograman Basis Data/TaskPlanner-Java-Backend/.classpath
-Pemrograman Basis Data/TaskPlanner-Java-Backend/.project
-Pemrograman Basis Data/TaskPlanner-Java-Backend/.settings/
-Pemrograman Basis Data/TaskPlanner-Java-Backend/*.jar
-Pemrograman Basis Data/TaskPlanner-Java-Backend/*.class
-Pemrograman Basis Data/TaskPlanner-Java-Backend/.DS_Store
-Pemrograman Basis Data/TaskPlanner-Java-Backend/.idea/
-Pemrograman Basis Data/TaskPlanner-Java-Backend/.vscode/
-Pemrograman Basis Data/TaskPlanner-Java-Backend/*.iml
+# Java Backend - pemrograman-basis-data/TaskPlanner-Java-Backend
+pemrograman-basis-data/TaskPlanner-Java-Backend/target/
+pemrograman-basis-data/TaskPlanner-Java-Backend/.classpath
+pemrograman-basis-data/TaskPlanner-Java-Backend/.project
+pemrograman-basis-data/TaskPlanner-Java-Backend/.settings/
+pemrograman-basis-data/TaskPlanner-Java-Backend/*.jar
+pemrograman-basis-data/TaskPlanner-Java-Backend/*.class
+pemrograman-basis-data/TaskPlanner-Java-Backend/.DS_Store
+pemrograman-basis-data/TaskPlanner-Java-Backend/.idea/
+pemrograman-basis-data/TaskPlanner-Java-Backend/.vscode/
+pemrograman-basis-data/TaskPlanner-Java-Backend/*.iml
 
 .clinerules/
 .roo/
@@ -132,4 +132,4 @@ backup/
 *.backup
 
 # Script dependencies
-Proyek Perangkat Lunak/scripts/node_modules/
+proyek-perangkat-lunak/scripts/node_modules/

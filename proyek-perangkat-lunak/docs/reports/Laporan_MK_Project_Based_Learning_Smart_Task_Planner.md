@@ -61,19 +61,19 @@ Deployment: <https://taskplanner.dastrevas.com>
 
 # KATA PENGANTAR {#kata-pengantar}
 
-Puji syukur ke hadirat Tuhan Yang Maha Esa karena atas rahmat dan karunia-Nya laporan Mata Kuliah **Proyek Perangkat Lunak** dengan metode berbasis proyek ini dapat disusun dengan baik. Laporan ini membahas proses analisis, perancangan, implementasi, dan evaluasi proyek aplikasi **Smart Task Planner**, yaitu sistem manajemen tugas berbasis web yang dilengkapi dengan penjadwalan prioritas cerdas.
+Puji syukur ke hadirat Tuhan Yang Maha Esa karena atas rahmat dan karunia-Nya laporan Mata Kuliah **proyek-perangkat-lunak** dengan metode berbasis proyek ini dapat disusun dengan baik. Laporan ini membahas proses analisis, perancangan, implementasi, dan evaluasi proyek aplikasi **Smart Task Planner**, yaitu sistem manajemen tugas berbasis web yang dilengkapi dengan penjadwalan prioritas cerdas.
 
 Laporan ini disusun sebagai dokumentasi kegiatan proyek yang dilakukan oleh:
 
 - **Nama**: Bayu Farid Mulyanto
 - **NIM**: 411251181
-- **Mata Kuliah**: Proyek Perangkat Lunak
+- **Mata Kuliah**: proyek-perangkat-lunak
 - **Nama Proyek**: Smart Task Planner
 - **Deployment**: <https://taskplanner.dastrevas.com>
 
 Smart Task Planner dikembangkan untuk membantu mahasiswa, pelajar, freelancer, dan profesional dalam mencatat, mengelola, memprioritaskan, dan menjadwalkan tugas secara lebih efektif. Aplikasi ini menggunakan pendekatan prioritas otomatis berbasis 4 faktor, yaitu urgensi, tingkat kepentingan, reminder, dan estimasi durasi pengerjaan.
 
-Penulis menyadari bahwa laporan ini masih memiliki kekurangan. Oleh karena itu, kritik dan saran yang membangun sangat diharapkan agar pengembangan aplikasi dan dokumentasi proyek dapat menjadi lebih baik. Semoga laporan ini dapat memberikan gambaran yang jelas mengenai proses pengembangan Smart Task Planner serta menjadi referensi dalam penerapan pembelajaran berbasis proyek pada mata kuliah Proyek Perangkat Lunak.
+Penulis menyadari bahwa laporan ini masih memiliki kekurangan. Oleh karena itu, kritik dan saran yang membangun sangat diharapkan agar pengembangan aplikasi dan dokumentasi proyek dapat menjadi lebih baik. Semoga laporan ini dapat memberikan gambaran yang jelas mengenai proses pengembangan Smart Task Planner serta menjadi referensi dalam penerapan pembelajaran berbasis proyek pada mata kuliah proyek-perangkat-lunak.
 
 ---
 
@@ -81,7 +81,7 @@ Penulis menyadari bahwa laporan ini masih memiliki kekurangan. Oleh karena itu, 
 
 ## 1. PROFIL ORGANISASI / PERUSAHAAN / INSTANSI {#profil-organisasi--perusahaan--instansi}
 
-Pada proyek ini, mitra atau objek studi yang digunakan adalah kebutuhan pengguna umum yang membutuhkan sistem manajemen tugas cerdas. Karena proyek dikembangkan sebagai proyek akademik individu untuk mata kuliah **Proyek Perangkat Lunak**, maka profil mitra disesuaikan sebagai profil pengguna sasaran dan lingkungan akademik proyek.
+Pada proyek ini, mitra atau objek studi yang digunakan adalah kebutuhan pengguna umum yang membutuhkan sistem manajemen tugas cerdas. Karena proyek dikembangkan sebagai proyek akademik individu untuk mata kuliah **proyek-perangkat-lunak**, maka profil mitra disesuaikan sebagai profil pengguna sasaran dan lingkungan akademik proyek.
 
 - **Nama Proyek**: Smart Task Planner
 - **Jenis Proyek**: Aplikasi web fullstack berbasis task management
@@ -170,7 +170,7 @@ Sebagai pengganti identifikasi lokasi fisik, proyek dapat diakses secara online 
 | Nama | Bayu Farid Mulyanto |
 | NIM | 411251181 |
 | Posisi | Pengembang / Mahasiswa |
-| Mata Kuliah | Proyek Perangkat Lunak |
+| Mata Kuliah | proyek-perangkat-lunak |
 | Nama Proyek | Smart Task Planner |
 | Email Kontak | bayu.farid36@gmail.com |
 | Deployment | <https://taskplanner.dastrevas.com> |
@@ -1055,7 +1055,7 @@ Namun agar benar-benar siap menuju skala produk besar, aplikasi masih perlu peng
 
 # BAB IV. KESIMPULAN {#bab-iv-kesimpulan}
 
-Smart Task Planner merupakan proyek aplikasi web untuk mata kuliah **Proyek Perangkat Lunak** yang dikembangkan dengan metode berbasis proyek. Aplikasi ini bertujuan membantu pengguna mengelola tugas dengan lebih efektif melalui fitur task management, priority scoring, filtering, calendar timeline, command palette, analytics overview, AI parsing, integrasi WhatsApp, dan dukungan dark/light mode.
+Smart Task Planner merupakan proyek aplikasi web untuk mata kuliah **proyek-perangkat-lunak** yang dikembangkan dengan metode berbasis proyek. Aplikasi ini bertujuan membantu pengguna mengelola tugas dengan lebih efektif melalui fitur task management, priority scoring, filtering, calendar timeline, command palette, analytics overview, AI parsing, integrasi WhatsApp, dan dukungan dark/light mode.
 
 Berbeda dari versi MVP awal yang masih dominan local-first, implementasi saat ini telah berkembang menjadi sistem **hybrid fullstack** dengan frontend Next.js dan backend Express terpisah. Pada sisi frontend, aplikasi menyediakan halaman publik, autentikasi, dashboard, overview, dan koneksi WhatsApp. Pada sisi backend, sistem telah memiliki route auth, task CRUD, reminder, calendar sync, AI endpoint, dan internal WhatsApp inbound. Persistence utama menggunakan MySQL dan Prisma, sementara sebagian flow kompatibilitas MVP tetap mempertahankan local storage tertentu pada client.
 
@@ -1431,10 +1431,10 @@ FrontendUI --> User : Show updated task list / snackbar
 ## 3. Link Repository dan Dokumentasi
 
 - Repository: <https://github.com/bayufrd/taskplanner>
-- README: `Proyek Perangkat Lunak/README.md`
-- SKPL: `Proyek Perangkat Lunak/docs/Progress_Dokumentasi_SKPL.md`
-- Dokumentasi Deployment: `Proyek Perangkat Lunak/docs/DEPLOYMENT.md`
-- Dokumentasi Database: `Proyek Perangkat Lunak/docs/phase0/DATABASE_SETUP.md`
+- README: `proyek-perangkat-lunak/README.md`
+- SKPL: `proyek-perangkat-lunak/docs/Progress_Dokumentasi_SKPL.md`
+- Dokumentasi Deployment: `proyek-perangkat-lunak/docs/DEPLOYMENT.md`
+- Dokumentasi Database: `proyek-perangkat-lunak/docs/phase0/DATABASE_SETUP.md`
 
 ## 4. Catatan Lanjutan
 

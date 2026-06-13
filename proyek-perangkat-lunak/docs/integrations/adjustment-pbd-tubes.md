@@ -2,7 +2,7 @@
 
 ## 1. Tujuan Dokumen
 
-Dokumen ini membahas 4 area penyesuaian yang paling penting agar backend [`Proyek Perangkat Lunak/backend`](../../backend) lebih dekat dengan requirement pada [`Pemrograman Basis Data/Tugas-Besar.md`](../../../Pemrograman%20Basis%20Data/Tugas-Besar.md:69), khususnya untuk bagian:
+Dokumen ini membahas 4 area penyesuaian yang paling penting agar backend [`proyek-perangkat-lunak/backend`](../../backend) lebih dekat dengan requirement pada [`pemrograman-basis-data/Tugas-Besar.md`](../../../pemrograman-basis-data/Tugas-Besar.md:69), khususnya untuk bagian:
 
 1. prepared statement / bind variable,
 2. user database terbatas,
@@ -32,10 +32,10 @@ Dari analisis sebelumnya di [`migration-java-to-express.md`](./migration-java-to
 
 Dokumen tugas besar sendiri secara eksplisit menyinggung:
 
-- prepared statement / bind variable di [`Tugas-Besar.md`](../../../Pemrograman%20Basis%20Data/Tugas-Besar.md:75),
-- user Oracle khusus di [`Tugas-Besar.md`](../../../Pemrograman%20Basis%20Data/Tugas-Besar.md:76),
-- pengujian performa query di [`Tugas-Besar.md`](../../../Pemrograman%20Basis%20Data/Tugas-Besar.md:79),
-- dokumentasi teknis di [`Tugas-Besar.md`](../../../Pemrograman%20Basis%20Data/Tugas-Besar.md:89).
+- prepared statement / bind variable di [`Tugas-Besar.md`](../../../pemrograman-basis-data/Tugas-Besar.md:75),
+- user Oracle khusus di [`Tugas-Besar.md`](../../../pemrograman-basis-data/Tugas-Besar.md:76),
+- pengujian performa query di [`Tugas-Besar.md`](../../../pemrograman-basis-data/Tugas-Besar.md:79),
+- dokumentasi teknis di [`Tugas-Besar.md`](../../../pemrograman-basis-data/Tugas-Besar.md:89).
 
 ## 3. Poin 1 — Prepared Statement / Bind Variable
 
@@ -157,7 +157,7 @@ Kesimpulan final untuk poin ini:
 
 ## 4.1 Kenapa Ini Penting
 
-Pada requirement tugas besar, user database terbatas diwajibkan di [`Tugas-Besar.md`](../../../Pemrograman%20Basis%20Data/Tugas-Besar.md:76).
+Pada requirement tugas besar, user database terbatas diwajibkan di [`Tugas-Besar.md`](../../../pemrograman-basis-data/Tugas-Besar.md:76).
 
 Walaupun dokumen tugas menulis Oracle user, untuk kondisi backend sekarang yang masih memakai MySQL, konsep yang sama tetap berlaku:
 
@@ -517,7 +517,7 @@ Isi minimal:
 
 ### B. Flowchart/alur CRUD
 
-Tugas besar meminta flowchart di [`Tugas-Besar.md`](../../../Pemrograman%20Basis%20Data/Tugas-Besar.md:94).
+Tugas besar meminta flowchart di [`Tugas-Besar.md`](../../../pemrograman-basis-data/Tugas-Besar.md:94).
 
 Untuk backend Express, cukup buat flow untuk:
 
@@ -573,7 +573,7 @@ Rekomendasi paling praktis:
 
 ## 6.4 Kesimpulan Poin 4
 
-Dokumentasi teknis saat ini **sudah kuat sebagai dokumentasi proyek**, tetapi **belum optimal sebagai dokumen kepatuhan tugas besar Pemrograman Basis Data**.
+Dokumentasi teknis saat ini **sudah kuat sebagai dokumentasi proyek**, tetapi **belum optimal sebagai dokumen kepatuhan tugas besar pemrograman-basis-data**.
 
 Artinya yang perlu dilakukan bukan mulai dari nol, tetapi:
 
@@ -615,4 +615,4 @@ Untuk 4 poin yang diminta:
 3. **Pengujian performa query**: sangat mungkin dinaikkan statusnya menjadi “ada” dengan benchmark sederhana pada query yang memang sudah ada di backend.
 4. **Dokumentasi teknis**: dasarnya sudah banyak, tetapi harus difokuskan ulang agar langsung menjawab requirement tugas besar PBD.
 
-Dengan 4 penyesuaian ini, backend Express akan jauh lebih kuat untuk diposisikan sebagai implementasi yang selaras dengan kebutuhan [`Pemrograman Basis Data/Tugas-Besar.md`](../../../Pemrograman%20Basis%20Data/Tugas-Besar.md:129), walaupun stack teknologinya tetap modern dan bukan Java/JDBC literal.
+Dengan 4 penyesuaian ini, backend Express akan jauh lebih kuat untuk diposisikan sebagai implementasi yang selaras dengan kebutuhan [`pemrograman-basis-data/Tugas-Besar.md`](../../../pemrograman-basis-data/Tugas-Besar.md:129), walaupun stack teknologinya tetap modern dan bukan Java/JDBC literal.

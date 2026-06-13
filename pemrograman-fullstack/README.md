@@ -1,6 +1,6 @@
-# Pemrograman Fullstack - PestaKami Backend
+# pemrograman-fullstack - PestaKami Backend
 
-Dokumentasi tugas individu backend `PestaKami` untuk mata kuliah Pemrograman Fullstack.
+Dokumentasi tugas individu backend `PestaKami` untuk mata kuliah pemrograman-fullstack.
 
 ## Ringkasan Project
 

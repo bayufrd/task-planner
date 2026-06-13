@@ -68,7 +68,7 @@
 ## 2. Project Structure
 
 ```
-Proyek Perangkat Lunak/
+proyek-perangkat-lunak/
 ├── frontend/                          # Future split — currently same level
 ├── src/                               # Next.js frontend source
 │   ├── app/                           # App Router pages
@@ -126,7 +126,7 @@ Proyek Perangkat Lunak/
 
 ## 3. Environment Variables
 
-### 3.1 Frontend — `Proyek Perangkat Lunak/.env`
+### 3.1 Frontend — `proyek-perangkat-lunak/.env`
 
 | Variable                  | Required | Description                                      |
 |---------------------------|----------|--------------------------------------------------|
@@ -145,7 +145,7 @@ Proyek Perangkat Lunak/
 openssl rand -base64 32
 ```
 
-### 3.2 Backend — `Proyek Perangkat Lunak/backend/.env`
+### 3.2 Backend — `proyek-perangkat-lunak/backend/.env`
 
 | Variable              | Required | Description                                      |
 |-----------------------|----------|--------------------------------------------------|
@@ -260,7 +260,7 @@ openssl rand -base64 32
 ### 5.1 Frontend Build
 
 ```bash
-# From Proyek Perangkat Lunak/
+# From proyek-perangkat-lunak/
 npm run build
 # Runs: next build && npm run prisma:generate
 ```
@@ -281,7 +281,7 @@ npm run build      # Production build
 ### 5.2 Backend Build
 
 ```bash
-# From Proyek Perangkat Lunak/backend/
+# From proyek-perangkat-lunak/backend/
 npm run build
 # Runs: tsc
 # Output: dist/
@@ -460,7 +460,7 @@ sudo certbot renew --dry-run
 
 ### 6.4 CORS Configuration (Backend)
 
-The Express backend CORS allowlist is defined in [`backend/src/config/cors.ts`](Proyek%20Perangkat%20Lunak/backend/src/config/cors.ts):
+The Express backend CORS allowlist is defined in [`backend/src/config/cors.ts`](proyek-perangkat-lunak/backend/src/config/cors.ts):
 
 ```typescript
 const allowedOrigins = [
@@ -932,12 +932,12 @@ npx prisma studio        # Prisma DB GUI
 
 | File | Purpose |
 |------|---------|
-| [`backend/src/server.ts`](Proyek%20Perangkat%20Lunak/backend/src/server.ts) | Express entry point |
-| [`backend/src/config/env.ts`](Proyek%20Perangkat%20Lunak/backend/src/config/env.ts) | Environment config |
-| [`backend/prisma/schema.prisma`](Proyek%20Perangkat%20Lunak/backend/prisma/schema.prisma) | Database schema |
-| [`backend/src/modules/tasks/task.service.ts`](Proyek%20Perangkat%20Lunak/backend/src/modules/tasks/task.service.ts) | Task business logic |
-| [`src/lib/api/client.ts`](Proyek%20Perangkat%20Lunak/src/lib/api/client.ts) | Frontend API client |
-| [`next.config.js`](Proyek%20Perangkat%20Lunak/next.config.js) | Next.js configuration |
+| [`backend/src/server.ts`](proyek-perangkat-lunak/backend/src/server.ts) | Express entry point |
+| [`backend/src/config/env.ts`](proyek-perangkat-lunak/backend/src/config/env.ts) | Environment config |
+| [`backend/prisma/schema.prisma`](proyek-perangkat-lunak/backend/prisma/schema.prisma) | Database schema |
+| [`backend/src/modules/tasks/task.service.ts`](proyek-perangkat-lunak/backend/src/modules/tasks/task.service.ts) | Task business logic |
+| [`src/lib/api/client.ts`](proyek-perangkat-lunak/src/lib/api/client.ts) | Frontend API client |
+| [`next.config.js`](proyek-perangkat-lunak/next.config.js) | Next.js configuration |
 
 ---
 

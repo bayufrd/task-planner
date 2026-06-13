@@ -4,7 +4,7 @@ Frontend Vue 3 + Vite untuk backend Java Spring Boot pada [`TaskPlanner-Java-Bac
 
 ## Scope
 
-Frontend ini menyesuaikan implementasi backend yang ada di [`docs/API_ENDPOINTS.md`](../TaskPlanner-Java-Backend/docs/API_ENDPOINTS.md) dan referensi tampilan dari project Next.js di [`../../Proyek Perangkat Lunak`](../../Proyek%20Perangkat%20Lunak).
+Frontend ini menyesuaikan implementasi backend yang ada di [`docs/API_ENDPOINTS.md`](../TaskPlanner-Java-Backend/docs/API_ENDPOINTS.md) dan referensi tampilan dari project Next.js di [`../../proyek-perangkat-lunak`](../../proyek-perangkat-lunak).
 
 Penyesuaian utama:
 - hanya memakai auth email/password JWT

@@ -37,7 +37,7 @@ Laporan Tugas Besar diketik dengan format kertas ukuran A4, margin pengetikan di
 
 **KATA PENGANTAR**
 
-**Rasa syukur yang mendalam penulis panjatkan ke hadirat Tuhan Yang Maha Esa, karena atas limpahan rahmat dan penyertaan-Nya, laporan Tugas Besar dengan judul “*Smart Task Planner*” ini dapat rampung dengan baik. Penyusunan laporan ini ditujukan untuk memenuhi komponen penilaian Ujian Akhir Semester (UAS) untuk mata kuliah Pemrograman Basis Data di Program Studi Teknik Informatika.**
+**Rasa syukur yang mendalam penulis panjatkan ke hadirat Tuhan Yang Maha Esa, karena atas limpahan rahmat dan penyertaan-Nya, laporan Tugas Besar dengan judul “*Smart Task Planner*” ini dapat rampung dengan baik. Penyusunan laporan ini ditujukan untuk memenuhi komponen penilaian Ujian Akhir Semester (UAS) untuk mata kuliah pemrograman-basis-data di Program Studi Teknik Informatika.**
 
 **Selama proses pengerjaan proyek hingga laporan ini selesai, penulis banyak menerima bantuan, bimbingan, serta dorongan semangat dari berbagai pihak. Oleh sebab itu, dengan segala kerendahan hati penulis ingin menyampaikan apresiasi dan terima kasih yang tulus kepada :** 
 

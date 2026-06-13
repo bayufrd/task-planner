@@ -1,16 +1,16 @@
 # Dokumentasi Endpoint API
 
-Dokumen ini merangkum endpoint yang **sudah diimplementasikan** pada aplikasi [`TaskPlannerApplication`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/TaskPlannerApplication.java:12) di project [`Pemrograman Basis Data/TaskPlanner-Java-Backend`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend).
+Dokumen ini merangkum endpoint yang **sudah diimplementasikan** pada aplikasi [`TaskPlannerApplication`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/TaskPlannerApplication.java:12) di project [`pemrograman-basis-data/TaskPlanner-Java-Backend`](pemrograman-basis-data/TaskPlanner-Java-Backend).
 
 ## Ringkasan Aplikasi
 
 - Framework: Spring Boot
-- Context path API: `/api` berdasarkan konfigurasi [`application.yml`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/resources/application.yml:31)
+- Context path API: `/api` berdasarkan konfigurasi [`application.yml`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/resources/application.yml:31)
 - Controller utama:
-  - [`TaskPlannerApplication`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/TaskPlannerApplication.java:12)
-  - [`AuthController`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/AuthController.java:27)
-  - [`TaskController`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/TaskController.java:28)
-  - [`PlannerController`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/PlannerController.java:18)
+  - [`TaskPlannerApplication`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/TaskPlannerApplication.java:12)
+  - [`AuthController`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/AuthController.java:27)
+  - [`TaskController`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/TaskController.java:28)
+  - [`PlannerController`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/PlannerController.java:18)
 
 ## Base URL
 
@@ -32,7 +32,7 @@ http://localhost:8080/api
 
 ### GET `/api/health`
 
-Sumber implementasi: [`health()`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/TaskPlannerApplication.java:18)
+Sumber implementasi: [`health()`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/TaskPlannerApplication.java:18)
 
 Digunakan untuk memastikan aplikasi berjalan.
 
@@ -46,17 +46,17 @@ Task Planner API is running!
 
 ## 2. Authentication
 
-Sumber implementasi controller: [`AuthController`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/AuthController.java:23)
+Sumber implementasi controller: [`AuthController`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/AuthController.java:23)
 
 ### POST `/api/auth/register`
 
-Sumber implementasi: [`register()`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/AuthController.java:36)
+Sumber implementasi: [`register()`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/AuthController.java:36)
 
 Mendaftarkan user baru menggunakan email dan password.
 
 #### Request Body
 
-Struktur request mengikuti [`RegisterRequest`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/dto/RegisterRequest.java:7)
+Struktur request mengikuti [`RegisterRequest`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/dto/RegisterRequest.java:7)
 
 ```json
 {
@@ -103,18 +103,18 @@ Struktur request mengikuti [`RegisterRequest`](Pemrograman%20Basis%20Data/TaskPl
 
 #### Catatan Implementasi
 
-- Password di-hash menggunakan BCrypt di [`AuthController`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/AuthController.java:48)
-- Endpoint juga membuat record akun lokal dengan provider `local` di [`createAccount()`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/AuthController.java:60)
+- Password di-hash menggunakan BCrypt di [`AuthController`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/AuthController.java:48)
+- Endpoint juga membuat record akun lokal dengan provider `local` di [`createAccount()`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/AuthController.java:60)
 
 ### POST `/api/auth/login`
 
-Sumber implementasi: [`login()`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/AuthController.java:75)
+Sumber implementasi: [`login()`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/AuthController.java:75)
 
 Login user menggunakan email dan password, lalu menghasilkan access token dan refresh token.
 
 #### Request Body
 
-Struktur request mengikuti [`LoginRequest`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/dto/LoginRequest.java:6)
+Struktur request mengikuti [`LoginRequest`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/dto/LoginRequest.java:6)
 
 ```json
 {
@@ -182,12 +182,12 @@ Contoh response ketika password salah:
 
 #### Catatan Implementasi
 
-- JWT dibuat melalui [`TokenService`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/service/TokenService.java)
-- Token kemudian dicoba untuk disimpan ke tabel account melalui [`updateAccountTokens()`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/repository/AuthRepository.java:73)
+- JWT dibuat melalui [`TokenService`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/service/TokenService.java)
+- Token kemudian dicoba untuk disimpan ke tabel account melalui [`updateAccountTokens()`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/repository/AuthRepository.java:73)
 
 ### POST `/api/auth/refresh`
 
-Sumber implementasi: [`refresh()`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/AuthController.java:160)
+Sumber implementasi: [`refresh()`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/AuthController.java:160)
 
 Memvalidasi `refreshToken`, lalu menerbitkan ulang access token dan me-rotate refresh token.
 
@@ -229,20 +229,20 @@ Memvalidasi `refreshToken`, lalu menerbitkan ulang access token dan me-rotate re
 
 #### Catatan Implementasi
 
-- Lookup refresh token dilakukan melalui [`findUserByRefreshToken()`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/repository/AuthRepository.java:79)
-- Endpoint ini melakukan token rotation dengan menyimpan pasangan token baru via [`updateAccountTokens()`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/repository/AuthRepository.java:73)
+- Lookup refresh token dilakukan melalui [`findUserByRefreshToken()`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/repository/AuthRepository.java:79)
+- Endpoint ini melakukan token rotation dengan menyimpan pasangan token baru via [`updateAccountTokens()`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/repository/AuthRepository.java:73)
 
 ---
 
 ## 3. Task Management
 
-Sumber implementasi controller: [`TaskController`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/TaskController.java:28)
+Sumber implementasi controller: [`TaskController`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/TaskController.java:28)
 
 > Catatan: endpoint task sekarang memerlukan header `Authorization: Bearer <accessToken>` dan `userId` di-resolve dari JWT subject, bukan hardcoded lagi.
 
 ### GET `/api/tasks`
 
-Sumber implementasi: [`getTasks()`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/TaskController.java:58)
+Sumber implementasi: [`getTasks()`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/TaskController.java:58)
 
 Mengambil daftar task dengan pagination, pencarian, filter, dan sorting.
 
@@ -264,7 +264,7 @@ GET /api/tasks?page=1&limit=10&status=PROGRESS&priority=HIGH&sort=deadline&order
 
 #### Response Sukses `200 OK`
 
-Response bertipe [`PaginatedResponse<Task>`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/dto/PaginatedResponse.java)
+Response bertipe [`PaginatedResponse<Task>`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/dto/PaginatedResponse.java)
 
 ```json
 {
@@ -298,13 +298,13 @@ Authorization: Bearer <accessToken>
 
 ### POST `/api/tasks`
 
-Sumber implementasi: [`createTask()`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/TaskController.java:98)
+Sumber implementasi: [`createTask()`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/TaskController.java:98)
 
 Membuat task baru.
 
 #### Request Body
 
-Struktur request mengikuti [`CreateTaskRequest`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/dto/CreateTaskRequest.java:6)
+Struktur request mengikuti [`CreateTaskRequest`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/dto/CreateTaskRequest.java:6)
 
 ```json
 {
@@ -342,7 +342,7 @@ Struktur request mengikuti [`CreateTaskRequest`](Pemrograman%20Basis%20Data/Task
 
 ### GET `/api/tasks/{id}`
 
-Sumber implementasi: [`getTaskById()`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/TaskController.java:135)
+Sumber implementasi: [`getTaskById()`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/TaskController.java:135)
 
 Mengambil detail task berdasarkan ID.
 
@@ -370,13 +370,13 @@ Mengambil detail task berdasarkan ID.
 
 ### PUT `/api/tasks/{id}`
 
-Sumber implementasi: [`updateTask()`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/TaskController.java:169)
+Sumber implementasi: [`updateTask()`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/TaskController.java:169)
 
 Memperbarui data task.
 
 #### Request Body
 
-Struktur request mengikuti [`UpdateTaskRequest`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/dto/UpdateTaskRequest.java:6)
+Struktur request mengikuti [`UpdateTaskRequest`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/dto/UpdateTaskRequest.java:6)
 
 Semua field bersifat opsional.
 
@@ -416,7 +416,7 @@ Semua field bersifat opsional.
 
 ### POST `/api/tasks/{id}/complete`
 
-Sumber implementasi: [`completeTask()`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/TaskController.java:217)
+Sumber implementasi: [`completeTask()`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/TaskController.java:217)
 
 Menandai task milik user login sebagai selesai.
 
@@ -450,7 +450,7 @@ Authorization: Bearer <accessToken>
 
 ### DELETE `/api/tasks/{id}`
 
-Sumber implementasi: [`deleteTask()`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/TaskController.java:200)
+Sumber implementasi: [`deleteTask()`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/TaskController.java:200)
 
 Menghapus task berdasarkan ID.
 
@@ -471,7 +471,7 @@ Menghapus task berdasarkan ID.
 
 ### GET `/api/tasks/priority/{level}`
 
-Sumber implementasi: [`getTasksByPriority()`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/TaskController.java:232)
+Sumber implementasi: [`getTasksByPriority()`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/TaskController.java:232)
 
 Mengambil daftar task berdasarkan level prioritas.
 
@@ -492,7 +492,7 @@ GET /api/tasks/priority/HIGH?page=1&limit=10
 
 #### Response Sukses `200 OK`
 
-Response bertipe [`PaginatedResponse<Task>`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/dto/PaginatedResponse.java)
+Response bertipe [`PaginatedResponse<Task>`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/dto/PaginatedResponse.java)
 
 ```json
 {
@@ -523,11 +523,11 @@ Response bertipe [`PaginatedResponse<Task>`](Pemrograman%20Basis%20Data/TaskPlan
 
 ## 4. Planner
 
-Sumber implementasi controller: [`PlannerController`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/PlannerController.java:18)
+Sumber implementasi controller: [`PlannerController`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/PlannerController.java:18)
 
 ### GET `/api/planner/today`
 
-Sumber implementasi: [`getTodayPlan()`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/PlannerController.java:26)
+Sumber implementasi: [`getTodayPlan()`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/PlannerController.java:26)
 
 Menghasilkan today plan milik user login berdasarkan JWT dan priority score dinamis.
 
@@ -612,9 +612,9 @@ Authorization: Bearer <accessToken>
 
 ## 6. Struktur Request DTO yang Dipakai
 
-- [`RegisterRequest`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/dto/RegisterRequest.java:7)
-- [`LoginRequest`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/dto/LoginRequest.java:6)
-- [`CreateTaskRequest`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/dto/CreateTaskRequest.java:6)
-- [`UpdateTaskRequest`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/dto/UpdateTaskRequest.java:6)
+- [`RegisterRequest`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/dto/RegisterRequest.java:7)
+- [`LoginRequest`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/dto/LoginRequest.java:6)
+- [`CreateTaskRequest`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/dto/CreateTaskRequest.java:6)
+- [`UpdateTaskRequest`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/dto/UpdateTaskRequest.java:6)
 
-Dokumentasi ini dibuat berdasarkan implementasi source code saat ini, bukan hanya berdasarkan rencana pada [`README.md`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/README.md).
+Dokumentasi ini dibuat berdasarkan implementasi source code saat ini, bukan hanya berdasarkan rencana pada [`README.md`](pemrograman-basis-data/TaskPlanner-Java-Backend/README.md).

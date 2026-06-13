@@ -2,7 +2,7 @@
 
 Backend REST API untuk Task Planner berbasis Java Spring Boot dan JDBC.
 
-Dokumentasi ini sudah disesuaikan dengan endpoint yang **benar-benar tersedia saat ini** berdasarkan implementasi controller dan referensi roadmap di [`ROADMAP_API_ENDPOINT.md`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/docs/ROADMAP_API_ENDPOINT.md).
+Dokumentasi ini sudah disesuaikan dengan endpoint yang **benar-benar tersedia saat ini** berdasarkan implementasi controller dan referensi roadmap di [`ROADMAP_API_ENDPOINT.md`](pemrograman-basis-data/TaskPlanner-Java-Backend/docs/ROADMAP_API_ENDPOINT.md).
 
 ---
 
@@ -82,7 +82,7 @@ Catatan penting implementasi saat ini:
 - Java 17
 - Spring Boot 3.2.0
 - Spring Web
-- Spring JDBC / [`JdbcTemplate`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/TaskController.java:81)
+- Spring JDBC / [`JdbcTemplate`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/TaskController.java:81)
 - MySQL JDBC Driver (`mysql-connector-j`)
 - Maven
 - BCrypt untuk password hashing
@@ -92,14 +92,14 @@ Catatan penting implementasi saat ini:
 
 ## 📁 Struktur Penting
 
-- [`README.md`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/README.md)
-- [`docs/ROADMAP_API_ENDPOINT.md`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/docs/ROADMAP_API_ENDPOINT.md)
-- [`src/main/java/com/taskplanner/controller/AuthController.java`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/AuthController.java)
-- [`src/main/java/com/taskplanner/controller/TaskController.java`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/TaskController.java)
-- [`src/main/java/com/taskplanner/controller/ReminderController.java`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/ReminderController.java)
-- [`src/main/java/com/taskplanner/controller/AiController.java`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/AiController.java)
-- [`src/main/resources/application.yml`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/resources/application.yml)
-- [`pom.xml`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/pom.xml)
+- [`README.md`](pemrograman-basis-data/TaskPlanner-Java-Backend/README.md)
+- [`docs/ROADMAP_API_ENDPOINT.md`](pemrograman-basis-data/TaskPlanner-Java-Backend/docs/ROADMAP_API_ENDPOINT.md)
+- [`src/main/java/com/taskplanner/controller/AuthController.java`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/AuthController.java)
+- [`src/main/java/com/taskplanner/controller/TaskController.java`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/TaskController.java)
+- [`src/main/java/com/taskplanner/controller/ReminderController.java`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/ReminderController.java)
+- [`src/main/java/com/taskplanner/controller/AiController.java`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/AiController.java)
+- [`src/main/resources/application.yml`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/resources/application.yml)
+- [`pom.xml`](pemrograman-basis-data/TaskPlanner-Java-Backend/pom.xml)
 
 ---
 
@@ -139,7 +139,7 @@ java -jar target/taskplanner-api-1.0.0.jar
 
 ## ✅ Auto Testing Endpoint Development
 
-Pengujian end-to-end terakhir sudah dijalankan terhadap environment development di [`.env`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/.env) dengan backend aktif di `http://localhost:8080`.
+Pengujian end-to-end terakhir sudah dijalankan terhadap environment development di [`.env`](pemrograman-basis-data/TaskPlanner-Java-Backend/.env) dengan backend aktif di `http://localhost:8080`.
 
 Scope pengujian yang berhasil:
 - auth: `register`, `login`, `me`, `logout`
@@ -156,18 +156,18 @@ EMAIL="alice.$(date +%s)@example.com"; PASS='secret123'; BASE='http://localhost:
 
 ### Hasil validasi terakhir
 
-- [`GET /api/health`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/TaskPlannerApplication.java:18) sukses `200`
-- [`POST /api/auth/register`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/AuthController.java:40) sukses `201`
-- [`POST /api/auth/login`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/AuthController.java:98) sukses `200`
-- [`GET /api/auth/me`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/AuthController.java:135) sukses `200`
-- [`POST /api/auth/logout`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/AuthController.java:160) sukses `200`
-- endpoint task privat sudah tervalidasi memakai JWT owner dari [`extractUserId()`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/TaskController.java:323)
-- [`POST /api/ai/parse-task`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/AiController.java:30) sukses `200`
-- [`POST /api/ai/overview-analysis`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/AiController.java:44) sukses `200`
+- [`GET /api/health`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/TaskPlannerApplication.java:18) sukses `200`
+- [`POST /api/auth/register`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/AuthController.java:40) sukses `201`
+- [`POST /api/auth/login`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/AuthController.java:98) sukses `200`
+- [`GET /api/auth/me`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/AuthController.java:135) sukses `200`
+- [`POST /api/auth/logout`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/AuthController.java:160) sukses `200`
+- endpoint task privat sudah tervalidasi memakai JWT owner dari [`extractUserId()`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/TaskController.java:323)
+- [`POST /api/ai/parse-task`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/AiController.java:30) sukses `200`
+- [`POST /api/ai/overview-analysis`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/AiController.java:44) sukses `200`
 
 Catatan hasil uji:
 - planner dapat mengembalikan list kosong jika task uji sudah selesai/terfilter
-- reminder Java saat ini tetap in-memory pada [`ReminderController`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/ReminderController.java:21)
+- reminder Java saat ini tetap in-memory pada [`ReminderController`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/ReminderController.java:21)
 - AI parse dapat mengembalikan deadline dalam format UTC, misalnya `2026-05-28T02:00:00Z`
 
 ---
@@ -181,13 +181,13 @@ Sesuaikan environment berikut:
 - `SPRING_DATASOURCE_USERNAME`
 - `SPRING_DATASOURCE_PASSWORD`
 
-Lihat contoh di [`.env.example`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/.env.example).
+Lihat contoh di [`.env.example`](pemrograman-basis-data/TaskPlanner-Java-Backend/.env.example).
 
 ---
 
 ## 🧱 Format Response Umum
 
-Sebagian besar endpoint memakai wrapper [`ApiResponse<T>`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/dto/ApiResponse.java:6):
+Sebagian besar endpoint memakai wrapper [`ApiResponse<T>`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/dto/ApiResponse.java:6):
 
 ```json
 {
@@ -198,7 +198,7 @@ Sebagian besar endpoint memakai wrapper [`ApiResponse<T>`](Pemrograman%20Basis%2
 }
 ```
 
-Endpoint list task memakai [`PaginatedResponse<T>`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/dto/PaginatedResponse.java:8):
+Endpoint list task memakai [`PaginatedResponse<T>`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/dto/PaginatedResponse.java:8):
 
 ```json
 {
@@ -225,7 +225,7 @@ Catatan:
 
 ## 🗄️ Model Data Task
 
-Field task yang saat ini dipakai di model [`Task`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/model/Task.java:9):
+Field task yang saat ini dipakai di model [`Task`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/model/Task.java:9):
 
 ```json
 {
@@ -277,12 +277,12 @@ curl http://localhost:8080/api/health
 
 ## 2. Auth
 
-Base route auth didefinisikan di [`AuthController`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/AuthController.java:27).
+Base route auth didefinisikan di [`AuthController`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/AuthController.java:27).
 
 ### `POST /api/auth/register`
 Register user lokal baru dan langsung menghasilkan token.
 
-Referensi implementasi: [`register()`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/AuthController.java:40)
+Referensi implementasi: [`register()`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/AuthController.java:40)
 
 #### Request body
 ```json
@@ -350,7 +350,7 @@ curl -X POST http://localhost:8080/api/auth/register \
 ### `POST /api/auth/login`
 Login user lokal dengan email dan password.
 
-Referensi implementasi: [`login()`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/AuthController.java:98)
+Referensi implementasi: [`login()`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/AuthController.java:98)
 
 #### Request body
 ```json
@@ -406,7 +406,7 @@ error: <detail error>
 ### `GET /api/auth/me`
 Ambil profil user dari access token Bearer.
 
-Referensi implementasi: [`getMe()`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/AuthController.java:135)
+Referensi implementasi: [`getMe()`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/AuthController.java:135)
 
 #### Headers
 ```http
@@ -459,7 +459,7 @@ curl http://localhost:8080/api/auth/me \
 ### `POST /api/auth/logout`
 Logout user berdasarkan Bearer token dan membersihkan token pada account.
 
-Referensi implementasi: [`logout()`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/AuthController.java:160)
+Referensi implementasi: [`logout()`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/AuthController.java:160)
 
 #### Headers
 ```http
@@ -496,10 +496,10 @@ curl -X POST http://localhost:8080/api/auth/logout \
 
 ## 3. Tasks
 
-Base route task didefinisikan di [`TaskController`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/TaskController.java:39).
+Base route task didefinisikan di [`TaskController`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/TaskController.java:39).
 
 ### Request body create task
-Mengikuti DTO [`CreateTaskRequest`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/dto/CreateTaskRequest.java:6):
+Mengikuti DTO [`CreateTaskRequest`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/dto/CreateTaskRequest.java:6):
 
 ```json
 {
@@ -513,7 +513,7 @@ Mengikuti DTO [`CreateTaskRequest`](Pemrograman%20Basis%20Data/TaskPlanner-Java-
 ```
 
 ### Request body update task
-Mengikuti DTO [`UpdateTaskRequest`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/dto/UpdateTaskRequest.java:6). Semua field bersifat opsional.
+Mengikuti DTO [`UpdateTaskRequest`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/dto/UpdateTaskRequest.java:6). Semua field bersifat opsional.
 
 ```json
 {
@@ -529,7 +529,7 @@ Mengikuti DTO [`UpdateTaskRequest`](Pemrograman%20Basis%20Data/TaskPlanner-Java-
 ### `GET /api/tasks`
 Ambil daftar task dengan pagination dan filter.
 
-Referensi implementasi: [`getTasks()`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/TaskController.java:65)
+Referensi implementasi: [`getTasks()`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/TaskController.java:65)
 
 #### Query params
 - `page` default `1`
@@ -584,7 +584,7 @@ curl "http://localhost:8080/api/tasks?page=1&limit=10&status=TODO&priority=HIGH&
 ### `POST /api/tasks`
 Buat task baru.
 
-Referensi implementasi: [`createTask()`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/TaskController.java:105)
+Referensi implementasi: [`createTask()`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/TaskController.java:105)
 
 #### cURL
 ```bash
@@ -649,7 +649,7 @@ curl -X POST http://localhost:8080/api/tasks \
 ### `GET /api/tasks/stats`
 Ambil ringkasan statistik task.
 
-Referensi implementasi: [`getTaskStats()`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/TaskController.java:131)
+Referensi implementasi: [`getTaskStats()`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/TaskController.java:131)
 
 #### cURL
 ```bash
@@ -675,7 +675,7 @@ curl http://localhost:8080/api/tasks/stats
 ### `GET /api/tasks/stats/daily`
 Ambil statistik task per hari.
 
-Referensi implementasi: [`getDailyStats()`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/TaskController.java:139)
+Referensi implementasi: [`getDailyStats()`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/TaskController.java:139)
 
 #### Query params
 - `days` default `30`
@@ -709,7 +709,7 @@ curl "http://localhost:8080/api/tasks/stats/daily?days=7"
 ### `GET /api/tasks/stats/weekly`
 Ambil statistik task per minggu.
 
-Referensi implementasi: [`getWeeklyStats()`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/TaskController.java:148)
+Referensi implementasi: [`getWeeklyStats()`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/TaskController.java:148)
 
 #### Query params
 - `weeks` default `12`
@@ -743,7 +743,7 @@ curl "http://localhost:8080/api/tasks/stats/weekly?weeks=4"
 ### `GET /api/tasks/{id}`
 Ambil detail task by id.
 
-Referensi implementasi: [`getTaskById()`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/TaskController.java:168)
+Referensi implementasi: [`getTaskById()`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/TaskController.java:168)
 
 #### cURL
 ```bash
@@ -789,7 +789,7 @@ curl http://localhost:8080/api/tasks/task-001
 ### `PUT /api/tasks/{id}`
 Update task secara penuh/semi-penuh menggunakan body update task.
 
-Referensi implementasi: [`updateTask()`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/TaskController.java:202)
+Referensi implementasi: [`updateTask()`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/TaskController.java:202)
 
 #### cURL
 ```bash
@@ -842,7 +842,7 @@ curl -X PUT http://localhost:8080/api/tasks/task-001 \
 ```
 
 ### `PATCH /api/tasks/{id}`
-Partial update task. Saat ini diarahkan ke logic yang sama dengan [`updateTask()`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/TaskController.java:202) melalui [`patchTask()`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/TaskController.java:222).
+Partial update task. Saat ini diarahkan ke logic yang sama dengan [`updateTask()`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/TaskController.java:202) melalui [`patchTask()`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/TaskController.java:222).
 
 #### cURL
 ```bash
@@ -883,7 +883,7 @@ curl -X PATCH http://localhost:8080/api/tasks/task-001 \
 ### `PATCH /api/tasks/{id}/status`
 Update status task saja.
 
-Referensi implementasi: [`updateTaskStatus()`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/TaskController.java:230)
+Referensi implementasi: [`updateTaskStatus()`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/TaskController.java:230)
 
 #### Request body
 ```json
@@ -940,7 +940,7 @@ curl -X PATCH http://localhost:8080/api/tasks/task-001/status \
 ### `DELETE /api/tasks/{id}`
 Hapus task by id.
 
-Referensi implementasi: [`deleteTask()`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/TaskController.java:266)
+Referensi implementasi: [`deleteTask()`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/TaskController.java:266)
 
 #### cURL
 ```bash
@@ -970,7 +970,7 @@ curl -X DELETE http://localhost:8080/api/tasks/task-001
 ### `POST /api/tasks/{id}/priority`
 Hitung priority score task.
 
-Referensi implementasi: [`calculatePriority()`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/TaskController.java:283)
+Referensi implementasi: [`calculatePriority()`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/TaskController.java:283)
 
 #### cURL
 ```bash
@@ -1008,7 +1008,7 @@ curl -X POST http://localhost:8080/api/tasks/task-001/priority
 ### `POST /api/tasks/{id}/skip`
 Ubah task menjadi skipped.
 
-Referensi implementasi: [`skipTask()`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/TaskController.java:301)
+Referensi implementasi: [`skipTask()`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/TaskController.java:301)
 
 #### cURL
 ```bash
@@ -1044,7 +1044,7 @@ curl -X POST http://localhost:8080/api/tasks/task-001/skip
 ### `GET /api/tasks/priority/{level}`
 Ambil list task berdasarkan level priority.
 
-Referensi implementasi: [`getTasksByPriority()`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/TaskController.java:333)
+Referensi implementasi: [`getTasksByPriority()`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/TaskController.java:333)
 
 #### Path param
 - `level`: `HIGH`, `MEDIUM`, `LOW`
@@ -1109,10 +1109,10 @@ curl "http://localhost:8080/api/tasks/priority/HIGH?page=1&limit=10"
 
 ## 4. Reminders
 
-Base route reminder didefinisikan di [`ReminderController`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/ReminderController.java:17).
+Base route reminder didefinisikan di [`ReminderController`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/ReminderController.java:17).
 
 Catatan implementasi:
-- reminder disimpan di memory [`reminders`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/ReminderController.java:21)
+- reminder disimpan di memory [`reminders`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/ReminderController.java:21)
 - data akan hilang saat aplikasi restart
 
 ### Bentuk data reminder
@@ -1131,7 +1131,7 @@ Catatan implementasi:
 ### `POST /api/reminders`
 Buat reminder baru.
 
-Referensi implementasi: [`createReminder()`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/ReminderController.java:23)
+Referensi implementasi: [`createReminder()`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/ReminderController.java:23)
 
 #### Request body
 ```json
@@ -1175,7 +1175,7 @@ curl -X POST http://localhost:8080/api/reminders \
 ### `GET /api/reminders`
 Ambil semua reminder.
 
-Referensi implementasi: [`getReminders()`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/ReminderController.java:38)
+Referensi implementasi: [`getReminders()`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/ReminderController.java:38)
 
 #### cURL
 ```bash
@@ -1204,7 +1204,7 @@ curl http://localhost:8080/api/reminders
 ### `GET /api/reminders/due`
 Ambil reminder yang sudah jatuh tempo.
 
-Referensi implementasi: [`getDueReminders()`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/ReminderController.java:43)
+Referensi implementasi: [`getDueReminders()`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/ReminderController.java:43)
 
 #### cURL
 ```bash
@@ -1233,7 +1233,7 @@ curl http://localhost:8080/api/reminders/due
 ### `GET /api/reminders/{id}`
 Ambil detail reminder.
 
-Referensi implementasi: [`getReminderById()`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/ReminderController.java:62)
+Referensi implementasi: [`getReminderById()`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/ReminderController.java:62)
 
 #### cURL
 ```bash
@@ -1270,7 +1270,7 @@ curl http://localhost:8080/api/reminders/rem-001
 ### `PATCH /api/reminders/{id}`
 Update reminder.
 
-Referensi implementasi: [`updateReminder()`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/ReminderController.java:72)
+Referensi implementasi: [`updateReminder()`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/ReminderController.java:72)
 
 #### Request body
 ```json
@@ -1313,7 +1313,7 @@ curl -X PATCH http://localhost:8080/api/reminders/rem-001 \
 ### `DELETE /api/reminders/{id}`
 Hapus reminder.
 
-Referensi implementasi: [`deleteReminder()`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/ReminderController.java:85)
+Referensi implementasi: [`deleteReminder()`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/ReminderController.java:85)
 
 #### cURL
 ```bash
@@ -1344,12 +1344,12 @@ curl -X DELETE http://localhost:8080/api/reminders/rem-001
 
 ## 5. AI Endpoints
 
-Base route AI didefinisikan di [`AiController`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/AiController.java:14).
+Base route AI didefinisikan di [`AiController`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/AiController.java:14).
 
 ### `POST /api/ai/parse-task`
 Parse teks bebas menjadi draft task.
 
-Referensi implementasi: [`parseTask()`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/AiController.java:21)
+Referensi implementasi: [`parseTask()`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/AiController.java:21)
 
 #### Request body
 ```json
@@ -1384,7 +1384,7 @@ curl -X POST http://localhost:8080/api/ai/parse-task \
 }
 ```
 
-Catatan heuristic priority saat ini dari [`inferPriority()`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/AiController.java:55):
+Catatan heuristic priority saat ini dari [`inferPriority()`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/AiController.java:55):
 - mengandung `urgent`, `penting`, `segera` → `HIGH`
 - mengandung `nanti`, `low` → `LOW`
 - selain itu → `MEDIUM`
@@ -1392,7 +1392,7 @@ Catatan heuristic priority saat ini dari [`inferPriority()`](Pemrograman%20Basis
 ### `POST /api/ai/overview-analysis`
 Hasilkan analisis ringkas kondisi task user.
 
-Referensi implementasi: [`overviewAnalysis()`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/AiController.java:34)
+Referensi implementasi: [`overviewAnalysis()`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/AiController.java:34)
 
 #### Request body
 ```json
@@ -1496,7 +1496,7 @@ CREATE TABLE Task (
 
 Catatan:
 - dokumentasi lama yang menyebut kolom `difficulty`, `skipCount`, dan `priorityScore` sebagai kolom wajib DB **tidak dipakai sebagai acuan utama README ini**, karena roadmap terbaru menekankan bahwa sebagian nilai dapat dihitung dinamis
-- untuk status akurat endpoint dan gap implementasi, acuan utama tetap [`ROADMAP_API_ENDPOINT.md`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/docs/ROADMAP_API_ENDPOINT.md)
+- untuk status akurat endpoint dan gap implementasi, acuan utama tetap [`ROADMAP_API_ENDPOINT.md`](pemrograman-basis-data/TaskPlanner-Java-Backend/docs/ROADMAP_API_ENDPOINT.md)
 
 ---
 
@@ -1541,7 +1541,7 @@ curl -X POST http://localhost:8080/api/ai/parse-task \
 
 ## 📍 Gap Implementasi Saat Ini
 
-Mengacu ke [`ROADMAP_API_ENDPOINT.md`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/docs/ROADMAP_API_ENDPOINT.md):
+Mengacu ke [`ROADMAP_API_ENDPOINT.md`](pemrograman-basis-data/TaskPlanner-Java-Backend/docs/ROADMAP_API_ENDPOINT.md):
 
 ### Belum ada
 - `POST /api/auth/sync`
@@ -1564,13 +1564,13 @@ Mengacu ke [`ROADMAP_API_ENDPOINT.md`](Pemrograman%20Basis%20Data/TaskPlanner-Ja
 
 ## 🧭 Referensi Utama
 
-- [`README.md`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/README.md)
-- [`ROADMAP_API_ENDPOINT.md`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/docs/ROADMAP_API_ENDPOINT.md)
-- [`API_ENDPOINTS.md`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/docs/API_ENDPOINTS.md)
-- [`AuthController.java`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/AuthController.java)
-- [`TaskController.java`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/TaskController.java)
-- [`ReminderController.java`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/ReminderController.java)
-- [`AiController.java`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/AiController.java)
+- [`README.md`](pemrograman-basis-data/TaskPlanner-Java-Backend/README.md)
+- [`ROADMAP_API_ENDPOINT.md`](pemrograman-basis-data/TaskPlanner-Java-Backend/docs/ROADMAP_API_ENDPOINT.md)
+- [`API_ENDPOINTS.md`](pemrograman-basis-data/TaskPlanner-Java-Backend/docs/API_ENDPOINTS.md)
+- [`AuthController.java`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/AuthController.java)
+- [`TaskController.java`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/TaskController.java)
+- [`ReminderController.java`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/ReminderController.java)
+- [`AiController.java`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/AiController.java)
 
 ---
 

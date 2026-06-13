@@ -2,7 +2,7 @@
 
 ## 1. Tujuan Dokumen
 
-Dokumen ini menganalisis apakah backend [`Proyek Perangkat Lunak/backend`](../../backend) dapat menyesuaikan requirement pada tugas [`Pemrograman Basis Data/Tugas-Besar.md`](../../../Pemrograman%20Basis%20Data/Tugas-Besar.md:1), dengan penegasan bahwa [`Express`](../../backend/package.json:27) **boleh dipakai sebagai tool integrasi lain**, selama aplikasi tetap terhubung ke **Oracle Database** seperti diminta pada [`Tugas-Besar.md`](../../../Pemrograman%20Basis%20Data/Tugas-Besar.md:19). Yang tidak dipakai pada stack ini adalah [`JDBC`](../../../Pemrograman%20Basis%20Data/Tugas-Besar.md:22), karena JDBC adalah mekanisme koneksi khusus Java.
+Dokumen ini menganalisis apakah backend [`proyek-perangkat-lunak/backend`](../../backend) dapat menyesuaikan requirement pada tugas [`pemrograman-basis-data/Tugas-Besar.md`](../../../pemrograman-basis-data/Tugas-Besar.md:1), dengan penegasan bahwa [`Express`](../../backend/package.json:27) **boleh dipakai sebagai tool integrasi lain**, selama aplikasi tetap terhubung ke **Oracle Database** seperti diminta pada [`Tugas-Besar.md`](../../../pemrograman-basis-data/Tugas-Besar.md:19). Yang tidak dipakai pada stack ini adalah [`JDBC`](../../../pemrograman-basis-data/Tugas-Besar.md:22), karena JDBC adalah mekanisme koneksi khusus Java.
 
 Fokus utamanya:
 
@@ -17,31 +17,31 @@ Fokus utamanya:
 
 Kesimpulan singkat:
 
-1. [`Tugas-Besar.md`](../../../Pemrograman%20Basis%20Data/Tugas-Besar.md:14) meminta aplikasi terhubung ke **Oracle Database** dan memberi contoh koneksi seperti **Java/JDBC** atau **C#/ODP.NET**.
+1. [`Tugas-Besar.md`](../../../pemrograman-basis-data/Tugas-Besar.md:14) meminta aplikasi terhubung ke **Oracle Database** dan memberi contoh koneksi seperti **Java/JDBC** atau **C#/ODP.NET**.
 2. Artinya, fokus utamanya adalah **aplikasi harus bisa konek ke Oracle**, bukan harus selalu memakai JDBC di semua bahasa.
 3. Backend Express **bisa memenuhi inti aplikasi CRUD**, validasi, error handling, autentikasi, keamanan dasar, dokumentasi teknis, dan integrasi database relasional.
-4. Backend Express **boleh dipakai sebagai tool integrasi lain**, tetapi jika dipakai maka koneksi Oracle-nya tidak melalui [`JDBC`](../../../Pemrograman%20Basis%20Data/Tugas-Besar.md:22), melainkan melalui driver Oracle untuk Node.js.
+4. Backend Express **boleh dipakai sebagai tool integrasi lain**, tetapi jika dipakai maka koneksi Oracle-nya tidak melalui [`JDBC`](../../../pemrograman-basis-data/Tugas-Besar.md:22), melainkan melalui driver Oracle untuk Node.js.
 5. Implementasi backend Express saat ini masih **belum sesuai penuh terhadap Oracle**, karena masih memakai **MySQL** melalui datasource [`mysql`](../../backend/prisma/schema.prisma:9).
 6. Beberapa konsep database programming seperti transaksi atomik, keamanan query, evaluasi performa query, dan dokumentasi teknis **tetap bisa dipenuhi secara konsep**, hanya implementasinya berbeda dari pendekatan Java/JDBC.
 
 ## 3. Requirement Asli dari Tugas Besar
 
-Requirement utama pada [`Tugas-Besar.md`](../../../Pemrograman%20Basis%20Data/Tugas-Besar.md:12) adalah:
+Requirement utama pada [`Tugas-Besar.md`](../../../pemrograman-basis-data/Tugas-Besar.md:12) adalah:
 
-- database: **Oracle Database** di [`Tugas-Besar.md`](../../../Pemrograman%20Basis%20Data/Tugas-Besar.md:133)
-- bahasa pemrograman: **Java atau C#** di [`Tugas-Besar.md`](../../../Pemrograman%20Basis%20Data/Tugas-Besar.md:134)
-- koneksi: **JDBC atau ODP.NET** di [`Tugas-Besar.md`](../../../Pemrograman%20Basis%20Data/Tugas-Besar.md:135)
-- fitur utama: CRUD data domain di [`Tugas-Besar.md`](../../../Pemrograman%20Basis%20Data/Tugas-Besar.md:136)
-- validasi input di [`Tugas-Besar.md`](../../../Pemrograman%20Basis%20Data/Tugas-Besar.md:36)
-- transaksi `COMMIT` dan `ROLLBACK` di [`Tugas-Besar.md`](../../../Pemrograman%20Basis%20Data/Tugas-Besar.md:45)
-- error handling di [`Tugas-Besar.md`](../../../Pemrograman%20Basis%20Data/Tugas-Besar.md:60)
-- keamanan dasar, prepared statement, dan user terbatas di [`Tugas-Besar.md`](../../../Pemrograman%20Basis%20Data/Tugas-Besar.md:69)
-- pengujian performa query di [`Tugas-Besar.md`](../../../Pemrograman%20Basis%20Data/Tugas-Besar.md:79)
-- dokumentasi teknis di [`Tugas-Besar.md`](../../../Pemrograman%20Basis%20Data/Tugas-Besar.md:89)
+- database: **Oracle Database** di [`Tugas-Besar.md`](../../../pemrograman-basis-data/Tugas-Besar.md:133)
+- bahasa pemrograman: **Java atau C#** di [`Tugas-Besar.md`](../../../pemrograman-basis-data/Tugas-Besar.md:134)
+- koneksi: **JDBC atau ODP.NET** di [`Tugas-Besar.md`](../../../pemrograman-basis-data/Tugas-Besar.md:135)
+- fitur utama: CRUD data domain di [`Tugas-Besar.md`](../../../pemrograman-basis-data/Tugas-Besar.md:136)
+- validasi input di [`Tugas-Besar.md`](../../../pemrograman-basis-data/Tugas-Besar.md:36)
+- transaksi `COMMIT` dan `ROLLBACK` di [`Tugas-Besar.md`](../../../pemrograman-basis-data/Tugas-Besar.md:45)
+- error handling di [`Tugas-Besar.md`](../../../pemrograman-basis-data/Tugas-Besar.md:60)
+- keamanan dasar, prepared statement, dan user terbatas di [`Tugas-Besar.md`](../../../pemrograman-basis-data/Tugas-Besar.md:69)
+- pengujian performa query di [`Tugas-Besar.md`](../../../pemrograman-basis-data/Tugas-Besar.md:79)
+- dokumentasi teknis di [`Tugas-Besar.md`](../../../pemrograman-basis-data/Tugas-Besar.md:89)
 
 ## 4. Stack Backend Express yang Sedang Dianalisis
 
-Backend yang dibandingkan adalah [`Proyek Perangkat Lunak/backend`](../../backend), dengan stack:
+Backend yang dibandingkan adalah [`proyek-perangkat-lunak/backend`](../../backend), dengan stack:
 
 - framework: [`express`](../../backend/package.json:27)
 - bahasa: [`typescript`](../../backend/package.json:40)
@@ -73,9 +73,9 @@ maka backend Express ini **bisa dijadikan pengganti arsitektur** untuk menunjukk
 
 Secara **formal terhadap wording tugas**, backend Express ini perlu dibaca dengan hati-hati:
 
-1. tugas mewajibkan aplikasi terhubung ke **Oracle Database** di [`Tugas-Besar.md`](../../../Pemrograman%20Basis%20Data/Tugas-Besar.md:19),
-2. tugas memberi contoh koneksi **Java menggunakan JDBC** di [`Tugas-Besar.md`](../../../Pemrograman%20Basis%20Data/Tugas-Besar.md:21),
-3. tugas juga memberi contoh **C# menggunakan ODP.NET** di [`Tugas-Besar.md`](../../../Pemrograman%20Basis%20Data/Tugas-Besar.md:23),
+1. tugas mewajibkan aplikasi terhubung ke **Oracle Database** di [`Tugas-Besar.md`](../../../pemrograman-basis-data/Tugas-Besar.md:19),
+2. tugas memberi contoh koneksi **Java menggunakan JDBC** di [`Tugas-Besar.md`](../../../pemrograman-basis-data/Tugas-Besar.md:21),
+3. tugas juga memberi contoh **C# menggunakan ODP.NET** di [`Tugas-Besar.md`](../../../pemrograman-basis-data/Tugas-Besar.md:23),
 4. sehingga JDBC di dokumen tugas dapat dipahami sebagai **contoh mekanisme koneksi untuk Java**, bukan satu-satunya mekanisme yang mungkin untuk semua stack,
 5. namun implementasi Express saat ini tetap belum identik, karena memakai TypeScript/Node.js dan masih memakai MySQL.
 
@@ -92,7 +92,7 @@ Jadi, untuk jawaban akademik yang jujur:
 |---|---|---|---|
 | Oracle Database | Belum sesuai saat ini | Bisa disesuaikan | Backend masih memakai [`mysql`](../../backend/prisma/schema.prisma:9), tetapi secara arsitektur Express tetap bisa diarahkan ke Oracle |
 | Java / C# | Tidak dipakai | Boleh berbeda jika tool lain diterima | Backend memakai [`typescript`](../../backend/package.json:40) |
-| JDBC / ODP.NET | Tidak dipakai | Wajar pada Express | JDBC adalah contoh koneksi Java di [`Tugas-Besar.md`](../../../Pemrograman%20Basis%20Data/Tugas-Besar.md:22), bukan mekanisme untuk Node.js |
+| JDBC / ODP.NET | Tidak dipakai | Wajar pada Express | JDBC adalah contoh koneksi Java di [`Tugas-Besar.md`](../../../pemrograman-basis-data/Tugas-Besar.md:22), bukan mekanisme untuk Node.js |
 | Koneksi ke database relasional | Ada | Sesuai konsep | Koneksi lewat [`DATABASE_URL`](../../backend/src/config/env.ts:7) dan Prisma |
 | CRUD | Ada | Sudah sesuai | Task CRUD tersedia di [`task.routes.ts`](../../backend/src/modules/tasks/task.routes.ts:13) |
 | Validasi input | Ada | Sudah sesuai | Validasi memakai Zod, misalnya [`createReminderSchema`](../../backend/src/modules/reminders/reminder.validation.ts:3) |
@@ -212,7 +212,7 @@ Penilaian:
 
 ## 8.1 Transaksi Database Atomik
 
-Requirement tugas meminta `COMMIT` dan `ROLLBACK` eksplisit pada operasi database di [`Tugas-Besar.md`](../../../Pemrograman%20Basis%20Data/Tugas-Besar.md:45).
+Requirement tugas meminta `COMMIT` dan `ROLLBACK` eksplisit pada operasi database di [`Tugas-Besar.md`](../../../pemrograman-basis-data/Tugas-Besar.md:45).
 
 Pada backend Express sekarang, ada operasi multi-step seperti create task:
 
@@ -234,7 +234,7 @@ Status:
 
 ## 8.2 Prepared Statement / Bind Variable
 
-Requirement tugas menekankan prepared statement di [`Tugas-Besar.md`](../../../Pemrograman%20Basis%20Data/Tugas-Besar.md:75).
+Requirement tugas menekankan prepared statement di [`Tugas-Besar.md`](../../../pemrograman-basis-data/Tugas-Besar.md:75).
 
 Pada backend Express:
 
@@ -299,8 +299,8 @@ Namun ini **bukan berarti Express tidak bisa terhubung ke Oracle**.
 
 Maknanya adalah:
 
-- jika backend memakai Java, koneksi Oracle lazimnya lewat [`JDBC`](../../../Pemrograman%20Basis%20Data/Tugas-Besar.md:22),
-- jika backend memakai C#, koneksi Oracle bisa lewat [`ODP.NET`](../../../Pemrograman%20Basis%20Data/Tugas-Besar.md:23),
+- jika backend memakai Java, koneksi Oracle lazimnya lewat [`JDBC`](../../../pemrograman-basis-data/Tugas-Besar.md:22),
+- jika backend memakai C#, koneksi Oracle bisa lewat [`ODP.NET`](../../../pemrograman-basis-data/Tugas-Besar.md:23),
 - jika backend memakai Express/Node.js, koneksi Oracle dilakukan lewat driver Oracle untuk Node.js, **bukan JDBC**.
 
 Status:
@@ -310,7 +310,7 @@ Status:
 
 ## 9.2 Oracle Database
 
-Requirement tugas menyebut Oracle di [`Tugas-Besar.md`](../../../Pemrograman%20Basis%20Data/Tugas-Besar.md:14), [`Tugas-Besar.md`](../../../Pemrograman%20Basis%20Data/Tugas-Besar.md:19), dan [`Tugas-Besar.md`](../../../Pemrograman%20Basis%20Data/Tugas-Besar.md:133).
+Requirement tugas menyebut Oracle di [`Tugas-Besar.md`](../../../pemrograman-basis-data/Tugas-Besar.md:14), [`Tugas-Besar.md`](../../../pemrograman-basis-data/Tugas-Besar.md:19), dan [`Tugas-Besar.md`](../../../pemrograman-basis-data/Tugas-Besar.md:133).
 
 Implementasi backend Express sekarang masih memakai MySQL di [`schema.prisma`](../../backend/prisma/schema.prisma:9).
 
@@ -350,7 +350,7 @@ Status:
 
 ## 9.4 User Oracle Terbatas
 
-Tugas mengharuskan user DB khusus dan tidak memakai `SYS`/`SYSTEM` di [`Tugas-Besar.md`](../../../Pemrograman%20Basis%20Data/Tugas-Besar.md:76).
+Tugas mengharuskan user DB khusus dan tidak memakai `SYS`/`SYSTEM` di [`Tugas-Besar.md`](../../../pemrograman-basis-data/Tugas-Besar.md:76).
 
 Pada backend Express, informasi user database hanya tampil sebagai [`DATABASE_URL`](../../backend/src/config/env.ts:7). Tidak ada dokumentasi eksplisit yang menunjukkan:
 
@@ -364,7 +364,7 @@ Status:
 
 ## 9.5 Pengujian Performa Query Formal
 
-Tugas mengharuskan laporan query kompleks, waktu eksekusi, dan evaluasi performa di [`Tugas-Besar.md`](../../../Pemrograman%20Basis%20Data/Tugas-Besar.md:79).
+Tugas mengharuskan laporan query kompleks, waktu eksekusi, dan evaluasi performa di [`Tugas-Besar.md`](../../../pemrograman-basis-data/Tugas-Besar.md:79).
 
 Pada backend Express belum ditemukan dokumen benchmark formal yang memuat:
 
@@ -485,7 +485,7 @@ Agar lebih dekat ke requirement tugas besar, bisa ditambahkan:
 
 ## 13. Kesimpulan Final
 
-Backend [`Proyek Perangkat Lunak/backend`](../../backend) **bisa menyesuaikan banyak requirement inti** dari [`Pemrograman Basis Data/Tugas-Besar.md`](../../../Pemrograman%20Basis%20Data/Tugas-Besar.md:12), terutama pada aspek:
+Backend [`proyek-perangkat-lunak/backend`](../../backend) **bisa menyesuaikan banyak requirement inti** dari [`pemrograman-basis-data/Tugas-Besar.md`](../../../pemrograman-basis-data/Tugas-Besar.md:12), terutama pada aspek:
 
 - CRUD,
 - validasi,
@@ -496,8 +496,8 @@ Backend [`Proyek Perangkat Lunak/backend`](../../backend) **bisa menyesuaikan ba
 
 Kesimpulan penting yang harus ditegaskan dari dokumen tugas:
 
-- requirement utama tugas adalah aplikasi harus **terhubung ke Oracle Database** di [`Tugas-Besar.md`](../../../Pemrograman%20Basis%20Data/Tugas-Besar.md:19),
-- [`JDBC`](../../../Pemrograman%20Basis%20Data/Tugas-Besar.md:22) adalah **contoh cara koneksi untuk Java**,
+- requirement utama tugas adalah aplikasi harus **terhubung ke Oracle Database** di [`Tugas-Besar.md`](../../../pemrograman-basis-data/Tugas-Besar.md:19),
+- [`JDBC`](../../../pemrograman-basis-data/Tugas-Besar.md:22) adalah **contoh cara koneksi untuk Java**,
 - jadi [`Express`](../../backend/package.json:27) **boleh dipakai** bila diterima sebagai tool integrasi lain,
 - tetapi kalau memakai Express maka koneksi Oracle-nya **bukan JDBC**,
 - implementasi backend Express yang ada sekarang **belum sesuai penuh** karena masih memakai MySQL, belum Oracle,
@@ -538,4 +538,4 @@ Agar backend Express ini lebih mudah diposisikan sebagai hasil migrasi dari requ
 2. tambahkan transaksi Prisma pada operasi multi-step seperti create task + tag + reset reminder flag
 3. dokumentasikan evaluasi query aman vs query raw
 4. buat benchmark query untuk statistik task, reminder due, dan scheduler candidate query
-5. jika tujuan akademik wajib literal, pertahankan project Java terpisah di [`Pemrograman Basis Data/TaskPlanner-Java-Backend`](../../../Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend)
+5. jika tujuan akademik wajib literal, pertahankan project Java terpisah di [`pemrograman-basis-data/TaskPlanner-Java-Backend`](../../../pemrograman-basis-data/TaskPlanner-Java-Backend)

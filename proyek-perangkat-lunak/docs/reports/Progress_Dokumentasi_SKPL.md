@@ -72,8 +72,8 @@ Ruang lingkup Smart Task Planner meliputi:
 
 Dokumen ini disusun berdasarkan konteks internal berikut:
 
-- `Proyek Perangkat Lunak/README.md`
-- `Proyek Perangkat Lunak/AGENTS.md`
+- `proyek-perangkat-lunak/README.md`
+- `proyek-perangkat-lunak/AGENTS.md`
 - Struktur aplikasi Smart Task Planner:
   - `src/app`
   - `src/components`

@@ -1,8 +1,8 @@
 # Roadmap API Endpoint Java vs Express
 
-Dokumen ini membandingkan cakupan endpoint pada backend Java [`TaskPlanner-Java-Backend`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend) dengan backend Express [`Proyek Perangkat Lunak/backend`](Proyek%20Perangkat%20Lunak/backend).
+Dokumen ini membandingkan cakupan endpoint pada backend Java [`TaskPlanner-Java-Backend`](pemrograman-basis-data/TaskPlanner-Java-Backend) dengan backend Express [`proyek-perangkat-lunak/backend`](proyek-perangkat-lunak/backend).
 
-Analisis dibuat berdasarkan route yang benar-benar terdaftar pada source code saat ini, terutama di [`TaskController`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/TaskController.java:33), [`AuthController`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/AuthController.java:23), dan [`createApp()`](Proyek%20Perangkat%20Lunak/backend/src/app.ts:14).
+Analisis dibuat berdasarkan route yang benar-benar terdaftar pada source code saat ini, terutama di [`TaskController`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/TaskController.java:33), [`AuthController`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/AuthController.java:23), dan [`createApp()`](proyek-perangkat-lunak/backend/src/app.ts:14).
 
 ## Ringkasan Singkat
 
@@ -29,15 +29,15 @@ Analisis dibuat berdasarkan route yang benar-benar terdaftar pada source code sa
 
 ### A. Health
 
-- [x] Java memiliki `GET /api/health` via [`health()`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/TaskPlannerApplication.java:18)
-- [x] Express memiliki `GET /health` via [`createApp()`](Proyek%20Perangkat%20Lunak/backend/src/app.ts:23)
+- [x] Java memiliki `GET /api/health` via [`health()`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/TaskPlannerApplication.java:18)
+- [x] Express memiliki `GET /health` via [`createApp()`](proyek-perangkat-lunak/backend/src/app.ts:23)
 - [x] Roadmap target dokumentasi health sudah disamakan ke `GET /api/health`
 
 ### B. Auth
 
-- [x] Java memiliki `POST /api/auth/register` via [`register()`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/AuthController.java:40)
-- [x] Java memiliki `POST /api/auth/login` via [`login()`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/AuthController.java:98)
-- [x] Java memiliki `POST /api/auth/refresh` via [`refresh()`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/AuthController.java:160)
+- [x] Java memiliki `POST /api/auth/register` via [`register()`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/AuthController.java:40)
+- [x] Java memiliki `POST /api/auth/login` via [`login()`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/AuthController.java:98)
+- [x] Java memiliki `POST /api/auth/refresh` via [`refresh()`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/AuthController.java:160)
 - [x] Java memiliki `GET /api/auth/me`
 - [x] Java memiliki `POST /api/auth/logout`
 - [ ] Java belum memiliki `POST /api/auth/sync`
@@ -77,7 +77,7 @@ Analisis dibuat berdasarkan route yang benar-benar terdaftar pada source code sa
 
 ### F. Internal / Integrasi Lain
 
-- [ ] Java belum memiliki route internal WhatsApp seperti `app.use('/internal/wa', ...)` pada [`createApp()`](Proyek%20Perangkat%20Lunak/backend/src/app.ts:28)
+- [ ] Java belum memiliki route internal WhatsApp seperti `app.use('/internal/wa', ...)` pada [`createApp()`](proyek-perangkat-lunak/backend/src/app.ts:28)
 
 ---
 
@@ -98,7 +98,7 @@ Berikut endpoint yang ditemukan dari route backend Express:
 - `GET /api/auth/google` *(ditunda, checklist tetap dikosongkan)*
 - `GET /api/auth/google/callback` *(ditunda, checklist tetap dikosongkan)*
 
-Sumber: [`auth.routes.ts`](Proyek%20Perangkat%20Lunak/backend/src/modules/auth/auth.routes.ts:11)
+Sumber: [`auth.routes.ts`](proyek-perangkat-lunak/backend/src/modules/auth/auth.routes.ts:11)
 
 ### Tasks
 - `GET /api/tasks`
@@ -113,7 +113,7 @@ Sumber: [`auth.routes.ts`](Proyek%20Perangkat%20Lunak/backend/src/modules/auth/a
 - `POST /api/tasks/:id/priority`
 - `POST /api/tasks/:id/skip`
 
-Sumber: [`task.routes.ts`](Proyek%20Perangkat%20Lunak/backend/src/modules/tasks/task.routes.ts:13) dan [`task.skip.routes.ts`](Proyek%20Perangkat%20Lunak/backend/src/modules/tasks/task.skip.routes.ts:7)
+Sumber: [`task.routes.ts`](proyek-perangkat-lunak/backend/src/modules/tasks/task.routes.ts:13) dan [`task.skip.routes.ts`](proyek-perangkat-lunak/backend/src/modules/tasks/task.skip.routes.ts:7)
 
 ### Reminders
 - `POST /api/reminders`
@@ -123,13 +123,13 @@ Sumber: [`task.routes.ts`](Proyek%20Perangkat%20Lunak/backend/src/modules/tasks/
 - `PATCH /api/reminders/:id`
 - `DELETE /api/reminders/:id`
 
-Sumber: [`reminder.routes.ts`](Proyek%20Perangkat%20Lunak/backend/src/modules/reminders/reminder.routes.ts:11)
+Sumber: [`reminder.routes.ts`](proyek-perangkat-lunak/backend/src/modules/reminders/reminder.routes.ts:11)
 
 ### AI
 - `POST /api/ai/parse-task`
 - `POST /api/ai/overview-analysis`
 
-Sumber: [`ai.routes.ts`](Proyek%20Perangkat%20Lunak/backend/src/modules/ai/ai.routes.ts:9)
+Sumber: [`ai.routes.ts`](proyek-perangkat-lunak/backend/src/modules/ai/ai.routes.ts:9)
 
 ---
 
@@ -202,9 +202,9 @@ Berdasarkan implementasi saat ini di backend Java:
 - `POST /api/ai/overview-analysis`
 
 Referensi implementasi:
-- [`TaskPlannerApplication`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/TaskPlannerApplication.java:12)
-- [`AuthController`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/AuthController.java:23)
-- [`TaskController`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/TaskController.java:33)
+- [`TaskPlannerApplication`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/TaskPlannerApplication.java:12)
+- [`AuthController`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/AuthController.java:23)
+- [`TaskController`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/TaskController.java:33)
 
 ---
 
@@ -230,10 +230,10 @@ Jika backend Express dijadikan target acuan fitur, maka backend Java untuk area 
 - `PATCH /api/tasks/{id}` sudah ada, tetapi Java juga masih mempertahankan `PUT /api/tasks/{id}`.
 
 #### Reminders
-- Endpoint reminders sudah ada, tetapi implementasi saat ini masih memakai penyimpanan in-memory pada [`ReminderController`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/ReminderController.java:16), belum persistence database seperti backend Express.
+- Endpoint reminders sudah ada, tetapi implementasi saat ini masih memakai penyimpanan in-memory pada [`ReminderController`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/controller/ReminderController.java:16), belum persistence database seperti backend Express.
 
 #### AI
-- Endpoint AI sudah ada dan Java sudah memakai provider AI melalui [`AiService.analyzeOverview()`](Pemrograman%20Basis%20Data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/service/AiService.java:123), tetapi hasil overview belum memiliki cache/persistence database seperti [`prisma.overviewAnalysisCache.upsert()`](Proyek%20Perangkat%20Lunak/backend/src/modules/ai/ai.service.ts:657) di backend Express.
+- Endpoint AI sudah ada dan Java sudah memakai provider AI melalui [`AiService.analyzeOverview()`](pemrograman-basis-data/TaskPlanner-Java-Backend/src/main/java/com/taskplanner/service/AiService.java:123), tetapi hasil overview belum memiliki cache/persistence database seperti [`prisma.overviewAnalysisCache.upsert()`](proyek-perangkat-lunak/backend/src/modules/ai/ai.service.ts:657) di backend Express.
 
 ---
 
@@ -260,4 +260,4 @@ Urutan prioritas yang disarankan:
 
 Jika tujuan backend Java hanya CRUD task dasar dan auth register/login/refresh/me/logout sederhana, implementasi sekarang sudah lebih dari cukup dan sudah mencakup task analytics, reminders, serta AI endpoints dasar.
 
-Jika tujuan backend Java adalah menyamai backend Express di [`Proyek Perangkat Lunak/backend`](Proyek%20Perangkat%20Lunak/backend), maka untuk area endpoint task, reminder, dan AI Java **sudah hampir setara secara route**, frontend refresh token juga sudah terintegrasi, dan login sekarang sudah mengembalikan message error terstruktur. Bagian yang masih tertinggal ada pada `POST /api/auth/sync`, Google OAuth, route internal WhatsApp, persistence reminder, cache/persistence overview analysis AI, dan kedalaman logic AI. Endpoint Google OAuth tetap dikosongkan sebagai bagian yang ditunda.
+Jika tujuan backend Java adalah menyamai backend Express di [`proyek-perangkat-lunak/backend`](proyek-perangkat-lunak/backend), maka untuk area endpoint task, reminder, dan AI Java **sudah hampir setara secara route**, frontend refresh token juga sudah terintegrasi, dan login sekarang sudah mengembalikan message error terstruktur. Bagian yang masih tertinggal ada pada `POST /api/auth/sync`, Google OAuth, route internal WhatsApp, persistence reminder, cache/persistence overview analysis AI, dan kedalaman logic AI. Endpoint Google OAuth tetap dikosongkan sebagai bagian yang ditunda.
