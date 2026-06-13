@@ -248,7 +248,7 @@ Dengan perubahan ini, false negative "nomor belum terhubung" akibat salah resolu
 ## Yang belum selesai
 
 - [ ] verifikasi end-to-end dengan payload nyata dari bot production yang sudah mengirim `senderPn`
-- [ ] update kontrak resmi integrasi pada [`WHATSAPP_INBOUND.md`](../integrations/api-external/WHATSAPP_INBOUND.md) agar `senderPn` atau `user.waNumber` menjadi requirement eksplisit
+- [x] update kontrak resmi integrasi pada [`WHATSAPP_INBOUND.md`](../integrations/api-external/WHATSAPP_INBOUND.md) agar `senderPn` atau `user.waNumber` menjadi requirement eksplisit
 - [ ] tambahkan automated test regresi khusus untuk kombinasi `senderPn`, `@s.whatsapp.net`, dan `@lid`
 - [ ] validasi apakah service bot eksternal sudah mengirim field `senderPn` ke body request inbound
 
@@ -258,4 +258,4 @@ Dengan perubahan ini, false negative "nomor belum terhubung" akibat salah resolu
 - [ ] uji payload dengan `remoteJid=@lid` + `senderPn=628...@s.whatsapp.net`
 - [ ] uji payload dengan hanya `remoteJid=@lid` untuk memastikan backend mengembalikan `400`
 - [ ] uji registrasi `user_id daftar` agar tetap kompatibel setelah perubahan resolusi nomor
-- [ ] update dokumentasi integrasi dan contoh payload final setelah kontrak bot dikonfirmasi
+- [x] update dokumentasi integrasi dan contoh payload final setelah kontrak bot dikonfirmasi

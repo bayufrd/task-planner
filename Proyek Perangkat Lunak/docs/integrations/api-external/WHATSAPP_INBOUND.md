@@ -75,14 +75,17 @@ Field yang saat ini dibaca oleh backend:
 - `message.body`
 - `message.id`
 - `message.timestamp`
+- `message.senderPn`
 - `user.waNumber`
 - `user.name`
+- `user.senderPn`
 - `user.chatId`
 - `user.participant`
 - `user.isGroup`
 - `context.remoteJid`
 - `context.groupId`
 - `context.pushName`
+- `context.senderPn`
 - `context.senderIsAdmin`
 
 Parsing dilakukan di [`handleWhatsappInbound()`](../../backend/src/app.ts:247).
@@ -95,6 +98,7 @@ Parsing dilakukan di [`handleWhatsappInbound()`](../../backend/src/app.ts:247).
   "user": {
     "chatId": "6281234567890@c.us",
     "waNumber": "6281234567890",
+    "senderPn": "6281234567890@s.whatsapp.net",
     "name": "Bayu"
   }
 }
@@ -111,11 +115,13 @@ Parsing dilakukan di [`handleWhatsappInbound()`](../../backend/src/app.ts:247).
   "message": {
     "id": "wamid.HBgLN...",
     "timestamp": "1716091200",
-    "body": "clx123abc daftar"
+    "body": "clx123abc daftar",
+    "senderPn": "6281234567890@s.whatsapp.net"
   },
   "user": {
     "waNumber": "081234567890",
     "name": "Bayu Farid",
+    "senderPn": "6281234567890@s.whatsapp.net",
     "chatId": "6281234567890@c.us",
     "participant": "6281234567890@c.us",
     "isGroup": false
@@ -124,6 +130,7 @@ Parsing dilakukan di [`handleWhatsappInbound()`](../../backend/src/app.ts:247).
     "groupId": null,
     "remoteJid": "6281234567890@c.us",
     "pushName": "Bayu Farid",
+    "senderPn": "6281234567890@s.whatsapp.net",
     "senderIsAdmin": false
   }
 }
@@ -131,17 +138,34 @@ Parsing dilakukan di [`handleWhatsappInbound()`](../../backend/src/app.ts:247).
 
 ## Resolusi Nomor WhatsApp
 
-Backend akan mencoba mengambil nomor WhatsApp dari beberapa field secara berurutan di [`handleWhatsappInbound()`](../../backend/src/app.ts:255):
+Sejak perbaikan bug identitas `@lid`, backend tidak lagi sekadar mengambil field pertama yang berisi digit. Backend sekarang membangun kandidat sumber nomor lalu memilih kandidat non-`@lid` yang paling aman di [`resolveWhatsappNumber()`](../../backend/src/modules/whatsappInbound/whatsapp-inbound.routes.ts:105).
 
-1. [`user.waNumber`](../../backend/src/app.ts:256)
-2. [`user.participant`](../../backend/src/app.ts:257)
-3. [`user.chatId`](../../backend/src/app.ts:258)
-4. [`context.remoteJid`](../../backend/src/app.ts:259)
+Urutan kandidat yang dibaca saat ini:
 
-Nomor lalu dinormalisasi oleh:
+1. [`user.waNumber`](../../backend/src/modules/whatsappInbound/whatsapp-inbound.routes.ts:62)
+2. [`user.senderPn`](../../backend/src/modules/whatsappInbound/whatsapp-inbound.routes.ts:66)
+3. [`context.senderPn`](../../backend/src/modules/whatsappInbound/whatsapp-inbound.routes.ts:70)
+4. [`message.senderPn`](../../backend/src/modules/whatsappInbound/whatsapp-inbound.routes.ts:74)
+5. [`user.participant`](../../backend/src/modules/whatsappInbound/whatsapp-inbound.routes.ts:78)
+6. [`user.chatId`](../../backend/src/modules/whatsappInbound/whatsapp-inbound.routes.ts:82)
+7. [`context.remoteJid`](../../backend/src/modules/whatsappInbound/whatsapp-inbound.routes.ts:86)
 
-- [`extractWaNumber()`](../../backend/src/app.ts:23)
-- [`normalizeSafeWhatsappNumber()`](../../backend/src/app.ts:29)
+Helper yang terlibat:
+
+- [`extractWaNumber()`](../../backend/src/modules/whatsappInbound/whatsapp-inbound.routes.ts:22)
+- [`classifyWhatsappIdentity()`](../../backend/src/modules/whatsappInbound/whatsapp-inbound.routes.ts:28)
+- [`normalizeSafeWhatsappNumber()`](../../backend/src/modules/whatsappInbound/whatsapp-inbound.routes.ts:41)
+- [`buildWhatsappNumberCandidates()`](../../backend/src/modules/whatsappInbound/whatsapp-inbound.routes.ts:59)
+- [`resolveWhatsappNumber()`](../../backend/src/modules/whatsappInbound/whatsapp-inbound.routes.ts:105)
+
+### Aturan prioritas sumber nomor
+
+Backend sekarang mengikuti aturan berikut:
+
+- `user.waNumber` tetap menjadi sumber terbaik bila provider sudah mengirim nomor plain yang benar
+- `senderPn` diperlakukan sebagai fallback prioritas tinggi karena biasanya merepresentasikan nomor pengirim asli
+- `participant`, `chatId`, dan `remoteJid` tetap boleh dipakai bila nilainya bertipe JID biasa seperti `@s.whatsapp.net` atau `@c.us`
+- identitas yang berakhiran `@lid` tidak boleh dijadikan nomor user jika tidak ada kandidat lain yang valid
 
 ### Normalisasi Nomor
 
@@ -152,11 +176,16 @@ Aturan normalisasi saat ini:
 - jika diawali `0` maka diubah menjadi `62...`,
 - selain itu otomatis diprefix `62`.
 
-Contoh:
+Contoh yang valid:
 
 - `081234567890` → `6281234567890`
 - `6281234567890` → `6281234567890`
+- `6281234567890@s.whatsapp.net` → `6281234567890`
 - `6281234567890@c.us` → `6281234567890`
+
+Contoh yang tidak boleh dipakai sebagai nomor user:
+
+- `51153194758269@lid` → ditolak jika tidak ada kandidat non-`@lid` lain
 
 ## Validasi Dasar
 
@@ -190,7 +219,19 @@ Jika backend tidak bisa menemukan nomor dari payload, endpoint mengembalikan:
 }
 ```
 
-Validasi ada di [`handleWhatsappInbound()`](../../backend/src/app.ts:266).
+Jika payload hanya membawa identitas `@lid` tanpa `user.waNumber` atau `senderPn` yang valid, endpoint mengembalikan:
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Unable to resolve WhatsApp number from payload because only @lid identity was provided"
+  }
+}
+```
+
+Validasi ada di [`handleWhatsappInbound()`](../../backend/src/modules/whatsappInbound/whatsapp-inbound.routes.ts:594).
 
 ## Pola Umum Command WhatsApp
 
@@ -968,6 +1009,8 @@ Contoh untuk create task:
 
 Semua request sukses menggunakan format [`sendSuccess()`](../../backend/src/lib/response.ts), tetapi top-level `message` sekarang diisi dengan balasan sinkron final untuk caller.
 
+Sejak hardening resolusi nomor, payload sukses juga menyertakan metadata `numberResolution` untuk membantu audit sumber identitas pengirim yang dipakai backend.
+
 ### Top-level response
 
 ```json
@@ -980,9 +1023,46 @@ Semua request sukses menggunakan format [`sendSuccess()`](../../backend/src/lib/
     "rawMessage": "task tambah meeting besok jam 10 malam",
     "registrationCommand": false,
     "taskPlannerUserId": null,
-    "user": {},
-    "message": {},
-    "context": {},
+    "user": {
+      "waNumber": "6281234567890",
+      "name": "Bayu Farid",
+      "chatId": "51153194758269@lid",
+      "participant": null,
+      "senderPn": "6281234567890@s.whatsapp.net",
+      "isGroup": false
+    },
+    "message": {
+      "id": "wamid.HBgLN...",
+      "timestamp": "1716091200",
+      "body": "task tambah meeting besok jam 10 malam",
+      "senderPn": "6281234567890@s.whatsapp.net"
+    },
+    "context": {
+      "groupId": null,
+      "remoteJid": "51153194758269@lid",
+      "pushName": "Bayu Farid",
+      "senderPn": "6281234567890@s.whatsapp.net",
+      "senderIsAdmin": false
+    },
+    "numberResolution": {
+      "source": "user.senderPn",
+      "sourceKind": "jid",
+      "rejectedLidCandidate": null,
+      "candidates": [
+        {
+          "field": "user.senderPn",
+          "kind": "jid",
+          "raw": "6281234567890@s.whatsapp.net",
+          "normalized": "6281234567890"
+        },
+        {
+          "field": "user.chatId",
+          "kind": "lid",
+          "raw": "51153194758269@lid",
+          "normalized": "6251153194758269"
+        }
+      ]
+    },
     "receivedAt": "2026-05-19T04:00:00.000Z",
     "reply": {
       "message": "✅ Task berhasil dibuat untuk Bayu:\n📝 Meeting...",
@@ -1017,6 +1097,9 @@ Semua request sukses menggunakan format [`sendSuccess()`](../../backend/src/lib/
 - `outbound.sent`: apakah trigger outbound berhasil
 - `intent`: hasil deteksi intent internal WhatsApp
 - `operation`: hasil eksekusi internal untuk create/list/done/overview/unknown
+- `numberResolution.source`: field payload yang akhirnya dipakai untuk menentukan nomor user
+- `numberResolution.sourceKind`: tipe identitas sumber terpilih seperti `phone`, `jid`, atau `lid`
+- `numberResolution.rejectedLidCandidate`: kandidat `@lid` yang sengaja tidak dipakai jika ada sumber lain yang lebih aman
 - `whatsappReply.sent`: apakah pengiriman WhatsApp balasan non-registrasi berhasil
 - `registration.linked`: apakah nomor berhasil dihubungkan ke user
 - `registration.reason`: alasan gagal link jika ada
@@ -1036,6 +1119,7 @@ Semua request sukses menggunakan format [`sendSuccess()`](../../backend/src/lib/
 | token salah | `401` | unauthorized |
 | command kosong | `400` | validation error |
 | wa number tidak ditemukan | `400` | validation error |
+| payload hanya berisi `@lid` | `400` | validation error, request ditolak agar nomor palsu tidak dipakai |
 | nomor gagal normalisasi | `400` | validation error |
 | nomor sudah dipakai user lain | `409` | conflict |
 | config token kosong | `500` | config error |
@@ -1100,8 +1184,30 @@ curl -X POST http://localhost:8000/internal/wa/inbound \
   -d '{
     "command": "task tambah meeting besok jam 10 malam #urgent",
     "user": {
-      "waNumber": "081234567890",
-      "chatId": "6281234567890@c.us"
+      "chatId": "51153194758269@lid",
+      "senderPn": "6281234567890@s.whatsapp.net"
+    },
+    "context": {
+      "remoteJid": "51153194758269@lid",
+      "senderPn": "6281234567890@s.whatsapp.net"
+    }
+  }'
+```
+
+### Payload ditolak jika hanya `@lid`
+
+```bash
+curl -X POST http://localhost:8000/internal/wa/inbound \
+  -H "Authorization: Bearer YOUR_TOKEN_WHATSAPP" \
+  -H "x-service-secret: YOUR_TOKEN_WHATSAPP" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "command": "task tambah meeting besok jam 10 malam #urgent",
+    "user": {
+      "chatId": "51153194758269@lid"
+    },
+    "context": {
+      "remoteJid": "51153194758269@lid"
     }
   }'
 ```
@@ -1140,14 +1246,16 @@ Dengan pola ini, WhatsApp AI punya akses internal tanpa login session user web, 
 
 Arah implementasi yang sekarang berlaku:
 
-- [`POST /internal/wa/inbound`](../../backend/src/modules/whatsappInbound/whatsapp-inbound.routes.ts:451) adalah pintu masuk semua command task dari WhatsApp,
+- [`POST /internal/wa/inbound`](../../backend/src/modules/whatsappInbound/whatsapp-inbound.routes.ts:1186) adalah pintu masuk semua command task dari WhatsApp,
 - filtering chat non-task sudah menjadi tanggung jawab provider bot WhatsApp,
 - backend fokus pada pembacaan `command`, pemetaan nomor WA ke user, dan routing intent,
 - flow `user_id daftar` tetap menjadi prerequisite untuk linking identitas user,
+- provider bot wajib mengirim nomor pengirim asli secara eksplisit melalui `user.waNumber` atau `senderPn`,
+- identitas `@lid` tidak boleh diperlakukan sebagai fallback nomor user tanpa kandidat lain yang valid,
 - flow AI WhatsApp sudah memakai service internal backend, bukan endpoint web auth biasa,
-- resolver utama sekarang adalah [`AiService.resolveWhatsappAction()`](../../backend/src/modules/ai/ai.service.ts:283) dengan fallback ringan ke [`detectWhatsappIntent()`](../../backend/src/modules/whatsappInbound/whatsapp-inbound.routes.ts:238),
+- resolver utama sekarang adalah [`AiService.resolveWhatsappAction()`](../../backend/src/modules/ai/ai.service.ts:283) dengan fallback ringan ke [`detectWhatsappIntent()`](../../backend/src/modules/whatsappInbound/whatsapp-inbound.routes.ts:334),
 - parser task natural sekarang menjaga konteks waktu Indonesia/Jakarta melalui [`applyIndonesianTimeHints()`](../../backend/src/modules/ai/ai.service.ts:128),
-- setelah setiap operasi, backend mencoba mengirim balasan ke endpoint WhatsApp reply melalui [`sendWhatsappMessage()`](../../backend/src/modules/whatsappInbound/whatsapp-inbound.routes.ts:38),
+- setelah setiap operasi, backend mencoba mengirim balasan ke endpoint WhatsApp reply melalui [`sendWhatsappMessage()`](../../backend/src/modules/whatsappInbound/whatsapp-inbound.routes.ts:117),
 - scheduler reminder personal berjalan paralel di background melalui [`TaskAutoSkipScheduler.start()`](../../backend/src/modules/tasks/task.auto-skip.scheduler.ts:11).
 
 Dengan arah ini, AI WhatsApp sekarang sudah dapat menentukan apakah sebuah command harus menuju create, update, delete, complete, overview, atau list, lalu menyusun payload backend yang sesuai tanpa keluar dari domain Smart Task Planner berbasis AI dari dastrevas.com.
@@ -1169,6 +1277,8 @@ Checklist manual/QC yang disarankan:
 - [ ] test request tanpa header auth → harus `401`
 - [ ] test request tanpa `command` → harus `400`
 - [ ] test request tanpa sumber nomor WA → harus `400`
+- [ ] test payload yang hanya berisi `remoteJid=@lid` → harus `400`
+- [ ] test payload `remoteJid=@lid` + `senderPn=628...@s.whatsapp.net` → backend harus pilih `senderPn`
 - [ ] test `user_id daftar` dengan user valid tanpa nomor → harus link berhasil + kirim pesan sukses
 - [ ] test `user_id daftar` dengan user tidak ditemukan → harus kirim pesan signup
 - [ ] test `user_id daftar` dengan user yang sudah punya nomor → harus kirim pesan sudah terdaftar
@@ -1190,7 +1300,7 @@ Checklist manual/QC yang disarankan:
 - [ ] test frasa `jam 9 malam`, `jam 9 pagi`, `jam 6 sore` → harus tersimpan sebagai WIB yang benar
 - [ ] test scheduler reminder H-24, H-1, tepat deadline, dan auto-`SKIPPED`
 - [ ] test user tanpa `whatsappNumber` → reminder personal tidak dikirim
-- [ ] verifikasi isi `operation` dan `whatsappReply` pada setiap skenario
+- [ ] verifikasi isi `operation`, `whatsappReply`, dan `numberResolution` pada setiap skenario
 - [ ] verifikasi pesan WhatsApp benar-benar terkirim dari service bot
 - [ ] jalankan build backend setelah perubahan
 - [ ] jalankan `git status --short` untuk review file berubah
