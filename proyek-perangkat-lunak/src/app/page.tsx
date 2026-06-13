@@ -1,33 +1,26 @@
 'use client'
 
 import Image from 'next/image'
-import { signIn } from 'next-auth/react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   ArrowRight,
-  Zap,
   Brain,
-  Watch,
   BarChart3,
-  Users,
   CheckCircle2,
   ChevronRight,
   Sparkles,
   Moon,
   Sun,
   MessageSquare,
-  Vibrate,
   Calendar,
   Lightbulb,
   Clock,
   Wand2,
   RotateCcw,
   TrendingUp,
-  Users2,
-  ChevronLeft,
-  ChevronRight as ChevronRightIcon
+  Users2
 } from 'lucide-react'
 
 // Custom Google Icon Component
@@ -43,14 +36,62 @@ import { useTheme } from '@/components/providers/ThemeProvider'
 import { useLanguage } from '@/components/providers/LanguageProvider'
 import { CollectionSlider } from '@/components/CollectionSlider'
 
-// Static video paths
 const VIDEOS = {
   hero: '/vids/ac7d1492-c7ee-42d2-b937-fe801c4e48f6.mp4',
-  features1: '/vids/motion_2.0_Indonesian_young_professional_working_at_desk_laptop_open_smartphone_beside_him_-0.mp4',
   features2: '/vids/motion_2.0_Indonesian_young_woman_smiling_gently_while_looking_at_her_smartphone_with_sched-0.mp4',
-  timeline: '/vids/veo-3.1-fast-generate-001_scene_1_title_POV_Opening_-_AI_Planner_Terminal_duration_4-5_seconds_camera_firs-0.mp4',
   cta: '/vids/motion_2.0_Indonesian_young_adult_looking_calm_and_productive_holding_smartphone_while_view-0.mp4'
 }
+
+const featureCards = [
+  {
+    icon: MessageSquare,
+    title: 'AI Understands Your Language',
+    status: 'Available Now',
+    desc: 'Type naturally in any language. Our AI parses casual speech, abbreviations, and mixed languages instantly. No rigid forms, no perfect syntax required.'
+  },
+  {
+    icon: Calendar,
+    title: 'Google Calendar Native',
+    status: 'Available Now',
+    desc: 'Create, edit, and sync tasks directly with Google Calendar. Your tasks live where you already look-no switching between apps.'
+  },
+  {
+    icon: Lightbulb,
+    title: 'AI Knowledge Breakdown',
+    status: 'Coming Soon',
+    desc: 'Tell our AI what you want to learn or achieve. It automatically breaks complex projects into manageable daily tasks with realistic timelines.'
+  },
+  {
+    icon: Clock,
+    title: 'Intelligent Scheduling',
+    status: 'Coming Soon',
+    desc: 'Never double-book again. Our AI detects conflicts, suggests optimal times, and prevents burnout with smart work distribution.'
+  },
+  {
+    icon: Wand2,
+    title: 'Smart Suggestions',
+    status: 'Coming Soon',
+    desc: 'As you use TaskPlanner, it learns your work patterns and proactively suggests optimizations to your schedule.'
+  },
+  {
+    icon: RotateCcw,
+    title: 'Auto-Recurring Tasks',
+    status: 'Coming Soon',
+    desc: 'The AI recognizes patterns and automatically creates recurring tasks with the right frequency-daily, weekly, or custom intervals.'
+  },
+  {
+    icon: TrendingUp,
+    title: 'Task Analytics',
+    status: 'Coming Soon',
+    desc: 'Beautiful dashboards show your productivity patterns, completion rates, and insights to help you work smarter.'
+  },
+  {
+    icon: Users2,
+    title: 'Team Collaboration',
+    status: 'Coming Soon',
+    desc: 'Share workspaces with your team. Assign tasks, track progress together, and keep everyone aligned on what matters.'
+  }
+] as const
 
 export default function LandingPage() {
   const { data: session, status } = useSession()
@@ -59,6 +100,10 @@ export default function LandingPage() {
   const { language, setLanguage, t } = useLanguage()
   const [mounted, setMounted] = useState(false)
   const theme = currentTheme
+  const reduceMotion = useMemo(
+    () => mounted && typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+    [mounted]
+  )
 
   useEffect(() => {
     setMounted(true)
@@ -133,7 +178,7 @@ export default function LandingPage() {
   ]
 
   return (
-    <div className={`min-h-screen w-full transition-colors ${theme === 'dark' ? 'bg-gradient-to-br from-gray-950 via-slate-900 to-indigo-950' : 'bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50'}`}>
+    <main className={`min-h-screen w-full transition-colors ${theme === 'dark' ? 'bg-gradient-to-br from-gray-950 via-slate-900 to-indigo-950 text-white' : 'bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 text-gray-900'}`}>
       {/* Decorative Background - Only render after mount untuk avoid CLS */}
       {mounted && (
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -210,21 +255,21 @@ export default function LandingPage() {
         </nav>
 
         {/* Hero Section - Matched to Reference */}
-        <div className="max-w-[1200px] mx-auto px-[40px] pt-32 pb-24 flex flex-col items-center text-center">
+        <div className="max-w-[1200px] mx-auto px-5 sm:px-8 lg:px-[40px] pt-20 sm:pt-28 lg:pt-24 pb-14 sm:pb-20 lg:pb-20 flex flex-col items-center text-center">
           {/* Badge */}
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 text-blue-600 font-semibold text-sm border border-blue-500/10 mb-10">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-100 font-semibold text-sm border border-blue-200 dark:border-blue-700/60 mb-5 sm:mb-8">
             <Sparkles className="w-3.5 h-3.5" />
             <span>{mounted && language === 'id' ? 'Asisten AI & Integrasi WhatsApp sudah aktif' : 'AI Assistant & WhatsApp Integration is now live'}</span>
           </div>
 
           {/* Main Heading */}
-          <h1 className="text-[64px] leading-[1.1] font-bold tracking-tight mb-8 max-w-4xl">
+          <h1 className="text-[40px] sm:text-[56px] lg:text-[64px] leading-[1.05] font-bold tracking-tight mb-5 sm:mb-7 max-w-4xl">
             {mounted && language === 'id' ? 'Rencanakan lebih cerdas.' : 'Plan smarter.'}<br />
             <span className="text-blue-600">{mounted && language === 'id' ? 'Selesaikan lebih cepat.' : 'Finish faster.'}</span>
           </h1>
 
           {/* Description */}
-          <p className="text-lg max-w-2xl mb-14 leading-relaxed text-gray-500 opacity-80">
+          <p className={`text-base sm:text-lg max-w-2xl mb-8 sm:mb-12 leading-relaxed ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
             {mounted && language === 'id' 
               ? 'Tugas yang diperingkat AI berdasarkan urgensi, prioritas, pengingat, dan durasi. Dapatkan kembali fokus Anda dan hilangkan kebingungan memilih pekerjaan berikutnya dengan mesin tugas cerdas pribadi.'
               : 'AI-ranked tasks based on urgency, priority, reminders, and duration. Regain focus and eliminate decision fatigue with your own intelligent task engine.'
@@ -232,22 +277,22 @@ export default function LandingPage() {
           </p>
 
           {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-5 items-center">
+          <div className="flex flex-col sm:flex-row gap-4 sm:gap-5 items-center">
             <button
               onClick={handleStartNow}
-              className="flex items-center gap-3 bg-white border border-gray-200 px-8 py-4 rounded-full font-semibold text-lg hover:bg-gray-50 transition-all hover:shadow-xl active:scale-[0.98]"
+              className="flex items-center gap-3 bg-white text-gray-900 border border-gray-200 px-8 py-4 rounded-full font-semibold text-lg hover:bg-gray-50 transition-all hover:shadow-xl active:scale-[0.98]"
             >
               <GoogleIcon className="w-5 h-5" />
               {mounted && language === 'id' ? 'Masuk dengan Google' : 'Sign in with Google'}
             </button>
-            <button onClick={handleSignUp} className="flex items-center gap-2 text-gray-500 hover:text-gray-900 px-8 py-4 font-semibold text-lg transition-colors group">
+            <button onClick={handleSignUp} className={`flex items-center gap-2 px-8 py-4 font-semibold text-lg transition-colors group ${theme === 'dark' ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`}>
               {mounted && language === 'id' ? 'Daftar Sekarang' : 'Sign Up Now'}
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" strokeWidth={2} />
             </button>
           </div>
 
           {/* Preview Video */}
-          <div className="mt-28 relative w-full max-w-5xl group">
+          <div className="mt-10 sm:mt-18 lg:mt-20 relative w-full max-w-5xl group">
             <div className="absolute -inset-10 bg-gradient-to-tr from-blue-300/20 to-emerald-300/20 rounded-full blur-3xl opacity-60"></div>
             <div className="relative bg-white border border-gray-200 p-1.5 rounded-[1.25rem] shadow-xl overflow-hidden">
               <Image
@@ -297,17 +342,33 @@ export default function LandingPage() {
               })}
             </div>
 
-            {/* Video */}
+            {/* Feature media */}
             <div className="relative rounded-2xl overflow-hidden border border-gray-800/50 shadow-2xl shadow-blue-500/20 h-96">
-              <video
-                autoPlay
-                muted
-                loop
-                playsInline
-                className="w-full h-full object-cover"
-              >
-                <source src={VIDEOS.features2} type="video/mp4" />
-              </video>
+              {reduceMotion ? (
+                <Image
+                  src="/opt-hero/2.webp"
+                  alt="TaskPlanner feature preview"
+                  width={1280}
+                  height={720}
+                  loading="lazy"
+                  sizes="(max-width: 1024px) 100vw, 50vw"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <video
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  preload="metadata"
+                  aria-hidden="true"
+                  tabIndex={-1}
+                  poster="/opt-hero/2.webp"
+                  className="w-full h-full object-cover"
+                >
+                  <source src={VIDEOS.features2} type="video/mp4" />
+                </video>
+              )}
               <div className="absolute inset-0 bg-gradient-to-t from-gray-950/20 to-transparent pointer-events-none"></div>
             </div>
           </div>
@@ -317,7 +378,7 @@ export default function LandingPage() {
         <div className={`py-20 border-t ${theme === 'dark' ? 'border-emerald-900/30 bg-emerald-900/5' : 'border-emerald-200/30 bg-emerald-50/50'}`}>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center">
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500 text-white font-semibold text-xs uppercase tracking-widest mb-8">
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-700 text-white font-semibold text-xs uppercase tracking-widest mb-8">
                 {mounted && language === 'id' ? 'Penawaran Terbaik' : 'Best Deal'}
               </div>
               <h2 className={`text-4xl sm:text-5xl font-bold mb-6 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
@@ -397,7 +458,7 @@ export default function LandingPage() {
                     <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${theme === 'dark' ? 'bg-blue-900/30' : 'bg-blue-100'}`}>
                       <Icon className="w-6 h-6 text-blue-600 dark:text-blue-400" strokeWidth={2} />
                     </div>
-                    <div className={`inline-block px-3 py-1 rounded-full text-xs font-bold ${theme === 'dark' ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-100 text-blue-600'}`}>
+                    <div className={`inline-block px-3 py-1 rounded-full text-xs font-bold ${theme === 'dark' ? 'bg-blue-900/50 text-blue-100' : 'bg-blue-100 text-blue-800'}`}>
                       {item.phase}
                     </div>
                   </div>
@@ -417,17 +478,33 @@ export default function LandingPage() {
               })}
             </div>
 
-            {/* Video di kanan */}
+            {/* Timeline preview */}
             <div className="relative rounded-2xl overflow-hidden border border-gray-800/50 shadow-2xl shadow-blue-500/20 h-96 lg:h-full">
-              <video
-                autoPlay
-                muted
-                loop
-                playsInline
-                className="w-full h-full object-cover"
-              >
-                <source src={VIDEOS.hero} type="video/mp4" />
-              </video>
+              {reduceMotion ? (
+                <Image
+                  src="/opt-hero/3.webp"
+                  alt="Timeline planning preview"
+                  width={1280}
+                  height={720}
+                  loading="lazy"
+                  sizes="(max-width: 1024px) 100vw, 50vw"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <video
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  preload="none"
+                  aria-hidden="true"
+                  tabIndex={-1}
+                  poster="/opt-hero/3.webp"
+                  className="w-full h-full object-cover"
+                >
+                  <source src={VIDEOS.hero} type="video/mp4" />
+                </video>
+              )}
               <div className="absolute inset-0 bg-gradient-to-t from-gray-950/20 to-transparent pointer-events-none"></div>
             </div>
           </div>
@@ -445,33 +522,27 @@ export default function LandingPage() {
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[
-              { icon: MessageSquare, title: 'AI Understands Your Language', status: 'Available Now', desc: 'Type naturally in any language. Our AI parses casual speech, abbreviations, and mixed languages instantly. No rigid forms, no perfect syntax required.' },
-              
-              { icon: Calendar, title: 'Google Calendar Native', status: 'Available Now', desc: 'Create, edit, and sync tasks directly with Google Calendar. Your tasks live where you already look—no switching between apps.' },
-              { icon: Lightbulb, title: 'AI Knowledge Breakdown', status: 'Coming Soon', desc: 'Tell our AI what you want to learn or achieve. It automatically breaks complex projects into manageable daily tasks with realistic timelines.' },
-              { icon: Clock, title: 'Intelligent Scheduling', status: 'Coming Soon', desc: 'Never double-book again. Our AI detects conflicts, suggests optimal times, and prevents burnout with smart work distribution.' },
-              { icon: Wand2, title: 'Smart Suggestions', status: 'Coming Soon', desc: 'As you use TaskPlanner, it learns your work patterns and proactively suggests optimizations to your schedule.' },
-              { icon: RotateCcw, title: 'Auto-Recurring Tasks', status: 'Coming Soon', desc: 'The AI recognizes patterns and automatically creates recurring tasks with the right frequency—daily, weekly, or custom intervals.' },
-              { icon: TrendingUp, title: 'Task Analytics', status: 'Coming Soon', desc: 'Beautiful dashboards show your productivity patterns, completion rates, and insights to help you work smarter.' },
-              { icon: Users2, title: 'Team Collaboration', status: 'Coming Soon', desc: 'Share workspaces with your team. Assign tasks, track progress together, and keep everyone aligned on what matters.' }
-            ].map((feature, index) => {
+            {featureCards.map((feature, index) => {
               const Icon = feature.icon
+              const statusClasses = feature.status === 'Available Now'
+                ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-100'
+                : 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-100'
+
               return (
-              <div key={index} className={`rounded-2xl border transition-all duration-300 p-6 hover:shadow-lg ${theme === 'dark' ? 'border-gray-800/50 bg-gray-900/50 hover:border-blue-400/50' : 'border-gray-200/50 bg-white/50 hover:border-blue-400/50'}`}>
+              <article key={index} className={`rounded-2xl border transition-all duration-300 p-6 hover:shadow-lg ${theme === 'dark' ? 'border-gray-800/50 bg-gray-900/50 hover:border-blue-400/50' : 'border-gray-200/50 bg-white/50 hover:border-blue-400/50'}`}>
                 <div className="flex items-start gap-3 mb-4">
                   <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${theme === 'dark' ? 'bg-blue-900/30' : 'bg-blue-100'}`}>
                     <Icon className="w-5 h-5 text-blue-600 dark:text-blue-400" strokeWidth={2} />
                   </div>
                   <div className="flex-1">
-                    <h4 className={`text-lg font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>{feature.title}</h4>
-                    <p className={`text-xs font-semibold mt-1 ${feature.status === 'Available Now' ? 'text-green-400' : 'text-yellow-400'}`}>
+                    <h3 className={`text-lg font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>{feature.title}</h3>
+                    <p className={`inline-flex mt-2 rounded-full px-2.5 py-1 text-xs font-semibold ${statusClasses}`}>
                       {feature.status}
                     </p>
                   </div>
                 </div>
-                <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>{feature.desc}</p>
-              </div>
+                <p className={`text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>{feature.desc}</p>
+              </article>
             )
             })}
           </div>
@@ -479,18 +550,32 @@ export default function LandingPage() {
 
         {/* CTA Section */}
         <div className="relative py-20 overflow-hidden">
-          {/* Background Video */}
           <div className="absolute inset-0 z-0">
-            <video
-              autoPlay
-              muted
-              loop
-              playsInline
-              className="w-full h-full object-cover"
-            >
-              <source src={VIDEOS.cta} type="video/mp4" />
-            </video>
-            {/* Blur Glass Overlay */}
+            {reduceMotion ? (
+              <Image
+                src="/opt-hero/4.webp"
+                alt=""
+                width={1280}
+                height={720}
+                loading="lazy"
+                sizes="100vw"
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <video
+                autoPlay
+                muted
+                loop
+                playsInline
+                preload="none"
+                aria-hidden="true"
+                tabIndex={-1}
+                poster="/opt-hero/4.webp"
+                className="w-full h-full object-cover"
+              >
+                <source src={VIDEOS.cta} type="video/mp4" />
+              </video>
+            )}
             <div className="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
           </div>
 
@@ -534,7 +619,7 @@ export default function LandingPage() {
           </div>
         </footer>
       </div>
-    </div>
+    </main>
   )
 }
 
