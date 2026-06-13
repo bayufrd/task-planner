@@ -206,7 +206,7 @@ Minimal perlu test untuk payload berikut:
 
 - status bug: terkonfirmasi dari log produksi
 - root cause: teridentifikasi
-- fix code: sudah diterapkan sebagian pada backend inbound WhatsApp
+- fix code: sudah diterapkan pada backend inbound WhatsApp
 - validasi build/runtime setelah fix: belum sepenuhnya selesai di production payload nyata
 
 ## Update implementasi
@@ -219,6 +219,7 @@ Perbaikan yang sudah diterapkan di [`handleWhatsappInbound()`](../backend/src/mo
 - jika payload hanya membawa identitas `@lid`, backend sekarang gagal lebih aman dengan `400 VALIDATION_ERROR` daripada salah menormalkan nomor lalu mengirim balasan ke target yang salah
 - payload normalized response sekarang menyertakan metadata `numberResolution` agar investigasi operasional lebih mudah
 - payload normalized response juga menyimpan `senderPn` jika tersedia untuk membantu tracing integrasi bot
+- inbound command sekarang response-only: backend hanya mengembalikan reply sinkron dan tidak lagi memanggil outbound personal WhatsApp untuk balasan command biasa
 
 Implementasi helper baru ada di:
 
@@ -233,7 +234,8 @@ Perilaku baru yang diharapkan:
 1. jika bot mengirim `senderPn` valid, backend akan memilih sumber itu dibanding `chatId` atau `remoteJid` yang berupa `@lid`
 2. jika `user.waNumber` valid, flow tetap berjalan seperti sebelumnya
 3. jika hanya tersedia `@lid`, backend akan menolak request sebagai payload tidak cukup aman
-4. outbound reply tidak lagi memakai nomor hasil normalisasi dari `@lid` saja
+4. inbound command reply tidak lagi dikirim lewat endpoint personal outbound, tetapi dikembalikan sinkron di response HTTP
+5. endpoint personal outbound tetap dipakai untuk flow reminder atau scheduler terpisah
 
 Dengan perubahan ini, false negative "nomor belum terhubung" akibat salah resolusi identitas bisa dicegah pada kasus yang sebelumnya terdokumentasi.
 
@@ -243,6 +245,7 @@ Dengan perubahan ini, false negative "nomor belum terhubung" akibat salah resolu
 - [x] hardening resolusi nomor WhatsApp di backend inbound
 - [x] penolakan eksplisit untuk payload yang hanya membawa identitas `@lid`
 - [x] penambahan metadata resolusi nomor pada normalized response
+- [x] perubahan inbound command menjadi response-only tanpa direct personal send
 - [x] pembaruan dokumen investigasi dengan status implementasi
 
 ## Yang belum selesai
@@ -257,5 +260,5 @@ Dengan perubahan ini, false negative "nomor belum terhubung" akibat salah resolu
 - [ ] pastikan bot eksternal mengirim `senderPn` atau langsung mengisi `user.waNumber`
 - [ ] uji payload dengan `remoteJid=@lid` + `senderPn=628...@s.whatsapp.net`
 - [ ] uji payload dengan hanya `remoteJid=@lid` untuk memastikan backend mengembalikan `400`
-- [ ] uji registrasi `user_id daftar` agar tetap kompatibel setelah perubahan resolusi nomor
+- [ ] uji registrasi `user_id daftar` agar tetap kompatibel setelah perubahan resolusi nomor dan flow response-only
 - [x] update dokumentasi integrasi dan contoh payload final setelah kontrak bot dikonfirmasi

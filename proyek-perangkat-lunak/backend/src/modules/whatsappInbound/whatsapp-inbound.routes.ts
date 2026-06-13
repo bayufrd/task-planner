@@ -664,23 +664,12 @@ const handleWhatsappInbound = async (req: Request, res: Response): Promise<void>
       const notRegisteredMessage =
         'user id tidak terdaftar pada Task Planner silahkan daftar dengan mengunjungi https://taskplanner.dastrevas.com/auth/signup?callbackUrl=%2Fdashboard';
 
-      try {
-        await sendWhatsappMessage(safeWhatsappNumber, notRegisteredMessage);
-        registrationNotification = {
-          sent: true,
-          number: safeWhatsappNumber,
-          type: 'user-not-found',
-          message: notRegisteredMessage,
-        };
-      } catch (error) {
-        console.error('[WA Registration] Failed to send user-not-found message:', error);
-        registrationNotification = {
-          sent: false,
-          number: safeWhatsappNumber,
-          type: 'user-not-found',
-          message: notRegisteredMessage,
-        };
-      }
+      registrationNotification = {
+        sent: false,
+        number: safeWhatsappNumber,
+        type: 'user-not-found',
+        message: notRegisteredMessage,
+      };
 
       registration = {
         linked: false,
@@ -694,23 +683,12 @@ const handleWhatsappInbound = async (req: Request, res: Response): Promise<void>
       });
       const alreadyRegisteredMessage = `user untuk ${taskPlannerUserId} atas nama ${existingUser.name} sudah terdaftar`;
 
-      try {
-        await sendWhatsappMessage(safeWhatsappNumber, alreadyRegisteredMessage);
-        registrationNotification = {
-          sent: true,
-          number: safeWhatsappNumber,
-          type: 'already-registered',
-          message: alreadyRegisteredMessage,
-        };
-      } catch (error) {
-        console.error('[WA Registration] Failed to send already-registered message:', error);
-        registrationNotification = {
-          sent: false,
-          number: safeWhatsappNumber,
-          type: 'already-registered',
-          message: alreadyRegisteredMessage,
-        };
-      }
+      registrationNotification = {
+        sent: false,
+        number: safeWhatsappNumber,
+        type: 'already-registered',
+        message: alreadyRegisteredMessage,
+      };
 
       registration = {
         linked: false,
@@ -767,27 +745,12 @@ const handleWhatsappInbound = async (req: Request, res: Response): Promise<void>
         updatedUser.name || req.body?.user?.name || 'User'
       );
 
-      try {
-        await sendWhatsappRegistrationSuccess(
-          safeWhatsappNumber,
-          updatedUser.name || req.body?.user?.name || 'User'
-        );
-
-        registrationNotification = {
-          sent: true,
-          number: safeWhatsappNumber,
-          type: 'registration-success',
-          message: registrationSuccessMessage,
-        };
-      } catch (error) {
-        console.error('[WA Registration] Failed to send confirmation message:', error);
-        registrationNotification = {
-          sent: false,
-          number: safeWhatsappNumber,
-          type: 'registration-success',
-          message: registrationSuccessMessage,
-        };
-      }
+      registrationNotification = {
+        sent: false,
+        number: safeWhatsappNumber,
+        type: 'registration-success',
+        message: registrationSuccessMessage,
+      };
     }
   }
 
@@ -821,23 +784,12 @@ const handleWhatsappInbound = async (req: Request, res: Response): Promise<void>
       const helpMessage = buildWhatsappHelpMessage(false);
       const unregisteredMessage = `Nomor WhatsApp ini belum terhubung ke Task Planner.\n\n${helpMessage}`;
 
-      try {
-        await sendWhatsappMessage(safeWhatsappNumber, unregisteredMessage);
-        whatsappReply = {
-          sent: true,
-          number: safeWhatsappNumber,
-          message: unregisteredMessage,
-          type: 'number-not-registered',
-        };
-      } catch (error) {
-        console.error('[WA AI] Failed to send unregistered-number message:', error);
-        whatsappReply = {
-          sent: false,
-          number: safeWhatsappNumber,
-          message: unregisteredMessage,
-          type: 'number-not-registered',
-        };
-      }
+      whatsappReply = {
+        sent: false,
+        number: safeWhatsappNumber,
+        message: unregisteredMessage,
+        type: 'number-not-registered',
+      };
 
       operation = {
         type: intent,
@@ -1074,30 +1026,17 @@ const handleWhatsappInbound = async (req: Request, res: Response): Promise<void>
         preview: replyMessage.slice(0, 200),
       });
 
-      try {
-        await sendWhatsappMessage(safeWhatsappNumber, replyMessage);
-        whatsappReply = {
-          sent: true,
-          number: safeWhatsappNumber,
-          message: replyMessage,
-          type: String((operation && 'type' in operation ? operation.type : fallbackAction.action) || intent).toLowerCase(),
-        };
-      } catch (error) {
-        console.error('[WA AI] Failed to send WhatsApp reply:', error);
-        whatsappReply = {
-          sent: false,
-          number: safeWhatsappNumber,
-          message: replyMessage,
-          type: String((operation && 'type' in operation ? operation.type : fallbackAction.action) || intent).toLowerCase(),
-        };
-      }
+      whatsappReply = {
+        sent: false,
+        number: safeWhatsappNumber,
+        message: replyMessage,
+        type: String((operation && 'type' in operation ? operation.type : fallbackAction.action) || intent).toLowerCase(),
+      };
     }
   }
 
   const finalMessage = whatsappReply?.message || registrationNotification?.message || null;
   const finalReplyType = whatsappReply?.type || registrationNotification?.type || null;
-  const outboundAttempted = Boolean(whatsappReply || registrationNotification);
-  const outboundSent = whatsappReply?.sent ?? registrationNotification?.sent ?? false;
   const outboundNumber = whatsappReply?.number || registrationNotification?.number || null;
 
   const normalizedPayload = {
@@ -1153,10 +1092,11 @@ const handleWhatsappInbound = async (req: Request, res: Response): Promise<void>
         }
       : null,
     outbound: {
-      attempted: outboundAttempted,
-      sent: outboundSent,
-      provider: 'whatsapp-external',
+      attempted: false,
+      sent: false,
+      provider: null,
       number: outboundNumber,
+      channel: 'sync-response-only',
     },
     registration,
     registrationNotification,
