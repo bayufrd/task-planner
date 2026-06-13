@@ -11,10 +11,31 @@ const taskService = new TaskService();
 
 type WhatsappIntent = 'REGISTER' | 'CREATE_TASK' | 'UPDATE_TASK' | 'DELETE_TASK' | 'LIST_TASKS' | 'LIST_BY_DATE' | 'COMPLETE_TASK' | 'OVERVIEW' | 'HELP' | 'UNKNOWN';
 
+type WhatsappNumberSource = {
+  field: string;
+  raw: string;
+  extracted: string;
+  normalized: string | null;
+  kind: 'phone' | 'jid' | 'lid' | 'unknown';
+};
+
 const extractWaNumber = (value?: string | null): string | null => {
   if (!value) return null;
   const digits = value.replace(/\D/g, '');
   return digits || null;
+};
+
+const classifyWhatsappIdentity = (value?: string | null): WhatsappNumberSource['kind'] => {
+  if (!value) return 'unknown';
+
+  const normalized = value.trim().toLowerCase();
+
+  if (!normalized) return 'unknown';
+  if (normalized.endsWith('@lid')) return 'lid';
+  if (normalized.includes('@')) return 'jid';
+  if (/^\+?\d+$/.test(normalized)) return 'phone';
+
+  return 'unknown';
 };
 
 const normalizeSafeWhatsappNumber = (value?: string | null): string | null => {
@@ -33,6 +54,64 @@ const normalizeSafeWhatsappNumber = (value?: string | null): string | null => {
   }
 
   return `62${digits}`;
+};
+
+const buildWhatsappNumberCandidates = (req: Request): WhatsappNumberSource[] => {
+  const candidates: Array<{ field: string; raw: string }> = [
+    {
+      field: 'user.waNumber',
+      raw: typeof req.body?.user?.waNumber === 'string' ? req.body.user.waNumber.trim() : '',
+    },
+    {
+      field: 'user.senderPn',
+      raw: typeof req.body?.user?.senderPn === 'string' ? req.body.user.senderPn.trim() : '',
+    },
+    {
+      field: 'context.senderPn',
+      raw: typeof req.body?.context?.senderPn === 'string' ? req.body.context.senderPn.trim() : '',
+    },
+    {
+      field: 'message.senderPn',
+      raw: typeof req.body?.message?.senderPn === 'string' ? req.body.message.senderPn.trim() : '',
+    },
+    {
+      field: 'user.participant',
+      raw: typeof req.body?.user?.participant === 'string' ? req.body.user.participant.trim() : '',
+    },
+    {
+      field: 'user.chatId',
+      raw: typeof req.body?.user?.chatId === 'string' ? req.body.user.chatId.trim() : '',
+    },
+    {
+      field: 'context.remoteJid',
+      raw: typeof req.body?.context?.remoteJid === 'string' ? req.body.context.remoteJid.trim() : '',
+    },
+  ];
+
+  return candidates
+    .filter((candidate) => candidate.raw)
+    .map((candidate) => {
+      const extracted = extractWaNumber(candidate.raw) || '';
+      return {
+        field: candidate.field,
+        raw: candidate.raw,
+        extracted,
+        normalized: extracted ? normalizeSafeWhatsappNumber(extracted) : null,
+        kind: classifyWhatsappIdentity(candidate.raw),
+      };
+    });
+};
+
+const resolveWhatsappNumber = (req: Request) => {
+  const candidates = buildWhatsappNumberCandidates(req);
+  const preferredCandidate = candidates.find((candidate) => candidate.kind !== 'lid' && candidate.normalized);
+  const lidCandidate = candidates.find((candidate) => candidate.kind === 'lid');
+
+  return {
+    candidates,
+    selected: preferredCandidate || null,
+    rejectedLidCandidate: preferredCandidate ? null : lidCandidate || null,
+  };
 };
 
 const sendWhatsappMessage = async (number: string, message: string): Promise<void> => {
@@ -494,11 +573,17 @@ const handleWhatsappInbound = async (req: Request, res: Response): Promise<void>
   const participant = typeof req.body?.user?.participant === 'string' ? req.body.user.participant : '';
   const chatId = typeof req.body?.user?.chatId === 'string' ? req.body.user.chatId : '';
   const remoteJid = typeof req.body?.context?.remoteJid === 'string' ? req.body.context.remoteJid : '';
-  const waNumber =
-    extractWaNumber(req.body?.user?.waNumber) ||
-    extractWaNumber(participant) ||
-    extractWaNumber(chatId) ||
-    extractWaNumber(remoteJid);
+  const senderPn =
+    typeof req.body?.user?.senderPn === 'string'
+      ? req.body.user.senderPn
+      : typeof req.body?.context?.senderPn === 'string'
+        ? req.body.context.senderPn
+        : typeof req.body?.message?.senderPn === 'string'
+          ? req.body.message.senderPn
+          : '';
+  const numberResolution = resolveWhatsappNumber(req);
+  const selectedNumberSource = numberResolution.selected;
+  const waNumber = selectedNumberSource?.extracted || null;
 
   if (!command) {
     console.log('[WA Inbound] Validation failed: command is required');
@@ -507,12 +592,22 @@ const handleWhatsappInbound = async (req: Request, res: Response): Promise<void>
   }
 
   if (!waNumber) {
-    console.log('[WA Inbound] Validation failed: WA number unresolved');
-    sendError(res, 'VALIDATION_ERROR', 'Unable to resolve WhatsApp number from payload', 400);
+    console.log('[WA Inbound] Validation failed: WA number unresolved', {
+      candidates: numberResolution.candidates,
+      rejectedLidCandidate: numberResolution.rejectedLidCandidate,
+    });
+    sendError(
+      res,
+      'VALIDATION_ERROR',
+      numberResolution.rejectedLidCandidate
+        ? 'Unable to resolve WhatsApp number from payload because only @lid identity was provided'
+        : 'Unable to resolve WhatsApp number from payload',
+      400
+    );
     return;
   }
 
-  const normalizedWaNumber = normalizeSafeWhatsappNumber(waNumber);
+  const normalizedWaNumber = selectedNumberSource?.normalized || normalizeSafeWhatsappNumber(waNumber);
 
   const commandMatch = command.match(/^(\S+)\s+daftar$/i);
   const taskPlannerUserId = commandMatch?.[1] || null;
@@ -522,6 +617,8 @@ const handleWhatsappInbound = async (req: Request, res: Response): Promise<void>
   console.log('[WA Inbound] Command parsed', {
     waNumber,
     normalizedWaNumber,
+    numberSource: selectedNumberSource?.field || null,
+    numberSourceKind: selectedNumberSource?.kind || null,
     command,
     taskPlannerUserId,
     intent,
@@ -1011,10 +1108,11 @@ const handleWhatsappInbound = async (req: Request, res: Response): Promise<void>
     registrationCommand,
     taskPlannerUserId,
     user: {
-      waNumber: normalizeSafeWhatsappNumber(waNumber) || waNumber,
+      waNumber: normalizedWaNumber || waNumber,
       name: typeof req.body?.user?.name === 'string' ? req.body.user.name : null,
       chatId: chatId || null,
       participant: participant || null,
+      senderPn: senderPn || null,
       isGroup: Boolean(req.body?.user?.isGroup),
     },
     message: {
@@ -1026,7 +1124,24 @@ const handleWhatsappInbound = async (req: Request, res: Response): Promise<void>
       groupId: typeof req.body?.context?.groupId === 'string' ? req.body.context.groupId : null,
       remoteJid: remoteJid || null,
       pushName: typeof req.body?.context?.pushName === 'string' ? req.body.context.pushName : null,
+      senderPn: typeof req.body?.context?.senderPn === 'string' ? req.body.context.senderPn : null,
       senderIsAdmin: Boolean(req.body?.context?.senderIsAdmin),
+    },
+    numberResolution: {
+      source: selectedNumberSource?.field || null,
+      sourceKind: selectedNumberSource?.kind || null,
+      rejectedLidCandidate: numberResolution.rejectedLidCandidate
+        ? {
+            field: numberResolution.rejectedLidCandidate.field,
+            raw: numberResolution.rejectedLidCandidate.raw,
+          }
+        : null,
+      candidates: numberResolution.candidates.map((candidate) => ({
+        field: candidate.field,
+        kind: candidate.kind,
+        raw: candidate.raw,
+        normalized: candidate.normalized,
+      })),
     },
     receivedAt: new Date().toISOString(),
     reply: finalMessage
