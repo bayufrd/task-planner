@@ -411,6 +411,11 @@ export class TaskService {
         user: {
           whatsappNumber: { not: null },
         },
+        OR: [
+          { reminder24hSent: false },
+          { reminder1hSent: false },
+          { reminderDeadlineSent: false },
+        ],
       },
       select: {
         id: true,
@@ -419,6 +424,9 @@ export class TaskService {
         priority: true,
         estimatedDuration: true,
         userId: true,
+        reminder24hSent: true,
+        reminder1hSent: true,
+        reminderDeadlineSent: true,
         user: {
           select: {
             name: true,
@@ -451,7 +459,7 @@ export class TaskService {
         timeZone: 'Asia/Jakarta',
       });
 
-      if (remainingMs <= twentyFourHoursMs && remainingMs >= twentyFourHoursMs - windowMs) {
+      if (!task.reminder24hSent && remainingMs <= twentyFourHoursMs && remainingMs >= twentyFourHoursMs - windowMs) {
         reminders.push({
           taskId: task.id,
           type: '24h',
@@ -467,7 +475,7 @@ export class TaskService {
         });
       }
 
-      if (remainingMs <= oneHourMs && remainingMs >= oneHourMs - windowMs) {
+      if (!task.reminder1hSent && remainingMs <= oneHourMs && remainingMs >= oneHourMs - windowMs) {
         reminders.push({
           taskId: task.id,
           type: '1h',
@@ -483,7 +491,7 @@ export class TaskService {
         });
       }
 
-      if (remainingMs <= windowMs && remainingMs >= 0) {
+      if (!task.reminderDeadlineSent && remainingMs <= windowMs && remainingMs >= 0) {
         const toleranceMinutes = Math.max(task.estimatedDuration || 60, 60);
         reminders.push({
           taskId: task.id,
@@ -503,9 +511,22 @@ export class TaskService {
     return reminders;
   }
 
-  async markWhatsappReminderSent(_taskId: string, _type: '24h' | '1h' | 'deadline') {
-    // The generated Prisma client in this environment does not include the
-    // per-reminder tracking fields yet, so avoid crashing the scheduler.
+  async markWhatsappReminderSent(taskId: string, type: '24h' | '1h' | 'deadline') {
+    const data =
+      type === '24h'
+        ? { reminder24hSent: true, reminderSent: true }
+        : type === '1h'
+          ? { reminder1hSent: true, reminderSent: true }
+          : { reminderDeadlineSent: true, reminderSent: true };
+
+    await prisma.task.updateMany({
+      where: {
+        id: taskId,
+        deletedAt: null,
+        status: 'PENDING',
+      },
+      data,
+    });
   }
 
   async markSkippedNotificationSent(_taskId: string) {
