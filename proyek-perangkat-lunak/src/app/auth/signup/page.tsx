@@ -93,16 +93,37 @@ function SignUpContent() {
 
   const handleCaptchaVerify = useCallback((token: string) => {
     setCaptchaToken(token)
+    setErrors(prev => {
+      const next = { ...prev }
+      delete next.submit
+      return next
+    })
   }, [])
 
   const handleCaptchaExpire = useCallback(() => {
     setCaptchaToken('')
   }, [])
 
+  const handleCaptchaError = useCallback(() => {
+    setCaptchaToken('')
+    setErrors(prev => ({
+      ...prev,
+      submit: 'CAPTCHA gagal dimuat atau tidak valid untuk domain ini. Periksa konfigurasi Turnstile lalu refresh halaman.',
+    }))
+  }, [])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
     if (!validateForm()) {
+      return
+    }
+
+    if (turnstileSiteKey && !captchaToken) {
+      setErrors(prev => ({
+        ...prev,
+        submit: 'Silakan selesaikan CAPTCHA terlebih dahulu.',
+      }))
       return
     }
 
@@ -309,6 +330,7 @@ function SignUpContent() {
                 <TurnstileWidget
                   siteKey={turnstileSiteKey}
                   onVerify={handleCaptchaVerify}
+                  onError={handleCaptchaError}
                   onExpire={handleCaptchaExpire}
                   theme="auto"
                 />
@@ -317,7 +339,7 @@ function SignUpContent() {
               {/* Submit Button */}
               <button
                 type="submit"
-                disabled={isLoading || (!turnstileSiteKey && !captchaToken)}
+                disabled={isLoading || (!!turnstileSiteKey && !captchaToken)}
                 className="w-full relative h-12 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:from-blue-500 disabled:to-indigo-500 disabled:cursor-not-allowed text-white font-semibold transition-all duration-200 flex items-center justify-center gap-3 shadow-lg shadow-blue-500/20 hover:shadow-lg hover:shadow-blue-500/30"
               >
                 {isLoading ? (

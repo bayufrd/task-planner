@@ -12,7 +12,7 @@ declare global {
           sitekey: string
           theme?: 'light' | 'dark' | 'auto'
           callback?: (token: string) => void
-          'error-callback'?: () => void
+          'error-callback'?: (error?: string) => void
           'expired-callback'?: () => void
         }
       ) => string
@@ -25,7 +25,7 @@ declare global {
 interface TurnstileConfig {
   siteKey: string
   callback: (token: string) => void
-  onError?: () => void
+  onError?: (error?: string) => void
   onExpire?: () => void
   theme?: 'auto' | 'light' | 'dark'
 }
@@ -93,7 +93,7 @@ export function useTurnstile() {
 interface TurnstileWidgetProps {
   siteKey: string
   onVerify: (token: string) => void
-  onError?: () => void
+  onError?: (error?: string) => void
   onExpire?: () => void
   theme?: 'auto' | 'light' | 'dark'
   className?: string
@@ -182,9 +182,14 @@ export function TurnstileWidget({
       callback: (token: string) => {
         onVerifyRef.current(token)
       },
-      'error-callback': () => {
+      'error-callback': (error?: string) => {
+        console.error('[turnstile] widget error', {
+          error,
+          siteKey,
+          hostname: typeof window !== 'undefined' ? window.location.hostname : undefined,
+        })
         setError(true)
-        onErrorRef.current?.()
+        onErrorRef.current?.(error)
       },
       'expired-callback': () => {
         onExpireRef.current?.()
@@ -203,7 +208,7 @@ export function TurnstileWidget({
     return (
       <div className={`p-4 rounded-lg border ${appTheme === 'dark' ? 'bg-red-900/20 border-red-800' : 'bg-red-50 border-red-200'}`}>
         <p className={`text-sm ${appTheme === 'dark' ? 'text-red-400' : 'text-red-600'}`}>
-          Gagal memuat CAPTCHA. Silakan refresh halaman.
+          Gagal memuat CAPTCHA. Periksa site key, domain Turnstile, lalu refresh halaman.
         </p>
       </div>
     )

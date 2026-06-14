@@ -28,6 +28,11 @@ export class AuthController {
           const verifyResult = await verifyTurnstileToken(data.captchaToken, env.TURNSTILE_SECRET_KEY, remoteIp)
           
           if (!verifyResult.success) {
+            console.error('[captcha] register verification failed', {
+              errorCodes: verifyResult.errorCodes,
+              hostname: req.headers.origin || req.headers.referer,
+              remoteIp,
+            })
             res.status(400).json({
               success: false,
               error: {
@@ -64,6 +69,11 @@ export class AuthController {
           const verifyResult = await verifyTurnstileToken(data.captchaToken, env.TURNSTILE_SECRET_KEY, remoteIp)
           
           if (!verifyResult.success) {
+            console.error('[captcha] login verification failed', {
+              errorCodes: verifyResult.errorCodes,
+              hostname: req.headers.origin || req.headers.referer,
+              remoteIp,
+            })
             res.status(400).json({
               success: false,
               error: {

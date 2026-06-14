@@ -3,8 +3,17 @@ import { NotFoundError, ForbiddenError } from '../../lib/errors';
 import { CreateTaskInput, UpdateTaskInput, UpdateTaskStatusInput } from './task.validation';
 import { calculatePriorityScore } from '../../utils/priority';
 import { AiService } from '../ai/ai.service';
+import { env } from '../../config/env';
 
 const aiService = new AiService();
+
+const DAILY_REMINDER_KIND = 'DAILY_SCHEDULE';
+const DAILY_DISCIPLINE_QUOTES = [
+  'Disiplin waktu adalah bentuk sederhana dari menghargai masa depan sendiri.',
+  'Waktu yang diatur dengan disiplin akan berubah menjadi hasil yang konsisten.',
+  'Jadwal yang dijaga hari ini akan membentuk pencapaian esok hari.',
+  'Konsistensi kecil setiap hari lebih kuat daripada niat besar yang tertunda.',
+];
 
 export class TaskService {
   async createTask(userId: string, data: CreateTaskInput) {
@@ -526,6 +535,164 @@ export class TaskService {
         status: 'PENDING',
       },
       data,
+    });
+  }
+
+  async processDailyScheduleReminder(referenceDate: Date = new Date()) {
+    const jakartaFormatter = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Jakarta',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    });
+    const dayKey = jakartaFormatter.format(referenceDate);
+    const [year, month, day] = dayKey.split('-').map(Number);
+    const startOfDayUtc = new Date(Date.UTC(year, month - 1, day, -7, 0, 0, 0));
+    const endOfDayUtc = new Date(Date.UTC(year, month - 1, day, 16, 59, 59, 999));
+
+    const quote = DAILY_DISCIPLINE_QUOTES[day % DAILY_DISCIPLINE_QUOTES.length];
+    const dailyImageUrl = `${env.FRONTEND_URL.replace(/\/$/, '')}/harian.webp`;
+    const reminderKey = `${DAILY_REMINDER_KIND}:${dayKey}`;
+
+    const users = await prisma.user.findMany({
+      where: {
+        whatsappNumber: { not: null },
+      },
+      select: {
+        id: true,
+        name: true,
+        whatsappNumber: true,
+        tasks: {
+          where: {
+            deletedAt: null,
+            deadline: {
+              gte: startOfDayUtc,
+              lte: endOfDayUtc,
+            },
+          },
+          select: {
+            title: true,
+            deadline: true,
+            status: true,
+          },
+          orderBy: {
+            deadline: 'asc',
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'asc',
+      },
+    });
+
+    const reminders: Array<{
+      reminderKey: string;
+      userId: string;
+      number: string;
+      media: {
+        type: 'image';
+        url: string;
+        caption: string;
+      };
+    }> = [];
+
+    for (const user of users) {
+      const number = user.whatsappNumber?.trim();
+      if (!number) continue;
+
+      const existing = await prisma.reminder.findFirst({
+        where: {
+          id: `${reminderKey}:${user.id}`,
+          userId: user.id,
+          taskId: null,
+          sent: true,
+        },
+        select: { id: true },
+      });
+      if (existing) continue;
+
+      const dateLabel = startOfDayUtc.toLocaleDateString('id-ID', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+        timeZone: 'Asia/Jakarta',
+      });
+      const userName = user.name ? `, ${user.name}` : '';
+      const taskLines = user.tasks.map((task, index) => {
+        const timeLabel = new Date(task.deadline).toLocaleTimeString('id-ID', {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false,
+          timeZone: 'Asia/Jakarta',
+        });
+
+        return [
+          `${index + 1}. ${task.title}`,
+          `   - Jam: ${timeLabel} WIB`,
+          `   - Status: ${task.status}`,
+        ].join('\n');
+      });
+
+      const caption = user.tasks.length > 0
+        ? [
+            `Selamat pagi${userName}! Ini jadwal Anda untuk hari ini, ${dateLabel}.`,
+            '',
+            'Jadwal hari ini:',
+            ...taskLines,
+            '',
+            'Tetap fokus dan kerjakan sesuai urutan prioritas.',
+            '',
+            `"${quote}"`,
+          ].join('\n')
+        : [
+            `Selamat pagi${userName}! Hari ini belum ada jadwal yang tercatat.`,
+            '',
+            'Yuk buat task baru agar hari Anda tetap terarah.',
+            '',
+            'Panduan singkat:',
+            '- daftar akun WA: user_id daftar',
+            '- lihat bantuan: task bantuan',
+            '- contoh tambah task: task tambah meeting besok jam 10 malam #urgent',
+            '- lihat task aktif: task lihat jadwal',
+            '- lihat task besok: task lihat jadwal besok',
+            '- overview: task overview',
+            '',
+            `"${quote}"`,
+          ].join('\n');
+
+      reminders.push({
+        reminderKey,
+        userId: user.id,
+        number,
+        media: {
+          type: 'image',
+          url: dailyImageUrl,
+          caption,
+        },
+      });
+    }
+
+    return reminders;
+  }
+
+  async markDailyScheduleReminderSent(reminderKey: string, userId: string, sentAt: Date = new Date()) {
+    const reminderId = `${reminderKey}:${userId}`;
+
+    await prisma.reminder.upsert({
+      where: { id: reminderId },
+      update: {
+        sent: true,
+        sentAt,
+      },
+      create: {
+        id: reminderId,
+        userId,
+        taskId: null,
+        remindAt: sentAt,
+        sent: true,
+        sentAt,
+      },
     });
   }
 
