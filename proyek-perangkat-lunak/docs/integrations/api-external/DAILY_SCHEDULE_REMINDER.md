@@ -52,7 +52,7 @@ Pemisahan yang disarankan:
 - scheduler deadline tetap menangani reminder `24h`, `1h`, `deadline`, dan auto-skip,
 - scheduler harian baru hanya menangani ringkasan agenda pukul 06:00 WIB,
 - service query harian dipisahkan dari [`TaskService.processWhatsappDeadlineReminders()`](../../../backend/src/modules/tasks/task.service.ts:402) agar concern tidak bercampur,
-- pengiriman outbound tetap memakai endpoint personal WhatsApp yang sama, tetapi payload-nya `media.type = image`.
+- pengiriman outbound tetap memakai endpoint personal WhatsApp yang sama, tetapi payload-nya `lampiran` base64.
 
 Struktur implementasi yang selaras dengan proyek:
 
@@ -62,56 +62,39 @@ Struktur implementasi yang selaras dengan proyek:
 
 ## Gambar harian
 
-Pesan **selalu** dikirim sebagai pesan bergambar menggunakan file publik:
+Pesan **selalu** dikirim sebagai pesan bergambar menggunakan file lokal yang kemudian diubah ke base64 sebelum request outbound:
 
-- asset: `proyek-perangkat-lunak/public/harian.webp`
-- path publik: `/harian.webp`
+- asset awal: `proyek-perangkat-lunak/public/harian.webp`
+- asset aktif yang lolos test gateway: `proyek-perangkat-lunak/public/harian-candidate-600.jpg`
+- path aktif di backend: `public/harian-candidate-600.jpg`
 
-URL gambar dibangun dari base public frontend ditambah path `/harian.webp`.
+Alasan memakai asset kompresi:
 
-Rumusnya:
+- file awal `harian.webp` berukuran terlalu besar saat diubah ke base64,
+- gateway menolak request dengan respons `413 Payload Too Large`,
+- asset `harian-candidate-600.jpg` sudah diuji dan berhasil terkirim.
 
-```text
-<FRONTEND_PUBLIC_URL>/harian.webp
-```
+Ukuran hasil uji:
 
-Contoh hasil:
+- `harian.webp`: `92626` byte, base64 `123504` karakter,
+- `harian-candidate-600.jpg`: `44800` byte, base64 `59736` karakter.
 
-```text
-https://taskplanner.dastrevas.com/harian.webp
-```
+### Strategi pengiriman gambar yang dipakai
 
-### Strategi penyusunan URL gambar
+1. backend membaca file lokal reminder harian,
+2. file diubah menjadi string base64,
+3. base64 dikirim ke gateway pada field `lampiran`.
 
-Prioritas yang disarankan:
-
-1. gunakan `FRONTEND_PUBLIC_URL` khusus jika tersedia,
-2. fallback ke `FRONTEND_URL` yang saat ini sudah ada di [`env`](../../../backend/src/config/env.ts:12),
-3. fallback terakhir ke `http://localhost:3000/harian.webp` untuk development.
-
-Contoh logika build URL:
+Contoh logika implementasi aktif:
 
 ```ts
-const frontendPublicUrl = process.env.FRONTEND_PUBLIC_URL
-  || process.env.FRONTEND_URL
-  || 'http://localhost:3000';
-
-const dailyImageUrl = `${frontendPublicUrl.replace(/\/$/, '')}/harian.webp`;
+const dailyImagePath = 'public/harian-candidate-600.jpg';
+const lampiran = await buildBase64Attachment(dailyImagePath);
 ```
 
 ### Catatan deploy
 
-Pada environment production, isi base URL dengan domain frontend publik yang memang bisa diakses oleh gateway WhatsApp, misalnya:
-
-```env
-FRONTEND_PUBLIC_URL=https://taskplanner.dastrevas.com
-```
-
-Jika env belum di-set:
-
-- development tetap bisa memakai `http://localhost:3000/harian.webp`,
-- production **tidak boleh** mengandalkan localhost karena bot/gateway eksternal tidak bisa mengakses file tersebut,
-- karena itu `FRONTEND_PUBLIC_URL` sebaiknya dianggap wajib untuk deployment fitur ini.
+Pada environment production, pastikan asset kompresi yang dipakai backend memang tersedia di server file system pada path yang sama atau sesuaikan path lokalnya di implementasi.
 
 ## Endpoint WhatsApp personal
 
@@ -136,30 +119,32 @@ Fallback token:
 
 ```json
 {
-  "number": "6281234567890",
-  "media": {
-    "type": "image",
-    "url": "<FRONTEND_PUBLIC_URL>/harian.webp",
-    "caption": "<konten jadwal harian atau ajakan + panduan + quote>"
-  }
+  "nomor": "6281234567890",
+  "pesan": "<konten jadwal harian atau ajakan + panduan + quote>",
+  "lampiran": "<base64-image>"
+}
+```
+
+### Body JSON kirim text-only
+
+```json
+{
+  "nomor": "6281234567890",
+  "pesan": "Halo, ini pesan dari backend gateway"
 }
 ```
 
 ### Arti field payload
 
-- `number`: nomor tujuan dalam format internasional tanpa simbol tambahan,
-- `message`: teks opsional, boleh dikosongkan jika seluruh isi sudah ada di `media.caption`,
-- `media.type`: tipe media (`image`, `video`, `audio`, `document`, `pdf`),
-- `media.url`: URL file publik yang dapat diakses gateway,
-- `media.caption`: isi pesan utama,
-- `media.fileName`: opsional, berguna untuk beberapa gateway saat kirim document,
-- `media.mimeType`: opsional, bisa ditambahkan bila gateway memerlukannya.
+- `nomor`: nomor tujuan dalam format internasional tanpa simbol tambahan,
+- `pesan`: isi pesan utama atau caption,
+- `lampiran`: file gambar dalam format base64; field ini opsional untuk text-only.
 
 Untuk fitur ini, nilai yang dipakai adalah:
 
-- `media.type = image`,
-- `media.url = <FRONTEND_PUBLIC_URL>/harian.webp`,
-- `media.caption = caption ringkasan harian`.
+- `nomor = whatsappNumber user`,
+- `pesan = caption ringkasan harian`,
+- `lampiran = base64 dari file gambar reminder harian`.
 
 ## Contoh curl lengkap
 
@@ -168,12 +153,9 @@ curl -X POST "https://api-whatsapp-bot.dastrevas.com/api/whatsapp/send-personal"
   -H "Authorization: Bearer ${WHATSAPP_API_TOKEN:-$ADMIN_TOKEN}" \
   -H "Content-Type: application/json" \
   -d '{
-    "number": "6281234567890",
-    "media": {
-      "type": "image",
-      "url": "https://taskplanner.dastrevas.com/harian.webp",
-      "caption": "Selamat pagi! Berikut jadwal Anda hari ini."
-    }
+    "nomor": "6281234567890",
+    "pesan": "Selamat pagi! Berikut jadwal Anda hari ini.",
+    "lampiran": "<base64-image>"
   }'
 ```
 
@@ -312,7 +294,7 @@ ADMIN_TOKEN=your_admin_token_here
 Karena saat ini backend sudah memiliki [`TOKEN_WHATSAPP`](../../../backend/src/config/env.ts:13) dan [`FRONTEND_URL`](../../../backend/src/config/env.ts:12), implementasi dapat memakai fallback berikut:
 
 - token: `WHATSAPP_API_TOKEN || TOKEN_WHATSAPP || ADMIN_TOKEN`,
-- base URL gambar: `FRONTEND_PUBLIC_URL || FRONTEND_URL || http://localhost:3000`.
+- asset gambar aktif: `public/harian-candidate-600.jpg`.
 
 ### Rekomendasi penamaan final
 
@@ -368,14 +350,14 @@ Dengan demikian:
 3. untuk setiap user, query task hari ini,
 4. pilih quote harian,
 5. bangun caption sesuai skenario,
-6. kirim `media.type = image` ke endpoint personal,
+6. ubah gambar reminder menjadi base64 lalu kirim `lampiran` ke endpoint personal,
 7. tulis log sukses/gagal per user.
 
 Contoh log yang disarankan:
 
 ```text
-[Daily Schedule Reminder] sent { userId, number, totalTasks, imageUrl }
-[Daily Schedule Reminder] failed { userId, number, error }
+[Daily Schedule Reminder] sent { userId, nomor, hasLampiran }
+[Daily Schedule Reminder] failed { userId, nomor, hasLampiran, error }
 ```
 
 ## Catatan keamanan
@@ -400,7 +382,7 @@ Agar selaras dengan struktur proyek saat ini, implementasi backend disarankan di
    - bangun caption,
    - pilih quote.
 3. **sender outbound media**
-   - kirim payload `media` ke endpoint `/api/whatsapp/send-personal`,
+   - kirim payload `nomor` + `pesan` + `lampiran` ke endpoint `/api/whatsapp/send-personal`,
    - pakai token dengan fallback yang terdokumentasi.
 
 Dengan struktur ini, fitur Daily Schedule Reminder tetap rapi, terpisah dari flow inbound command WhatsApp, dan tidak mengganggu reminder deadline yang sudah berjalan.

@@ -3,7 +3,6 @@ import { NotFoundError, ForbiddenError } from '../../lib/errors';
 import { CreateTaskInput, UpdateTaskInput, UpdateTaskStatusInput } from './task.validation';
 import { calculatePriorityScore } from '../../utils/priority';
 import { AiService } from '../ai/ai.service';
-import { env } from '../../config/env';
 
 const aiService = new AiService();
 
@@ -370,7 +369,7 @@ export class TaskService {
     const overdueTaskIds = overdueTasks.map((task) => task.id);
 
     if (overdueTaskIds.length === 0) {
-      return { skipped: 0, skippedNotifications: [] as Array<{ taskId: string; number: string; message: string }> };
+      return { skipped: 0, skippedNotifications: [] as Array<{ taskId: string; nomor: string; pesan: string }> };
     }
 
     const result = await prisma.task.updateMany({
@@ -389,8 +388,8 @@ export class TaskService {
         const toleranceMinutes = Math.max(task.estimatedDuration || 60, 60);
         return {
           taskId: task.id,
-          number: String(task.whatsappNumber).trim(),
-          message: [
+          nomor: String(task.whatsappNumber).trim(),
+          pesan: [
             `⛔ Task otomatis menjadi SKIPPED${task.userName ? `, ${task.userName}` : ''}`,
             `Task: ${task.title}`,
             `Deadline: ${new Date(task.deadline).toLocaleString('id-ID', { dateStyle: 'full', timeStyle: 'short', timeZone: 'Asia/Jakarta' })} WIB`,
@@ -451,8 +450,8 @@ export class TaskService {
     const reminders: Array<{
       taskId: string;
       type: '24h' | '1h' | 'deadline';
-      number: string;
-      message: string;
+      nomor: string;
+      pesan: string;
     }> = [];
 
     for (const task of candidates) {
@@ -472,8 +471,8 @@ export class TaskService {
         reminders.push({
           taskId: task.id,
           type: '24h',
-          number: whatsappNumber,
-          message: [
+          nomor: whatsappNumber,
+          pesan: [
             `⏰ Pengingat Task 24 Jam${userName}`,
             `Task: ${task.title}`,
             `Deadline: ${deadlineLabel} WIB`,
@@ -488,8 +487,8 @@ export class TaskService {
         reminders.push({
           taskId: task.id,
           type: '1h',
-          number: whatsappNumber,
-          message: [
+          nomor: whatsappNumber,
+          pesan: [
             `🚨 Pengingat Task 1 Jam${userName}`,
             `Task: ${task.title}`,
             `Deadline: ${deadlineLabel} WIB`,
@@ -505,8 +504,8 @@ export class TaskService {
         reminders.push({
           taskId: task.id,
           type: 'deadline',
-          number: whatsappNumber,
-          message: [
+          nomor: whatsappNumber,
+          pesan: [
             `⏳ Deadline task sudah tiba${userName}`,
             `Task: ${task.title}`,
             `Deadline: ${deadlineLabel} WIB`,
@@ -551,7 +550,7 @@ export class TaskService {
     const endOfDayUtc = new Date(Date.UTC(year, month - 1, day, 16, 59, 59, 999));
 
     const quote = DAILY_DISCIPLINE_QUOTES[day % DAILY_DISCIPLINE_QUOTES.length];
-    const dailyImageUrl = `${env.FRONTEND_URL.replace(/\/$/, '')}/harian.webp`;
+    const dailyImagePath = 'public/harian-candidate-600.jpg';
     const reminderKey = `${DAILY_REMINDER_KIND}:${dayKey}`;
 
     const users = await prisma.user.findMany({
@@ -588,12 +587,9 @@ export class TaskService {
     const reminders: Array<{
       reminderKey: string;
       userId: string;
-      number: string;
-      media: {
-        type: 'image';
-        url: string;
-        caption: string;
-      };
+      nomor: string;
+      pesan: string;
+      lampiranPath: string;
     }> = [];
 
     for (const user of users) {
@@ -664,12 +660,9 @@ export class TaskService {
       reminders.push({
         reminderKey,
         userId: user.id,
-        number,
-        media: {
-          type: 'image',
-          url: dailyImageUrl,
-          caption,
-        },
+        nomor: number,
+        pesan: caption,
+        lampiranPath: dailyImagePath,
       });
     }
 

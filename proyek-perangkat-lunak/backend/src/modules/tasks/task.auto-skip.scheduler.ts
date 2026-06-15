@@ -1,5 +1,13 @@
+import { readFile } from 'node:fs/promises';
+import path from 'node:path';
 import { env } from '../../config/env';
 import { TaskService } from './task.service';
+
+interface WhatsappPersonalPayload {
+  nomor: string;
+  pesan: string;
+  lampiran?: string;
+}
 
 const AUTO_SKIP_INTERVAL_MS = 60 * 1000;
 const DAILY_SCHEDULE_HOUR_WIB = 6;
@@ -26,45 +34,46 @@ export class TaskAutoSkipScheduler {
     this.interval = null;
   }
 
-  private async sendWhatsappMessage(number: string, message: string): Promise<void> {
-    if (!env.WHATSAPP_BOT_URL || !env.TOKEN_WHATSAPP) {
+  private getWhatsappAuthToken(): string {
+    return process.env.WHATSAPP_API_TOKEN || env.TOKEN_WHATSAPP || process.env.ADMIN_TOKEN || '';
+  }
+
+  private async postWhatsappPayload(payload: WhatsappPersonalPayload, errorPrefix: string): Promise<void> {
+    const token = this.getWhatsappAuthToken();
+    if (!env.WHATSAPP_BOT_URL || !token) {
       return;
     }
 
     const response = await fetch(`${env.WHATSAPP_BOT_URL}/api/whatsapp/send-personal`, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${env.TOKEN_WHATSAPP}`,
+        Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ number, message }),
+      body: JSON.stringify(payload),
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to send WhatsApp reminder: ${response.status} ${response.statusText}`);
+      throw new Error(`${errorPrefix}: ${response.status} ${response.statusText}`);
     }
   }
 
-  private async sendWhatsappMediaMessage(
-    number: string,
-    media: { type: 'image'; url: string; caption: string },
-  ): Promise<void> {
-    if (!env.WHATSAPP_BOT_URL || !env.TOKEN_WHATSAPP) {
-      return;
-    }
+  private async buildBase64Attachment(relativePath: string): Promise<string> {
+    const absolutePath = path.resolve(process.cwd(), relativePath);
+    const fileBuffer = await readFile(absolutePath);
+    return fileBuffer.toString('base64');
+  }
 
-    const response = await fetch(`${env.WHATSAPP_BOT_URL}/api/whatsapp/send-personal`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${env.TOKEN_WHATSAPP}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ number, media }),
-    });
+  private async sendWhatsappMessage(nomor: string, pesan: string): Promise<void> {
+    await this.postWhatsappPayload({ nomor, pesan }, 'Failed to send WhatsApp reminder');
+  }
 
-    if (!response.ok) {
-      throw new Error(`Failed to send WhatsApp media reminder: ${response.status} ${response.statusText}`);
-    }
+  private async sendWhatsappMediaMessage(nomor: string, pesan: string, lampiranPath: string): Promise<void> {
+    const lampiran = await this.buildBase64Attachment(lampiranPath);
+    await this.postWhatsappPayload(
+      { nomor, pesan, lampiran },
+      'Failed to send WhatsApp media reminder',
+    );
   }
 
   private getJakartaScheduleWindow(referenceDate: Date = new Date()) {
@@ -105,18 +114,20 @@ export class TaskAutoSkipScheduler {
 
         for (const reminder of dailyReminders) {
           try {
-            await this.sendWhatsappMediaMessage(reminder.number, reminder.media);
+            await this.sendWhatsappMediaMessage(reminder.nomor, reminder.pesan, reminder.lampiranPath);
             await this.taskService.markDailyScheduleReminderSent(reminder.reminderKey, reminder.userId);
             console.log('[Daily Schedule Reminder] WhatsApp reminder sent', {
               reminderKey: reminder.reminderKey,
               userId: reminder.userId,
-              number: reminder.number,
+              nomor: reminder.nomor,
+              hasLampiran: true,
             });
           } catch (error) {
             console.error('[Daily Schedule Reminder] Failed to send WhatsApp reminder', {
               reminderKey: reminder.reminderKey,
               userId: reminder.userId,
-              number: reminder.number,
+              nomor: reminder.nomor,
+              hasLampiran: true,
               error,
             });
           }
@@ -129,18 +140,18 @@ export class TaskAutoSkipScheduler {
 
       for (const reminder of reminders) {
         try {
-          await this.sendWhatsappMessage(reminder.number, reminder.message);
+          await this.sendWhatsappMessage(reminder.nomor, reminder.pesan);
           await this.taskService.markWhatsappReminderSent(reminder.taskId, reminder.type);
           console.log('[Task Reminder] WhatsApp reminder sent', {
             taskId: reminder.taskId,
             type: reminder.type,
-            number: reminder.number,
+            nomor: reminder.nomor,
           });
         } catch (error) {
           console.error('[Task Reminder] Failed to send WhatsApp reminder', {
             taskId: reminder.taskId,
             type: reminder.type,
-            number: reminder.number,
+            nomor: reminder.nomor,
             error,
           });
         }
@@ -151,16 +162,16 @@ export class TaskAutoSkipScheduler {
       if (result.skippedNotifications.length > 0) {
         for (const item of result.skippedNotifications) {
           try {
-            await this.sendWhatsappMessage(item.number, item.message);
+            await this.sendWhatsappMessage(item.nomor, item.pesan);
             await this.taskService.markSkippedNotificationSent(item.taskId);
             console.log('[Task Reminder] SKIPPED notification sent', {
               taskId: item.taskId,
-              number: item.number,
+              nomor: item.nomor,
             });
           } catch (error) {
             console.error('[Task Reminder] Failed to send SKIPPED notification', {
               taskId: item.taskId,
-              number: item.number,
+              nomor: item.nomor,
               error,
             });
           }
