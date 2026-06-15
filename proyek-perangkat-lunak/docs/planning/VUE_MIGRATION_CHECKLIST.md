@@ -79,7 +79,7 @@
 - [x] Align stat strip surfaces and labels.
 - [x] Align hero image/media section.
 - [x] Align empty state design and messaging.
-- [ ] Align task list/card presentation.
+- [x] Align task list/card presentation.
 - [ ] Align create/edit modal UX.
 - [x] Align refresh behavior after mutations.
 - [ ] Evaluate whether planner panel remains, moves, or is absorbed into reference structure.

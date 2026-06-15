@@ -294,16 +294,10 @@ onMounted(refresh)
             </p>
           </section>
 
-          <section v-else class="panel dashboard-task-list-panel">
-            <div class="section-header dashboard-section-header-simple">
-              <div>
-                <span class="chart-kicker">Task list</span>
-                <h2>Active tasks</h2>
-                <p>Review and act on your highest priority work.</p>
-              </div>
-            </div>
+          <section v-else class="dashboard-task-list-panel">
             <TaskTable
               :tasks="filteredTasks"
+              :planner-items="appStore.planner"
               @edit="editTarget = $event; showTaskForm = true"
               @complete="appStore.completeTask($event).then(refresh)"
               @skip="appStore.skipTask($event).then(refresh)"
