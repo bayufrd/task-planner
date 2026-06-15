@@ -8,7 +8,6 @@ type CalendarView = (typeof calendarViews)[number]
 
 import TaskForm from '../components/TaskForm.vue'
 import TaskTable from '../components/TaskTable.vue'
-import PlannerPanel from '../components/PlannerPanel.vue'
 import { appStore } from '../stores/app'
 import { uiStore } from '../stores/ui'
 import type { Task } from '../types'
@@ -170,7 +169,6 @@ async function refresh() {
       appStore.loadTasks({ search: search.value, status: status.value as any, priority: priority.value as any }),
       appStore.loadStats(),
       appStore.loadDailyStats(),
-      appStore.loadPlanner(),
     ])
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Failed to load dashboard'
@@ -278,91 +276,31 @@ onMounted(refresh)
         </div>
       </section>
 
-      <section class="dashboard-main-grid dashboard-main-grid-next">
-        <div class="dashboard-left-column">
-          <section v-if="filteredTasks.length === 0" class="panel dashboard-empty-state">
-            <div class="dashboard-empty-icon">
-              <CheckSquare2 :size="26" />
-            </div>
-            <h2>No tasks yet</h2>
-            <p>Create your first task to start building momentum.</p>
-            <button class="dashboard-new-task-button" @click="uiStore.openCommandPalette()">
-              <Plus :size="18" /> Add Task
-            </button>
-            <p class="dashboard-empty-shortcut">
-              <Command :size="14" /> Or press Ctrl+K
-            </p>
-          </section>
+      <section class="dashboard-content-next">
+        <section v-if="filteredTasks.length === 0" class="panel dashboard-empty-state">
+          <div class="dashboard-empty-icon">
+            <CheckSquare2 :size="26" />
+          </div>
+          <h2>No tasks yet</h2>
+          <p>Create your first task to start building momentum.</p>
+          <button class="dashboard-new-task-button" @click="uiStore.openCommandPalette()">
+            <Plus :size="18" /> Add Task
+          </button>
+          <p class="dashboard-empty-shortcut">
+            <Command :size="14" /> Or press Ctrl+K
+          </p>
+        </section>
 
-          <section v-else class="dashboard-task-list-panel">
-            <TaskTable
-              :tasks="filteredTasks"
-              :planner-items="appStore.planner"
-              @edit="editTarget = $event; showTaskForm = true"
-              @complete="appStore.completeTask($event).then(refresh)"
-              @skip="appStore.skipTask($event).then(refresh)"
-              @remove="appStore.deleteTask($event).then(refresh)"
-            />
-          </section>
-        </div>
-
-        <aside class="dashboard-right-column">
-          <section class="panel dashboard-focus-panel">
-            <div class="section-header dashboard-section-header-simple">
-              <div>
-                <span class="chart-kicker">Focus</span>
-                <h2>Quick stats</h2>
-                <p>Stay close to your current task rhythm.</p>
-              </div>
-              <button class="ghost-button dashboard-refresh-button" @click="refresh">
-                <RefreshCw :size="16" /> Refresh
-              </button>
-            </div>
-            <div class="dashboard-focus-grid">
-              <article
-                v-for="item in focusStats"
-                :key="item.key"
-                :class="['dashboard-focus-card', item.tone]"
-              >
-                <div class="dashboard-focus-icon">
-                  <component :is="item.icon" :size="18" />
-                </div>
-                <div>
-                  <span>{{ item.label }}</span>
-                  <strong>{{ item.value }}</strong>
-                </div>
-              </article>
-            </div>
-          </section>
-
-          <section class="panel filters-panel dashboard-filters">
-            <div class="section-header dashboard-section-header-simple">
-              <div>
-                <span class="chart-kicker">Filter</span>
-                <h2>Filter tasks</h2>
-                <p>Search and narrow your task list quickly.</p>
-              </div>
-            </div>
-            <div class="filters-grid">
-              <input v-model="search" placeholder="Search tasks" />
-              <select v-model="status">
-                <option value="">All statuses</option>
-                <option value="TODO">Pending</option>
-                <option value="DONE">Done</option>
-                <option value="SKIPPED">Skipped</option>
-              </select>
-              <select v-model="priority">
-                <option value="">All priorities</option>
-                <option value="HIGH">High</option>
-                <option value="MEDIUM">Medium</option>
-                <option value="LOW">Low</option>
-              </select>
-              <button class="primary-button" @click="refresh">Apply filters</button>
-            </div>
-          </section>
-
-          <PlannerPanel :items="appStore.planner" />
-        </aside>
+        <section v-else class="dashboard-task-list-panel">
+          <TaskTable
+            :tasks="filteredTasks"
+            :planner-items="appStore.planner"
+            @edit="editTarget = $event; showTaskForm = true"
+            @complete="appStore.completeTask($event).then(refresh)"
+            @skip="appStore.skipTask($event).then(refresh)"
+            @remove="appStore.deleteTask($event).then(refresh)"
+          />
+        </section>
       </section>
 
     <p v-if="error" class="error-text">{{ error }}</p>
