@@ -96,9 +96,9 @@ onMounted(() => {
     <!-- Header -->
     <nav :class="[
       'border-b transition-colors',
-      uiStore.state.theme === 'dark' 
-        ? 'border-gray-800/50 backdrop-blur-sm bg-gray-950/50' 
-        : 'border-white/20 dark:border-gray-800/50 backdrop-blur-sm bg-white/50 dark:bg-gray-950/50'
+      uiStore.state.theme === 'dark'
+        ? 'border-gray-800/50 backdrop-blur-sm bg-gray-950/50'
+        : 'border-gray-200/50 backdrop-blur-sm bg-white/50'
     ]">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
         <RouterLink :to="routePaths.landing" class="flex items-center">
@@ -114,7 +114,7 @@ onMounted(() => {
           aria-label="Toggle theme"
         >
           <Sun v-if="uiStore.state.theme === 'dark'" class="w-5 h-5 text-yellow-500" :stroke-width="2" />
-          <Moon v-else class="w-5 h-5 text-gray-600" :stroke-width="2" />
+          <Moon v-else class="w-5 h-5 text-indigo-500" :stroke-width="2" />
         </button>
       </div>
     </nav>

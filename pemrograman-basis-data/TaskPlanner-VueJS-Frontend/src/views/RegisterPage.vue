@@ -23,7 +23,7 @@ async function submit() {
 
 <template>
   <div :class="['min-h-screen w-full flex flex-col transition-colors', uiStore.state.theme === 'dark' ? 'bg-gradient-to-br from-gray-950 via-slate-900 to-indigo-950' : 'bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50']">
-    <nav :class="['border-b transition-colors', uiStore.state.theme === 'dark' ? 'border-gray-800/50 backdrop-blur-sm bg-gray-950/50' : 'border-white/20 dark:border-gray-800/50 backdrop-blur-sm bg-white/50 dark:bg-gray-950/50']">
+    <nav :class="['border-b transition-colors', uiStore.state.theme === 'dark' ? 'border-gray-800/50 backdrop-blur-sm bg-gray-950/50' : 'border-gray-200/50 backdrop-blur-sm bg-white/50']">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
         <RouterLink :to="routePaths.landing" class="flex items-center">
           <div class="rounded-xl shadow-sm shadow-black/5 dark:shadow-black/10 bg-white/20 dark:bg-gray-800/20 backdrop-blur-sm p-0.5">
@@ -31,8 +31,8 @@ async function submit() {
           </div>
         </RouterLink>
         <button @click="uiStore.toggleTheme()" class="p-2 rounded-lg border border-gray-200/50 dark:border-gray-800/50 bg-gray-100/50 dark:bg-gray-900/50 hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors">
-          <Sun v-if="uiStore.state.theme === 'dark'" class="w-5 h-5 text-yellow-500" />
-          <Moon v-else class="w-5 h-5 text-gray-600" />
+          <Sun v-if="uiStore.state.theme === 'dark'" class="w-5 h-5 text-yellow-500" :stroke-width="2" />
+          <Moon v-else class="w-5 h-5 text-indigo-500" :stroke-width="2" />
         </button>
       </div>
     </nav>
