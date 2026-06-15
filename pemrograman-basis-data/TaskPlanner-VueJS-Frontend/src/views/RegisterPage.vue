@@ -72,6 +72,15 @@ async function submit() {
       </section>
 
       <form class="next-auth-form-card" @submit.prevent="submit">
+        <div v-if="import.meta.env.VITE_TURNSTILE_SITE_KEY" class="next-auth-turnstile">
+          <!-- Cloudflare Turnstile Widget Placeholder -->
+          <iframe
+            :src="`https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&sitekey=${import.meta.env.VITE_TURNSTILE_SITE_KEY}`"
+            style="width: 100%; min-height: 80px; border: none; background: transparent;"
+            title="Cloudflare Turnstile"
+            referrerpolicy="no-referrer"
+          ></iframe>
+        </div>
         <div class="next-auth-card-head centered">
           <div class="next-auth-card-logo-wrap">
             <img src="/opt-logo/logo3.png" alt="TaskPlanner Logo" class="next-auth-card-logo" />
