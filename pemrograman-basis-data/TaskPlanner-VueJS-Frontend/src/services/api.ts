@@ -93,7 +93,7 @@ function unwrap<T>(payload: ApiEnvelope<T> | T): T {
   return payload as T
 }
 
-export const authApi = {
+const authApi = {
   async register(payload: RegisterPayload) {
     const result = await request<ApiEnvelope<AuthResult>>('/api/auth/register', {
       method: 'POST',
@@ -223,6 +223,8 @@ export const reminderApi = {
     return unwrap(result)
   },
 }
+
+export { authApi }
 
 export const aiApi = {
   async parseTask(text: string) {

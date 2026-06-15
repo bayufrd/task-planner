@@ -7,6 +7,7 @@ import RemindersPage from '../views/RemindersPage.vue'
 import AiAssistantPage from '../views/AiAssistantPage.vue'
 import OverviewPage from '../views/OverviewPage.vue'
 import ConnectWhatsappPage from '../views/ConnectWhatsappPage.vue'
+import AuthCallbackPage from '../views/AuthCallbackPage.vue'
 import { authStore } from '../stores/auth'
 import { canonicalRouteNames, deferredRouteNames, routeMeta, routePaths } from './registry'
 
@@ -21,7 +22,7 @@ const router = createRouter({
     {
       path: routePaths.authCallback,
       name: canonicalRouteNames.authCallback,
-      component: LoginPage,
+      component: AuthCallbackPage,
       meta: { ...routeMeta.auth, callbackBridge: true },
     },
     { path: routePaths.dashboard, name: canonicalRouteNames.dashboard, component: DashboardPage, meta: routeMeta.protected },
