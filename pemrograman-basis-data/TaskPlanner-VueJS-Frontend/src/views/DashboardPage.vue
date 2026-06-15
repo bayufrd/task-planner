@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { CalendarDays, CheckCircle2, CheckSquare2, CircleDashed, Clock3, Command, Plus, RefreshCw, X, XCircle } from '@lucide/vue'
+import { CalendarDays, CheckCircle2, CheckSquare2, CircleDashed, Command, Plus, X, XCircle } from '@lucide/vue'
 
 const calendarViews = ['This week', 'This month', 'Next month'] as const
 
@@ -134,33 +134,6 @@ const calendarEntries = computed(() => {
   return buildMonthEntries(target, today)
 })
 
-const focusStats = computed(() => {
-  const stats = appStore.stats
-
-  return [
-    {
-      key: 'pending',
-      label: 'Pending',
-      value: (stats?.todo ?? 0) + (stats?.inProgress ?? 0),
-      tone: 'pending',
-      icon: CircleDashed,
-    },
-    {
-      key: 'done',
-      label: 'Done',
-      value: stats?.done ?? 0,
-      tone: 'done',
-      icon: CheckCircle2,
-    },
-    {
-      key: 'hours',
-      label: 'Planned mins',
-      value: filteredTasks.value.reduce((total, task) => total + (task.estimatedDuration ?? 0), 0),
-      tone: 'time',
-      icon: Clock3,
-    },
-  ]
-})
 
 async function refresh() {
   error.value = ''
@@ -271,7 +244,7 @@ onMounted(refresh)
       <section class="dashboard-hero dashboard-hero-next">
         <div class="dashboard-hero-art dashboard-hero-art-full">
           <div class="dashboard-hero-image-frame">
-            <img src="/opt-hero/2.png" alt="Task planner dashboard preview" class="dashboard-hero-image" />
+            <img src="/opt-hero/2.webp" alt="Task planner dashboard preview" class="dashboard-hero-image" />
           </div>
         </div>
       </section>

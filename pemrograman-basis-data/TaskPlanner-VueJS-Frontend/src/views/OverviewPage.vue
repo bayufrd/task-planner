@@ -203,7 +203,7 @@ onMounted(loadData)
 
         <!-- Hero Image -->
         <article class="overview-hero-image-next">
-          <img src="/opt-hero/3.png" alt="Overview hero" />
+          <img src="/opt-hero/3.webp" alt="Overview hero" />
         </article>
 
         <!-- Daily Chart -->

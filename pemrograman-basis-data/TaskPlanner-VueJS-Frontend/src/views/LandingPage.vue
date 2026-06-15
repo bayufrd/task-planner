@@ -136,7 +136,7 @@ const copy = computed(() => {
         <div id="demo" class="next-video-shell next-video-shell-parity">
           <div class="next-video-glow"></div>
           <div class="next-video-frame next-demo-frame next-demo-frame-parity">
-            <img src="/opt-hero/1.png" alt="Hero preview" class="next-hero-image next-hero-image-clean" />
+            <img src="/opt-hero/1.webp" alt="Hero preview" class="next-hero-image next-hero-image-clean" />
             <div class="next-video-overlay-button">
               <div class="next-video-play-badge">
                 <Play :size="22" />

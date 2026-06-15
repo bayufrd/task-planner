@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { useRoute, useRouter, RouterLink } from 'vue-router'
-import { ArrowRight, Mail, Lock, ShieldCheck, Sparkles, Sun, Moon } from '@lucide/vue'
+import { ArrowRight, Mail, Lock, Sun, Moon } from '@lucide/vue'
 import { authStore } from '../stores/auth'
 import { routePaths } from '../router/registry'
 import { uiStore } from '../stores/ui'
@@ -10,7 +10,6 @@ const router = useRouter()
 const route = useRoute()
 const form = reactive({ email: '', password: '' })
 const error = ref('')
-const turnstileSiteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY || ''
 
 const callbackUrl = computed(() => {
   const value = route.query.callbackUrl
