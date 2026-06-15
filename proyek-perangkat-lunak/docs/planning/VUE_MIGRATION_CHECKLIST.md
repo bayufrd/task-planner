@@ -82,7 +82,7 @@
 - [x] Align task list/card presentation.
 - [x] Align create/edit modal UX.
 - [x] Align refresh behavior after mutations.
-- [ ] Evaluate whether planner panel remains, moves, or is absorbed into reference structure.
+- [x] Remove legacy planner panel (not in Next.js reference).
 
 ### Phase 7 - Overview parity
 
