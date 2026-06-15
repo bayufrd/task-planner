@@ -1,18 +1,26 @@
 <script setup lang="ts">
 import { reactive, ref } from 'vue'
-import { RouterLink, useRouter } from 'vue-router'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { ArrowRight, House, LayoutDashboard, LogIn, Mail, Lock, Sparkles, User, UserPlus } from '@lucide/vue'
 import { authStore } from '../stores/auth'
+import { routePaths } from '../router/registry'
+import { uiStore } from '../stores/ui'
 
 const router = useRouter()
+const route = useRoute()
 const form = reactive({ name: '', email: '', password: '' })
 const error = ref('')
+
+function getCallbackUrl() {
+  const value = route.query.callbackUrl
+  return typeof value === 'string' && value.startsWith('/') ? value : routePaths.dashboard
+}
 
 async function submit() {
   error.value = ''
   try {
     await authStore.register(form)
-    router.push('/dashboard')
+    await router.push(getCallbackUrl())
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Registration failed'
   }
@@ -24,19 +32,21 @@ async function submit() {
     <header class="next-landing-header auth-chrome-header">
       <div class="next-header-content">
         <div class="next-brand-block">
-          <RouterLink to="/" class="next-brand-link" aria-label="Go to home">
+          <RouterLink :to="routePaths.landing" class="next-brand-link" aria-label="Go to home">
             <div class="next-brand-image-wrap">
               <img class="next-brand-image" src="/opt-logo/logo3.png" alt="Smart Task Planner" />
             </div>
           </RouterLink>
           <nav class="next-landing-nav">
-            <RouterLink to="/">Home</RouterLink>
+            <RouterLink :to="routePaths.landing">Home</RouterLink>
             <a href="/#features">Features</a>
           </nav>
         </div>
         <div class="next-header-actions">
-          <RouterLink to="/login" class="next-header-link">Sign in</RouterLink>
-          <RouterLink to="/register" class="next-header-cta">Get started</RouterLink>
+          <button class="next-header-link" type="button" @click="uiStore.toggleLanguage()">
+            {{ uiStore.state.language === 'en' ? 'ID' : 'EN' }}
+          </button>
+          <RouterLink :to="routePaths.authSignin" class="next-header-cta">Sign in</RouterLink>
         </div>
       </div>
     </header>
@@ -118,7 +128,7 @@ async function submit() {
         <div class="next-auth-benefits">
           <div class="next-auth-benefit-item">
             <span>✓</span>
-            <p>AI-powered task creation & prioritization</p>
+            <p>AI-powered task creation and prioritization</p>
           </div>
           <div class="next-auth-benefit-item">
             <span>✓</span>
@@ -131,18 +141,18 @@ async function submit() {
         </div>
 
         <div class="next-auth-link-block">
-          <p>Already have an account? <RouterLink to="/login">Sign in here</RouterLink></p>
+          <p>Already have an account? <RouterLink :to="routePaths.authSignin">Sign in here</RouterLink></p>
         </div>
 
         <div class="next-auth-footnote">
           <p>By creating an account, you agree to our Terms of Service and Privacy Policy</p>
-          <p>TaskPlanner Vue version uses email/password authentication only</p>
+          <p>Canonical sign-up route follows the parity plan at <code>{{ routePaths.authSignup }}</code></p>
         </div>
       </form>
     </main>
 
     <nav class="mobile-tabbar mobile-tabbar-public" aria-label="Public mobile navigation">
-      <RouterLink class="mobile-tab" to="/">
+      <RouterLink class="mobile-tab" :to="routePaths.landing">
         <House :size="18" />
         <span>Home</span>
       </RouterLink>
@@ -150,11 +160,11 @@ async function submit() {
         <LayoutDashboard :size="18" />
         <span>Features</span>
       </a>
-      <RouterLink class="mobile-tab" to="/login">
+      <RouterLink class="mobile-tab" :to="routePaths.authSignin">
         <LogIn :size="18" />
         <span>Sign in</span>
       </RouterLink>
-      <RouterLink class="mobile-tab" to="/register">
+      <RouterLink class="mobile-tab" :to="routePaths.authSignup">
         <UserPlus :size="18" />
         <span>Register</span>
       </RouterLink>

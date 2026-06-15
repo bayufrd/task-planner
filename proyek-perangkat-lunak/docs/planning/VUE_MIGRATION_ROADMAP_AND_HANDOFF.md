@@ -166,21 +166,21 @@ Track progress by milestone and by route.
 
 | Area | Owner | Status | Blocker | Last verified | Notes |
 | --- | --- | --- | --- | --- | --- |
-| Layout foundation | | | | | |
-| Styling tokens | | | | | |
-| Route matrix | | | | | |
-| Landing | | | | | |
-| Sign in | | | | | |
-| Sign up | | | | | |
-| Auth callback strategy | | | | | |
-| Protected shell | | | | | |
-| Dashboard | | | | | |
-| Overview | | | | | |
-| WhatsApp connect | | | | | |
-| Reminders decision | | | | | |
-| AI helper decision | | | | | |
-| Demo/starter cleanup | | | | | |
-| QA | | | | | |
+| Layout foundation | Codex | 100% | None | 2026-06-15 | `App.vue`, shared layouts, and route-driven layout switching are in place. |
+| Styling tokens | Codex | 75% | Mobile-safe validation not run | 2026-06-15 | Shared parity-oriented surfaces exist in `src/style.css`, but QA is still pending. |
+| Route matrix | Codex | 100% | None | 2026-06-15 | Canonical auth paths, aliases, deferred routes, and registry are implemented. |
+| Landing | Codex | 75% | Runtime QA pending | 2026-06-15 | Public landing parity pass shipped; final visual verification not run. |
+| Sign in | Codex | 75% | OAuth/Turnstile deferred | 2026-06-15 | Canonical route and callback behavior exist; backend parity gaps remain deferred. |
+| Sign up | Codex | 75% | OAuth/Turnstile deferred | 2026-06-15 | Layout and flow are aligned; backend parity gaps remain deferred. |
+| Auth callback strategy | Codex | 75% | Runtime QA pending | 2026-06-15 | `/auth/callback` bridge is implemented via Vue auth flow and router metadata. |
+| Protected shell | Codex | 75% | Route availability + redirect QA pending | 2026-06-15 | Shared shell, command palette, profile controls, and bottom nav exist. |
+| Dashboard | Codex | 50% | Task list parity and modal polish incomplete | 2026-06-15 | Shared-shell integration, empty state, timeline, stats, and hero are aligned; task presentation remains in progress. |
+| Overview | Codex | 0% | Dashboard batch still active | 2026-06-15 | Old page structure still needs migration onto the new protected shell. |
+| WhatsApp connect | Codex | 0% | Route/page not yet ported | 2026-06-15 | Planned after dashboard and overview. |
+| Reminders decision | Codex | 25% | Scope freeze not finalized | 2026-06-15 | Currently documented as deferred, not yet hidden or re-homed. |
+| AI helper decision | Codex | 25% | Scope freeze not finalized | 2026-06-15 | Currently documented as deferred, not yet hidden or re-homed. |
+| Demo/starter cleanup | Codex | 0% | Deferred until core parity stabilizes | 2026-06-15 | `HelloWorld.vue` and starter leftovers still exist. |
+| QA | Codex | 0% | Implementation batches still in progress | 2026-06-15 | No build/test/parity verification has been run yet. |
 
 ## Route And Flow Diagrams
 
@@ -241,10 +241,10 @@ Visitor
 
 ### Recommended next action
 
-1. Build the shared Vue layout system.
-2. Add a UI state layer for theme/language/command/profile.
-3. Create the canonical Vue route matrix and alias plan.
-4. Refactor auth and landing pages onto the new layouts.
+1. Finish the dashboard batch by replacing legacy task-list presentation with a closer equivalent to the Next.js priority/task surface.
+2. Remove any remaining page-local shell duplication tied to protected pages.
+3. Port `OverviewPage.vue` onto the protected shell only after the dashboard batch is stable.
+4. Keep planning docs and checklist status synchronized after each implementation batch.
 
 ### What must not be changed too early
 
@@ -263,9 +263,9 @@ Visitor
 
 ### Re-check before implementation continues
 
-- Confirm whether Vue should add alias routes for `/auth/signin` and `/auth/signup`.
-- Confirm whether Vue needs a dedicated `/auth/callback` route.
-- Confirm whether Google OAuth is deferred or in scope.
+- Confirm dashboard task presentation replacement scope before closing Milestone 5.
+- Confirm whether `/connectwhatsapp` can reuse existing Vue assets or needs additional parity assets from the reference app.
+- Confirm whether Google OAuth remains explicitly deferred for this migration wave.
 - Confirm whether reminders remain as a first-class route in the final product.
 - Confirm whether AI parsing should live in command palette, modal flow, or a dedicated page during the transition.
 - Confirm whether starter/demo files should be removed in the first structural cleanup pass.

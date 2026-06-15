@@ -1,16 +1,16 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { CalendarDays, CheckCircle2, CircleDashed, Clock3, Command, Plus, RefreshCw, X } from '@lucide/vue'
+import { CalendarDays, CheckCircle2, CheckSquare2, CircleDashed, Clock3, Command, Plus, RefreshCw, XCircle } from '@lucide/vue'
 
 const calendarViews = ['This week', 'This month', 'Next month'] as const
 
 type CalendarView = (typeof calendarViews)[number]
 
-import AppHeader from '../components/AppHeader.vue'
 import TaskForm from '../components/TaskForm.vue'
 import TaskTable from '../components/TaskTable.vue'
 import PlannerPanel from '../components/PlannerPanel.vue'
 import { appStore } from '../stores/app'
+import { uiStore } from '../stores/ui'
 import type { Task } from '../types'
 
 type CalendarEntry = {
@@ -196,9 +196,7 @@ onMounted(refresh)
 </script>
 
 <template>
-  <div>
-    <AppHeader />
-    <main class="dashboard-shell dashboard-shell-next">
+  <main class="dashboard-shell dashboard-shell-next">
       <section class="dashboard-topbar dashboard-topbar-next">
         <div>
           <h1>Tasks</h1>
@@ -264,7 +262,7 @@ onMounted(refresh)
           </div>
         </article>
         <article class="dashboard-stats-strip-card skipped">
-          <Clock3 :size="18" />
+          <XCircle :size="18" />
           <div>
             <strong>{{ appStore.stats?.skipped ?? 0 }}</strong>
             <span>Skipped</span>
@@ -284,13 +282,16 @@ onMounted(refresh)
         <div class="dashboard-left-column">
           <section v-if="filteredTasks.length === 0" class="panel dashboard-empty-state">
             <div class="dashboard-empty-icon">
-              <Command :size="26" />
+              <CheckSquare2 :size="26" />
             </div>
             <h2>No tasks yet</h2>
             <p>Create your first task to start building momentum.</p>
-            <button class="dashboard-new-task-button" @click="showTaskForm = true; editTarget = null">
+            <button class="dashboard-new-task-button" @click="uiStore.openCommandPalette()">
               <Plus :size="18" /> Add Task
             </button>
+            <p class="dashboard-empty-shortcut">
+              <Command :size="14" /> Or press Ctrl+K
+            </p>
           </section>
 
           <section v-else class="panel dashboard-task-list-panel">
@@ -370,8 +371,7 @@ onMounted(refresh)
         </aside>
       </section>
 
-      <p v-if="error" class="error-text">{{ error }}</p>
-    </main>
+    <p v-if="error" class="error-text">{{ error }}</p>
 
     <div v-if="isTaskModalOpen" class="dashboard-modal-backdrop" @click.self="closeTaskModal">
       <section class="panel dashboard-task-modal">
@@ -381,7 +381,7 @@ onMounted(refresh)
             <p>{{ editTarget ? 'Adjust task details and keep your plan up to date.' : 'Add a task to your planner and organize the rest of your day.' }}</p>
           </div>
           <button class="ghost-button" @click="closeTaskModal">
-            <X :size="16" /> Close
+            <Command :size="16" /> Close
           </button>
         </div>
         <TaskForm
@@ -392,5 +392,5 @@ onMounted(refresh)
         />
       </section>
     </div>
-  </div>
+  </main>
 </template>

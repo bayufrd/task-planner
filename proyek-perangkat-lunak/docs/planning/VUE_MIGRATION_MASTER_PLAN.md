@@ -33,13 +33,16 @@ This migration is **not** a loose adaptation. The target Vue result must mirror 
 
 | Route | Purpose | Notes |
 | --- | --- | --- |
-| `/` | landing | Partial visual adaptation only. |
-| `/login` | sign-in | No Google OAuth, no Turnstile, no callback route. |
-| `/register` | sign-up | No Google OAuth, no Turnstile, no callback route. |
-| `/dashboard` | task workspace | Simplified protected experience. |
-| `/overview` | analytics | Partial parity only. |
-| `/reminders` | reminders CRUD | Extra relative to current reference shell. |
-| `/ai-assistant` | AI helper page | Transitional/extra relative to reference flow. |
+| `/` | landing | Refactored onto shared public layout; runtime QA still pending. |
+| `/auth/signin` | canonical sign-in | Shared auth layout, callback-aware flow, Google OAuth and Turnstile still deferred. |
+| `/login` | sign-in alias | Transitional alias redirect to `/auth/signin`. |
+| `/auth/signup` | canonical sign-up | Shared auth layout; Google OAuth and Turnstile still deferred. |
+| `/register` | sign-up alias | Transitional alias redirect to `/auth/signup`. |
+| `/auth/callback` | auth token bridge | Implemented as callback bridge flow routed through the auth page logic. |
+| `/dashboard` | task workspace | Shared protected shell is active; dashboard parity batch is still in progress. |
+| `/overview` | analytics | Still pending parity migration onto the protected shell. |
+| `/reminders` | reminders CRUD | Explicitly deferred/transitional until scope is finalized. |
+| `/ai-assistant` | AI helper page | Explicitly deferred/transitional until scope is finalized. |
 
 ## Migration Principles
 
@@ -125,6 +128,7 @@ Required parity checkpoints:
 - route exists in Vue
 - page sits inside protected shell
 - copy and instructional surfaces mirror reference intent
+- implementation is still pending in the current execution batch order
 
 ### Flow 5: transitional or optional flows
 
@@ -150,7 +154,7 @@ Required planning decision:
 - Dashboard composition: sticky header, timeline/calendar emphasis, stat strip, hero media, empty state, task list, modal-driven create/edit flow, and command-entry mental model.
 - Overview analytics storytelling, animal-level visual system, and AI analysis presentation.
 - Connect WhatsApp flow.
-- Auth callback handling as a planned route decision even if implementation is deferred.
+- Auth callback handling as a documented and implemented route decision, pending runtime verification.
 
 ### Must remove or de-emphasize from current Vue app
 
@@ -271,6 +275,7 @@ Current Vue reminders page is utility-driven and not parity-aligned. Unless the 
 - Separate public/auth/protected route trees.
 - Add a UI state layer for theme, language, command palette, and profile menu.
 - Introduce a route registry or parity matrix used by implementation agents.
+- Keep dashboard and overview migration in small, explicitly tracked batches so documentation can be updated after each protected-page pass.
 
 ### Recommended target folder direction
 
@@ -333,7 +338,7 @@ This does not need to be implemented immediately, but the migration roadmap shou
 
 ## Deliverables Expected From Execution Phase
 
-- Shared migration tracker documents kept current.
+- Shared migration tracker documents kept current after each batch.
 - Vue route/layout refactor foundation.
 - Page-by-page parity implementation against Next.js source.
 - Removal of extra Vue-only UX paths that conflict with the reference app.
