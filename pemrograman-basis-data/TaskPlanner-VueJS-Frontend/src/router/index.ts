@@ -6,6 +6,7 @@ import RegisterPage from '../views/RegisterPage.vue'
 import RemindersPage from '../views/RemindersPage.vue'
 import AiAssistantPage from '../views/AiAssistantPage.vue'
 import OverviewPage from '../views/OverviewPage.vue'
+import ConnectWhatsappPage from '../views/ConnectWhatsappPage.vue'
 import { authStore } from '../stores/auth'
 import { canonicalRouteNames, deferredRouteNames, routeMeta, routePaths } from './registry'
 
@@ -25,6 +26,12 @@ const router = createRouter({
     },
     { path: routePaths.dashboard, name: canonicalRouteNames.dashboard, component: DashboardPage, meta: routeMeta.protected },
     { path: routePaths.overview, name: canonicalRouteNames.overview, component: OverviewPage, meta: routeMeta.protected },
+    {
+      path: routePaths.connectWhatsapp,
+      name: canonicalRouteNames.connectWhatsapp,
+      component: ConnectWhatsappPage,
+      meta: routeMeta.protected,
+    },
     {
       path: routePaths.reminders,
       name: deferredRouteNames.reminders,
