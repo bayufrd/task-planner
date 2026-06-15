@@ -97,8 +97,8 @@
 
 ### Phase 8 - Missing feature parity
 
-- [ ] Implement `/connectwhatsapp` route in Vue.
-- [ ] Port WhatsApp onboarding copy and surface design.
+- [x] Implement `/connectwhatsapp` route in Vue.
+- [x] Port WhatsApp onboarding copy and surface design.
 - [ ] Decide whether reminders become hidden, redesigned, or integrated later.
 - [ ] Decide whether standalone AI helper remains temporary or is folded into parity flows.
 - [ ] Track Google OAuth parity as deferred or in-scope based on backend readiness.
