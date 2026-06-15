@@ -9,6 +9,7 @@
 - [ ] Confirm agent will not preserve Vue-specific UX if it conflicts with Next.js parity.
 - [ ] Confirm required assets from `proyek-perangkat-lunak/public` are available to Vue target.
 - [ ] Confirm route naming strategy for auth aliases versus parity paths.
+- [ ] Confirm canonical in-scope route list and deferred route list.
 
 ### Phase 1 - Inventory and dependency mapping
 
@@ -21,6 +22,8 @@
 - [ ] Inventory backend/API assumptions in Vue that may constrain parity.
 - [ ] Document every missing route in Vue.
 - [ ] Document every extra route in Vue.
+- [ ] Document every end-to-end frontend flow that must survive migration.
+- [ ] Document starter/demo artifacts in Vue that should be removed.
 
 ### Phase 2 - Structural normalization in Vue
 
@@ -33,6 +36,7 @@
 - [ ] Introduce global UI state for command palette.
 - [ ] Introduce global UI state for profile dropdown/mobile nav behavior.
 - [ ] Normalize route guards around new layout boundaries.
+- [ ] Create route registry or parity matrix used by all implementation work.
 
 ### Phase 3 - Styling system alignment
 
@@ -53,6 +57,7 @@
 - [ ] Rebuild landing CTA/footer sections to match Next.js.
 - [ ] Rebuild sign-in page structure to match Next.js.
 - [ ] Rebuild sign-up page structure to match Next.js.
+- [ ] Define and implement auth callback route behavior if needed.
 - [ ] Reintroduce CAPTCHA placeholder or integration plan if backend parity is not ready.
 - [ ] Remove Vue-only auth footnotes and mismatched copy.
 
@@ -64,6 +69,7 @@
 - [ ] Add command palette mounting layer.
 - [ ] Add shell-level loading and redirect handling.
 - [ ] Align route availability with reference navigation.
+- [ ] Validate protected route redirects against canonical route matrix.
 
 ### Phase 6 - Dashboard parity
 
@@ -104,6 +110,7 @@
 - [ ] Remove UI paths that contradict reference navigation.
 - [ ] Remove or de-prioritize extra pages not justified by the reference product.
 - [ ] Remove dead CSS and orphaned assets.
+- [ ] Remove starter/demo components not part of the product experience.
 
 ### Phase 10 - Validation and QA
 
@@ -115,6 +122,26 @@
 - [ ] Validate task CRUD and overview refresh behavior.
 - [ ] Validate responsive behavior on desktop and mobile widths.
 - [ ] Validate no extra Vue-only UX remains in critical flows.
+- [ ] Validate all documented routes against implemented routes before sign-off.
+- [ ] Validate all end-to-end frontend flows against the migration plan before sign-off.
+
+## Route Parity Checklist
+
+- [ ] Canonical public route list documented.
+- [ ] Canonical auth route list documented.
+- [ ] Canonical protected route list documented.
+- [ ] Deferred routes documented.
+- [ ] Extra Vue routes documented with disposition.
+- [ ] Alias routes documented.
+- [ ] Auth callback strategy documented.
+
+## Flow Coverage Checklist
+
+- [ ] Landing -> auth -> dashboard flow documented and verified.
+- [ ] Dashboard task CRUD flow documented and verified.
+- [ ] Overview analytics flow documented and verified.
+- [ ] WhatsApp onboarding flow documented and verified.
+- [ ] Transitional reminders / AI helper decisions documented and verified.
 
 ## Definition Of Done By Area
 
@@ -134,7 +161,13 @@
 - Layout order, primary CTA placement, key assets, and interaction entry points match the reference.
 - Remaining differences are documented as explicit deferred gaps.
 
+### Routing done when
+
+- In-scope routes, aliases, redirects, and deferred routes are all documented and implemented consistently.
+- No page is reachable in a way that contradicts the planned product architecture.
+
 ### Migration done when
 
 - Vue frontend behaves as a refactored equivalent of the Next.js frontend for all in-scope routes.
 - Extra Vue-only UX has been removed or isolated with documented justification.
+- Route parity and flow coverage have both been explicitly verified.
