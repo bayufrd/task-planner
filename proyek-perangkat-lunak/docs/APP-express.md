@@ -21,7 +21,7 @@ Berdasarkan [`backend/README.md`](../backend/README.md:1), backend ini dibuat un
 Tujuan utamanya mencakup:
 
 - autentikasi email/password,
-- Google OAuth,
+- **Google OAuth** (fully implemented with `googleapis` library),
 - CRUD task,
 - status task `PENDING`, `DONE`, `SKIPPED`,
 - statistik task,
@@ -143,6 +143,32 @@ Registrasi route pada [`src/app.ts`](../backend/src/app.ts:27):
 - [`/api/ai`](../backend/src/app.ts:35) → AI.
 
 Catatan: di [`backend/README.md`](../backend/README.md:144) masih ada beberapa referensi endpoint calendar lama seperti `/api/calendar`, tetapi implementasi aktif di kode memakai prefix [`/api/calendars`](../backend/src/app.ts:33). Ini penting dicatat agar dokumentasi mengikuti kode aktual, bukan hanya README.
+
+### 6.1 Cloudflare Tunnel Integration
+
+Backend mendukung deployment dengan Cloudflare Tunnel untuk expose local development atau production environment secara aman tanpa mengkonfigurasi firewall atau port forwarding.
+
+Setup detail ada di dokumentasi [`CLOUDFLARED_SETUP.md`](./integrations/CLOUDFLARED_SETUP.md).
+
+Key points untuk integrasi Cloudflare Tunnel:
+
+- **Frontend URL**: Environment [`FRONTEND_URL`](../backend/src/config/env.ts:12) perlu diubah ke domain Cloudflare Tunnel (misal `https://app.yourdomain.com`)
+- **Google OAuth Callback**: [`GOOGLE_REDIRECT_URI`](../backend/src/config/env.ts:20) otomatis mengikuti `FRONTEND_URL` + path callback
+- **CORS Configuration**: [`cors.ts`](../backend/src/config/cors.ts:4) perlu include domain tunnel di `allowedOrigins`
+
+Contoh environment untuk Cloudflare Tunnel:
+
+```env
+FRONTEND_URL=https://app.yourdomain.com
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+```
+
+Dengan setup ini:
+- User mengakses frontend via `https://app.yourdomain.com`
+- API requests diarahkan ke `https://api.yourdomain.com`
+- Google OAuth callback ke `https://api.yourdomain.com/api/auth/google/callback`
+- Cloudflare Tunnel route traffic ke local ports (5173 untuk Vue dev, 8000 untuk Express backend)
 
 ## 7. Modul Autentikasi
 
