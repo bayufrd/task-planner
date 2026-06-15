@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { CalendarDays, CheckCircle2, CheckSquare2, CircleDashed, Clock3, Command, Plus, RefreshCw, XCircle } from '@lucide/vue'
+import { CalendarDays, CheckCircle2, CheckSquare2, CircleDashed, Clock3, Command, Plus, RefreshCw, X, XCircle } from '@lucide/vue'
 
 const calendarViews = ['This week', 'This month', 'Next month'] as const
 
@@ -369,19 +369,21 @@ onMounted(refresh)
 
     <div v-if="isTaskModalOpen" class="dashboard-modal-backdrop" @click.self="closeTaskModal">
       <section class="panel dashboard-task-modal">
-        <div class="section-header dashboard-task-form-head">
+        <div class="section-header dashboard-task-form-head dashboard-task-form-head-next">
           <div>
-            <h2>{{ editTarget ? 'Update task' : 'Create a new task' }}</h2>
-            <p>{{ editTarget ? 'Adjust task details and keep your plan up to date.' : 'Add a task to your planner and organize the rest of your day.' }}</p>
+            <span class="chart-kicker">Step 1 of 1</span>
+            <h2>{{ editTarget ? 'Edit Task' : 'Create Task' }}</h2>
+            <p>{{ editTarget ? 'Review the current task details, update the fields, then save changes.' : 'Fill in the task details, review the summary, then create the task.' }}</p>
           </div>
-          <button class="ghost-button" @click="closeTaskModal">
-            <Command :size="16" /> Close
+          <button class="dashboard-modal-close-button" aria-label="Close task modal" @click="closeTaskModal">
+            <X :size="18" />
           </button>
         </div>
         <TaskForm
           :busy="busy"
+          :mode="editTarget ? 'edit' : 'create'"
           :model-value="editTarget || undefined"
-          :submit-label="editTarget ? 'Update task' : 'Create task'"
+          :submit-label="editTarget ? 'Save Changes' : 'Create Task'"
           @submit="submitTask"
         />
       </section>

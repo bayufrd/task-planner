@@ -174,7 +174,7 @@ Track progress by milestone and by route.
 | Sign up | Codex | 75% | OAuth/Turnstile deferred | 2026-06-15 | Layout and flow are aligned; backend parity gaps remain deferred. |
 | Auth callback strategy | Codex | 75% | Runtime QA pending | 2026-06-15 | `/auth/callback` bridge is implemented via Vue auth flow and router metadata. |
 | Protected shell | Codex | 75% | Route availability + redirect QA pending | 2026-06-15 | Shared shell, command palette, profile controls, and bottom nav exist. |
-| Dashboard | Codex | 75% | Modal polish and planner-panel disposition incomplete | 2026-06-15 | Shared-shell integration, empty state, timeline, stats, hero, and task-card presentation are aligned; modal parity remains in progress. |
+| Dashboard | Codex | 90% | Planner-panel disposition incomplete | 2026-06-15 | Shared-shell integration, empty state, timeline, stats, hero, task-card, and modal UX are aligned. |
 | Overview | Codex | 0% | Dashboard batch still active | 2026-06-15 | Old page structure still needs migration onto the new protected shell. |
 | WhatsApp connect | Codex | 0% | Route/page not yet ported | 2026-06-15 | Planned after dashboard and overview. |
 | Reminders decision | Codex | 25% | Scope freeze not finalized | 2026-06-15 | Currently documented as deferred, not yet hidden or re-homed. |

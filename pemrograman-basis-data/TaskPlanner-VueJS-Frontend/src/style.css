@@ -525,10 +525,11 @@ textarea { resize: vertical; }
   padding: 1.5rem;
 }
 .dashboard-task-modal {
-  width: min(960px, 100%);
+  width: min(760px, 100%);
   max-height: calc(100vh - 3rem);
   overflow: auto;
   padding: 0;
+  border-radius: 1.5rem;
 }
 .dashboard-task-modal .form-panel {
   padding: 0 1.35rem 1.35rem;
@@ -673,6 +674,84 @@ textarea { resize: vertical; }
 }
 .dashboard-task-form-head {
   padding: 1.35rem 1.35rem 0;
+}
+.dashboard-task-form-head-next {
+  align-items: flex-start;
+  padding-bottom: 1rem;
+}
+.dashboard-modal-close-button {
+  display: inline-grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 0;
+  border-radius: 0.9rem;
+  background: #f1f5f9;
+  color: #475569;
+  cursor: pointer;
+}
+.dashboard-modal-close-button:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+.task-modal-form-next {
+  display: grid;
+  gap: 1rem;
+}
+.task-modal-progress {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.95rem 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem;
+  background: #f8fafc;
+}
+.task-modal-progress span {
+  color: #64748b;
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+.task-modal-progress strong {
+  color: #0f172a;
+  font-size: 0.86rem;
+}
+.task-modal-review-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+.task-modal-review-grid article {
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem;
+  background: #f8fafc;
+  padding: 0.9rem 1rem;
+}
+.task-modal-review-grid span {
+  display: block;
+  margin-bottom: 0.35rem;
+  color: #64748b;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.task-modal-review-grid strong {
+  color: #0f172a;
+  font-size: 0.92rem;
+}
+.task-modal-form-grid-next {
+  padding: 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 1.2rem;
+  background: #ffffff;
+}
+.task-modal-submit-next {
+  min-height: 3rem;
+  border-radius: 1rem;
 }
 .filters-panel p, .section-header p { margin: 0.35rem 0 0; color: #64748b; }
 .auth-points li { color: rgba(255,255,255,0.9); border-color: rgba(255,255,255,0.14); }

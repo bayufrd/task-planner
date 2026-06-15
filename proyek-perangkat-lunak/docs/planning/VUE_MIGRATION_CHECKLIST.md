@@ -80,7 +80,7 @@
 - [x] Align hero image/media section.
 - [x] Align empty state design and messaging.
 - [x] Align task list/card presentation.
-- [ ] Align create/edit modal UX.
+- [x] Align create/edit modal UX.
 - [x] Align refresh behavior after mutations.
 - [ ] Evaluate whether planner panel remains, moves, or is absorbed into reference structure.
 
