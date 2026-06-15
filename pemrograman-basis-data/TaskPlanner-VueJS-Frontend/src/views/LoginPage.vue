@@ -110,11 +110,11 @@ onMounted(() => {
         <!-- Theme Toggle -->
         <button
           @click="uiStore.toggleTheme()"
-          class="p-2 rounded-lg border border-gray-200/50 dark:border-gray-800/50 bg-gray-100/50 dark:bg-gray-900/50 hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors"
+          class="p-2 rounded-lg border border-gray-200/50 dark:border-gray-800/50 bg-white/50 dark:bg-gray-900/50 hover:bg-white dark:hover:bg-gray-800 transition-colors shadow-sm shadow-black/5"
           aria-label="Toggle theme"
         >
           <Sun v-if="uiStore.state.theme === 'dark'" class="w-5 h-5 text-yellow-500" :stroke-width="2" />
-          <Moon v-else class="w-5 h-5 text-indigo-500" :stroke-width="2" />
+          <Moon v-else class="w-5 h-5 text-slate-600" :stroke-width="2" />
         </button>
       </div>
     </nav>
