@@ -10,6 +10,7 @@ const router = useRouter()
 const route = useRoute()
 const form = reactive({ email: '', password: '' })
 const error = ref('')
+const turnstileSiteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY || ''
 const isCallbackBridge = computed(() => route.name === canonicalRouteNames.authCallback)
 const callbackUrl = computed(() => {
   const value = route.query.callbackUrl
@@ -95,10 +96,10 @@ async function submit() {
       </section>
 
       <form v-if="!isCallbackBridge" class="next-auth-form-card" @submit.prevent="submit">
-        <div v-if="import.meta.env.VITE_TURNSTILE_SITE_KEY" class="next-auth-turnstile">
+        <div v-if="turnstileSiteKey" class="next-auth-turnstile">
           <!-- Cloudflare Turnstile Widget Placeholder -->
           <iframe
-            :src="`https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&sitekey=${import.meta.env.VITE_TURNSTILE_SITE_KEY}`"
+            :src="`https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&sitekey=${turnstileSiteKey}`"
             style="width: 100%; min-height: 80px; border: none; background: transparent;"
             title="Cloudflare Turnstile"
             referrerpolicy="no-referrer"

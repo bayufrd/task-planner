@@ -155,4 +155,5 @@ const qrCodeUrl = computed(() => {
         </div>
       </div>
     </div>
-  </template>
+  </div>
+</template>

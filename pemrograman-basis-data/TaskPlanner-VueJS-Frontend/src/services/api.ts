@@ -95,14 +95,14 @@ function unwrap<T>(payload: ApiEnvelope<T> | T): T {
 
 export const authApi = {
   async register(payload: RegisterPayload) {
-    const result = await request<ApiEnvelope<AuthResult>>('/auth/register', {
+    const result = await request<ApiEnvelope<AuthResult>>('/api/auth/register', {
       method: 'POST',
       body: JSON.stringify(payload),
     })
     return unwrap(result)
   },
   async login(payload: LoginPayload) {
-    const result = await request<ApiEnvelope<AuthResult>>('/auth/login', {
+    const result = await request<ApiEnvelope<AuthResult>>('/api/auth/login', {
       method: 'POST',
       body: JSON.stringify(payload),
     })
