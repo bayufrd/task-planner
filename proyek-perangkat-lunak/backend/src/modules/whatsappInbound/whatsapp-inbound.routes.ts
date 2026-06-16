@@ -563,17 +563,18 @@ const handleTaskCompletion = async (userId: string, command: string, name?: stri
 };
 
 const handleWhatsappInbound = async (req: Request, res: Response): Promise<void> => {
-  console.log('[WA Inbound] Request received', {
-    source: typeof req.body?.source === 'string' ? req.body.source.trim() : '',
-    service: typeof req.body?.service === 'string' ? req.body.service.trim() : '',
-    command: typeof req.body?.command === 'string' ? req.body.command.trim() : '',
-    rawMessage: typeof req.body?.rawMessage === 'string' ? req.body.rawMessage.trim() : '',
-    user: req.body?.user || null,
-    message: req.body?.message || null,
-    context: req.body?.context || null,
-  });
+  try {
+    console.log('[WA Inbound] Request received', {
+      source: typeof req.body?.source === 'string' ? req.body.source.trim() : '',
+      service: typeof req.body?.service === 'string' ? req.body.service.trim() : '',
+      command: typeof req.body?.command === 'string' ? req.body.command.trim() : '',
+      rawMessage: typeof req.body?.rawMessage === 'string' ? req.body.rawMessage.trim() : '',
+      user: req.body?.user || null,
+      message: req.body?.message || null,
+      context: req.body?.context || null,
+    });
 
-  const bearerToken = req.headers.authorization?.startsWith('Bearer ')
+    const bearerToken = req.headers.authorization?.startsWith('Bearer ')
     ? req.headers.authorization.substring(7).trim()
     : '';
   const serviceSecret = String(req.headers['x-service-secret'] || '').trim();
@@ -1006,7 +1007,11 @@ const handleWhatsappInbound = async (req: Request, res: Response): Promise<void>
           }
         } else if (action === 'CREATE_TASK') {
           const taskCommand = normalizeCommandText(command);
+          console.log('[WA Command] Executing CREATE_TASK', { userId: linkedUser.id, command: taskCommand });
+          
           const aiParsedTask = await aiService.parseTaskCommand(taskCommand);
+          console.log('[WA Command] AI Parsed Task', { userId: linkedUser.id, aiParsedTask });
+
           const parsedTask = resolvedAction.updates?.title
             ? {
                 ...aiParsedTask,
@@ -1020,7 +1025,12 @@ const handleWhatsappInbound = async (req: Request, res: Response): Promise<void>
                 reminderTime: resolvedAction.updates.reminderTime ?? aiParsedTask.reminderTime,
               }
             : aiParsedTask;
+          
+          console.log('[WA Command] Final Parsed Task for Creation', { userId: linkedUser.id, parsedTask });
+
           const createdTask = await taskService.createTask(linkedUser.id, parsedTask);
+          console.log('[WA Command] Task created successfully', { userId: linkedUser.id, taskId: createdTask.id });
+
           actionReply = [
             `✅ Task berhasil dibuat${linkedUser.name ? ` untuk ${linkedUser.name}` : ''}:`,
             formatTaskSuccessLine(createdTask),
@@ -1160,6 +1170,12 @@ const handleWhatsappInbound = async (req: Request, res: Response): Promise<void>
     finalMessage || (registrationCommand ? 'WhatsApp registration captured and saved' : 'WhatsApp inbound command processed'),
     201
   );
+  } catch (error) {
+    console.error('[WA Inbound] CRITICAL ERROR:', error);
+    if (!res.headersSent) {
+      sendError(res, 'INTERNAL_ERROR', error instanceof Error ? error.message : 'Failed to process WhatsApp inbound request', 500);
+    }
+  }
 };
 
 router.post('/inbound', handleWhatsappInbound);
