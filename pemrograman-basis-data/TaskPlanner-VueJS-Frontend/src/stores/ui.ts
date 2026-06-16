@@ -17,7 +17,7 @@ function readLanguage(): AppLanguage {
 }
 
 const state = reactive({
-  theme: readTheme() as ThemeMode,
+  theme: 'light' as ThemeMode,
   language: readLanguage() as AppLanguage,
   isProfileMenuOpen: false,
   isCommandPaletteOpen: false,
@@ -25,7 +25,11 @@ const state = reactive({
 
 function applyTheme(theme: ThemeMode) {
   document.documentElement.dataset.theme = theme
-  document.documentElement.classList.toggle('dark', theme === 'dark')
+  if (theme === 'dark') {
+    document.documentElement.classList.add('dark')
+  } else {
+    document.documentElement.classList.remove('dark')
+  }
   localStorage.setItem(THEME_KEY, theme)
 }
 
