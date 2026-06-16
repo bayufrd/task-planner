@@ -443,22 +443,32 @@ const findBestTaskMatch = async (
   dateHint?: string
 ) => {
   const tasks = await taskService.getTasks(userId, 'PENDING');
-  const combined = [targetText, dateHint].filter(Boolean).join(' ').trim();
-  const normalizedCombined = normalizeComparableText(combined);
-  const dateTokens = extractDateTokens(combined);
+  const normalizedTarget = normalizeComparableText(targetText || '');
+  const normalizedCombined = normalizeComparableText([targetText, dateHint].filter(Boolean).join(' ').trim());
+  const dateTokens = extractDateTokens(dateHint || '');
+
+  const scoreFromText = (candidate: string, comparableTitle: string) => {
+    if (!candidate) return 0;
+
+    let score = 0;
+    if (comparableTitle === candidate) score += 100;
+    else if (comparableTitle.includes(candidate)) score += 80;
+    else if (candidate.includes(comparableTitle)) score += 60;
+
+    const words = candidate.split(' ').filter(Boolean);
+    score += words.filter((word) => comparableTitle.includes(word)).length * 10;
+    return score;
+  };
 
   const scored = tasks
     .map((task) => {
       const comparableTitle = normalizeComparableText(task.title);
       let score = 0;
 
-      if (normalizedCombined) {
-        if (comparableTitle === normalizedCombined) score += 100;
-        else if (comparableTitle.includes(normalizedCombined)) score += 80;
-        else if (normalizedCombined.includes(comparableTitle)) score += 60;
+      score += scoreFromText(normalizedTarget, comparableTitle) * 2;
 
-        const words = normalizedCombined.split(' ').filter(Boolean);
-        score += words.filter((word) => comparableTitle.includes(word)).length * 10;
+      if (!score && !normalizedTarget && normalizedCombined) {
+        score += scoreFromText(normalizedCombined, comparableTitle);
       }
 
       if (taskMatchesDateTokens(task, dateTokens)) {
@@ -970,18 +980,6 @@ const handleWhatsappInbound = async (req: Request, res: Response): Promise<void>
           } else {
             const match = await findBestTaskMatch(linkedUser.id, resolvedAction.targetText, resolvedAction.dateHint);
             const updateInput = sanitizeTaskUpdateInput(resolvedAction.updates) as Record<string, unknown>;
-            const hasExplicitTimeChange = /\b(hari ini|besok|lusa|jam|pukul|pagi|siang|sore|malam|\d{1,2}(?::|\.)\d{2})\b/i.test(command);
-
-            if (!updateInput.deadline && hasExplicitTimeChange) {
-              try {
-                const parsedUpdate = await aiService.parseTaskCommand(command);
-                if (parsedUpdate.deadline) {
-                  updateInput.deadline = parsedUpdate.deadline;
-                }
-              } catch {
-                // Keep the original update payload when fallback parsing fails.
-              }
-            }
  
             if (!match.bestMatch) {
               actionReply = buildTaskNotFoundMessage('diedit', resolvedAction.targetText, resolvedAction.dateHint);

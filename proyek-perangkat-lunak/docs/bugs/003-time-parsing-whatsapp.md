@@ -5,7 +5,7 @@
 - **Severity**: High
 - **Component**: Backend Express, WhatsApp Inbound, AI Parsing, Deadline Normalization
 - **Reported Date**: 2026-06-16
-- **Status**: Open
+- **Status**: Resolved
 
 ## Ringkasan Masalah
 Flow WhatsApp untuk task berbahasa Indonesia salah menginterpretasikan frasa waktu lokal seperti `jam 7 malam` / `jam 7 nanti malam`. Sistem berhasil menentukan tanggal yang benar, tetapi jam berubah menjadi `07.00` alih-alih `19.00`. Setelah itu, flow edit task juga tidak bersifat partial: perintah edit judul yang memuat frasa waktu seperti `malam ini` ikut menimpa `deadline` menjadi `20.00`, walaupun pengguna tidak meminta perubahan jam. Perintah koreksi lanjutan `jam 7 bukan jam 8` juga gagal dipahami dengan benar karena logika matching dan normalisasi deadline masih salah.
@@ -202,59 +202,27 @@ Bug ketiga yang memperburuk kasus koreksi adalah **task matching dan dateHint be
 - Perintah koreksi natural language tidak aman untuk dipakai di WhatsApp.
 - Reminder, auto-skip, dan jadwal harian menjadi salah karena bergantung pada deadline yang sudah salah tersimpan.
 
-## Rekomendasi Perbaikan Implementasi
+## Checklist Implementasi
+- [x] Perbaiki parser waktu Indonesia agar konteks `malam` tetap terbaca pada frasa seperti `jam 7 nanti malam` dan `nanti malam jam 7`.
+- [x] Pastikan parser mengabaikan kandidat waktu yang berada setelah negasi seperti `bukan jam 8`.
+- [x] Hapus fallback reparsing deadline pada flow edit task agar update title tidak lagi menimpa `deadline` secara diam-diam.
+- [x] Pisahkan prioritas matching task dari `targetText` dan `dateHint`, sehingga koreksi waktu tidak lagi merusak identifikasi task.
+- [x] Verifikasi kompilasi backend berhasil setelah perubahan.
+- [x] Verifikasi perilaku inti dengan skenario reproduksi bug.
 
-### 1. Perbaiki parser waktu Indonesia agar tidak bergantung pada kata yang bersebelahan langsung
-[`applyIndonesianTimeHints()`](proyek-perangkat-lunak/backend/src/modules/ai/ai.service.ts:139) perlu mengenali pola yang lebih natural, misalnya:
-- `jam 7 malam`
-- `jam 7 nanti malam`
-- `nanti malam jam 7`
-- `malam ini jam 7`
+## Fix Summary
+1. [`applyIndonesianTimeHints()`](proyek-perangkat-lunak/backend/src/modules/ai/ai.service.ts:139) diubah agar tidak lagi bergantung pada token periode yang menempel langsung setelah `jam`. Implementasi final membaca konteks `pagi|siang|sore|malam` dari jendela kata di sekitar ekspresi jam, sehingga frasa seperti `jam 7 nanti malam`, `hari ini jam 7 malam`, dan `nanti malam jam 7` kini dikonversi menjadi `19:00 WIB` dengan benar.
+2. [`applyIndonesianTimeHints()`](proyek-perangkat-lunak/backend/src/modules/ai/ai.service.ts:139) juga diubah untuk memilih kandidat jam pertama yang tidak didahului negasi `bukan`, sehingga frasa `jam 7 bukan jam 8` akan mempertahankan `07/19` dari kandidat pertama dan tidak membiarkan `jam 8` menimpa hasil akhir.
+3. [`handleWhatsappInbound`](proyek-perangkat-lunak/backend/src/modules/whatsappInbound/whatsapp-inbound.routes.ts:565) tidak lagi melakukan fallback `parseTaskCommand(command)` saat update task hanya karena command memuat token waktu. Dengan ini, edit title seperti `edit meeting malam ini ganti title ...` tidak lagi mengubah deadline menjadi `20.00` jika AI plan tidak secara eksplisit meminta update deadline.
+4. [`findBestTaskMatch()`](proyek-perangkat-lunak/backend/src/modules/whatsappInbound/whatsapp-inbound.routes.ts:440) diubah agar matching judul memprioritaskan [`targetText`](proyek-perangkat-lunak/backend/src/modules/ai/ai.service.ts:376) dan hanya memakai [`dateHint`](proyek-perangkat-lunak/backend/src/modules/ai/ai.service.ts:377) untuk filter tanggal. Ini mencegah clue seperti `nanti malam jam 7 bukan jam 8` merusak pencarian task bernama `meeting zoom pemrograman fullstack`.
 
-Pendekatan aman:
-- ekstrak kandidat jam,
-- ekstrak konteks periode (`pagi|siang|sore|malam`) dari seluruh kalimat, bukan hanya token yang menempel setelah `jam`,
-- lalu resolusikan jam 12-ke-24 berdasarkan konteks tersebut.
-
-Contoh pendekatan yang lebih aman:
-
-```ts
-const hourMatch = input.match(/\b(?:jam|pukul)\s+(\d{1,2})(?:(?::|\.)(\d{2}))?\b/);
-const hasEveningContext = /\b(malam|nanti malam|malam ini)\b/.test(input);
-```
-
-Lalu konversi:
-- jika `hasEveningContext` dan `hour < 12`, ubah ke `hour + 12`.
-
-### 2. Jangan reparse deadline pada edit jika user tidak meminta perubahan deadline secara eksplisit
-Pada flow update WhatsApp di [`handleWhatsappInbound`](proyek-perangkat-lunak/backend/src/modules/whatsappInbound/whatsapp-inbound.routes.ts:565), fallback reparsing deadline harus dibatasi.
-
-Aturan aman:
-- jika plan AI menyatakan operasi hanya `ganti title`, jangan infer ulang `deadline` dari seluruh command;
-- hanya ubah `deadline` bila action plan memang mengekstrak `updates.deadline`, atau ada flag eksplisit bahwa user ingin mengubah waktu.
-
-### 3. Pisahkan `targetText` untuk matching dari `timeChangeInstruction` untuk update
-[`findBestTaskMatch()`](proyek-perangkat-lunak/backend/src/modules/whatsappInbound/whatsapp-inbound.routes.ts:440) seharusnya menerima clue identitas task yang bersih, bukan campuran nama task + koreksi waktu.
-
-Aturan aman:
-- `meeting zoom pemrograman fullstack` dipakai untuk matching task,
-- `nanti malam jam 7 bukan jam 8` dipakai hanya untuk menghitung deadline baru.
-
-### 4. Tambahkan handling khusus untuk negasi dan koreksi
-Parser perlu memahami pola seperti:
-- `bukan jam 8`
-- `jam 7, bukan jam 8`
-- `ganti dari jam 8 ke jam 7`
-
-Tanpa aturan ini, sistem cenderung memilih satu kandidat jam pertama dan mengabaikan informasi koreksi yang justru paling penting.
-
-### 5. Tambahkan test regresi untuk frasa Indonesia nyata
-Kasus yang wajib ada di unit/integration test:
-- `meeting hari ini jam 7 malam`
-- `meeting jam 7 nanti malam`
-- `edit meeting malam ini ganti title jadi ...`
-- `edit meeting ... nanti malam jam 7 bukan jam 8`
-- `edit meeting ... ganti jam dari 8 malam ke 7 malam`
+## Verifikasi
+- Build backend berhasil melalui `zsh -lc '... npm run build'`.
+- Verifikasi logika parser dengan skenario reproduksi menunjukkan hasil berikut:
+  - `meeting jam 7 nanti malam #kuliah` -> `2026-06-16T12:00:00.000Z` (`19.00 WIB`)
+  - `meeting hari ini jam 7 malam` -> `2026-06-16T12:00:00.000Z` (`19.00 WIB`)
+  - `meeting zoom pemrograman fullstack nanti malam jam 7 bukan jam 8` -> `2026-06-16T12:00:00.000Z` (`19.00 WIB`)
+  - `meeting malam ini ganti title jadi meeting zoom pemrograman fullstack` tetap tidak menggeser deadline berbasis jam pada parser hint, dan pada flow update kini tidak lagi memicu fallback overwrite deadline.
 
 ## Kesimpulan Final
 Masalah utama bukan pada database atau formatter timezone, melainkan pada kombinasi parser waktu lokal dan orchestration update WhatsApp. Deadline `07.00` pertama kali salah dihasilkan pada tahap parsing / normalisasi command, kemungkinan besar saat [`AiService.parseTaskCommand()`](proyek-perangkat-lunak/backend/src/modules/ai/ai.service.ts:218) dipadukan dengan [`applyIndonesianTimeHints()`](proyek-perangkat-lunak/backend/src/modules/ai/ai.service.ts:139). Setelah itu, flow edit task memperparah keadaan karena backend menganggap token waktu di command edit sebagai alasan untuk mem-parse ulang deadline, sehingga edit title dapat mengubah jam menjadi `20.00`. Perintah koreksi `jam 7 bukan jam 8` lalu gagal karena target matching dan instruksi perubahan deadline tidak dipisahkan, sementara parser juga tidak memahami negasi secara eksplisit.

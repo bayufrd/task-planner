@@ -158,48 +158,82 @@ const applyIndonesianTimeHints = (input: string, deadline: Date, now: Date): Dat
     base = createJakartaDate(nowJakarta.year, nowJakarta.month, nowJakarta.day, deadlineJakarta.hour, deadlineJakarta.minute, 0);
   }
 
-  const setengahMatch = lower.match(/\b(?:jam|pukul)\s+setengah\s+(\d{1,2})\s*(pagi|siang|sore|malam)?\b/);
-  if (setengahMatch) {
+  const detectPeriodContext = (start: number, end: number): 'pagi' | 'siang' | 'sore' | 'malam' | undefined => {
+    const localWindow = lower.slice(Math.max(0, start - 24), Math.min(lower.length, end + 24));
+    const globalContext = [
+      { period: 'malam' as const, regex: /\b(nanti malam|malam ini|malam)\b/ },
+      { period: 'sore' as const, regex: /\b(sore ini|sore)\b/ },
+      { period: 'siang' as const, regex: /\b(siang ini|siang)\b/ },
+      { period: 'pagi' as const, regex: /\b(pagi ini|pagi)\b/ },
+    ];
+
+    for (const item of globalContext) {
+      if (item.regex.test(localWindow)) return item.period;
+    }
+
+    for (const item of globalContext) {
+      if (item.regex.test(lower)) return item.period;
+    }
+
+    return undefined;
+  };
+
+  const applyPeriodToHour = (hour: number, period?: 'pagi' | 'siang' | 'sore' | 'malam') => {
+    if (period === 'malam') {
+      if (hour === 12) return 0;
+      if (hour >= 1 && hour <= 11) return hour + 12;
+      return hour;
+    }
+
+    if (period === 'sore') {
+      if (hour >= 1 && hour <= 11) return hour + 12;
+      return hour;
+    }
+
+    if (period === 'siang') {
+      if (hour >= 1 && hour <= 10) return hour + 12;
+      return hour;
+    }
+
+    if (period === 'pagi') {
+      if (hour === 12) return 0;
+      return hour;
+    }
+
+    return hour;
+  };
+
+  const setengahRegex = /\b(?:jam|pukul)\s+setengah\s+(\d{1,2})(?:\s+(pagi|siang|sore|malam))?\b/g;
+  const setengahMatches = Array.from(lower.matchAll(setengahRegex));
+  const setengahMatch = setengahMatches.find((match) => !/\bbukan\s*$/.test(lower.slice(Math.max(0, match.index! - 16), match.index!))) || setengahMatches[0];
+
+  if (setengahMatch && typeof setengahMatch.index === 'number') {
     let hour = Number(setengahMatch[1]) - 1;
     const minute = 30;
-    const period = setengahMatch[2];
+    const explicitPeriod = setengahMatch[2] as 'pagi' | 'siang' | 'sore' | 'malam' | undefined;
+    const period = explicitPeriod || detectPeriodContext(setengahMatch.index, setengahMatch.index + setengahMatch[0].length);
 
     if (hour < 0) hour = 0;
-
-    if (period === 'malam') {
-      if (hour === 12) hour = 0;
-      else if (hour >= 1 && hour <= 11) hour += 12;
-    } else if (period === 'sore') {
-      if (hour >= 1 && hour <= 11) hour += 12;
-    } else if (period === 'siang') {
-      if (hour >= 1 && hour <= 10) hour += 12;
-    } else if (period === 'pagi') {
-      if (hour === 12) hour = 0;
-    }
+    hour = applyPeriodToHour(hour, period);
 
     const baseJakarta = getJakartaDateParts(base);
-    base = createJakartaDate(baseJakarta.year, baseJakarta.month, baseJakarta.day, hour, minute, 0);
-  } else {
-    const jamMatch = lower.match(/\b(?:jam|pukul)\s+(\d{1,2})(?:(?::|\.)(\d{2}))?\s*(pagi|siang|sore|malam)?\b/);
-    if (jamMatch) {
-      let hour = Number(jamMatch[1]);
-      const minute = jamMatch[2] ? Number(jamMatch[2]) : 0;
-      const period = jamMatch[3];
+    return createJakartaDate(baseJakarta.year, baseJakarta.month, baseJakarta.day, hour, minute, 0);
+  }
 
-      if (period === 'malam') {
-        if (hour === 12) hour = 0;
-        else if (hour >= 1 && hour <= 11) hour += 12;
-      } else if (period === 'sore') {
-        if (hour >= 1 && hour <= 11) hour += 12;
-      } else if (period === 'siang') {
-        if (hour >= 1 && hour <= 10) hour += 12;
-      } else if (period === 'pagi') {
-        if (hour === 12) hour = 0;
-      }
+  const jamRegex = /\b(?:jam|pukul)\s+(\d{1,2})(?:(?::|\.)(\d{2}))?(?:\s+(pagi|siang|sore|malam))?\b/g;
+  const jamMatches = Array.from(lower.matchAll(jamRegex));
+  const jamMatch = jamMatches.find((match) => !/\bbukan\s*$/.test(lower.slice(Math.max(0, match.index! - 16), match.index!))) || jamMatches[0];
 
-      const baseJakarta = getJakartaDateParts(base);
-      base = createJakartaDate(baseJakarta.year, baseJakarta.month, baseJakarta.day, hour, minute, 0);
-    }
+  if (jamMatch && typeof jamMatch.index === 'number') {
+    let hour = Number(jamMatch[1]);
+    const minute = jamMatch[2] ? Number(jamMatch[2]) : 0;
+    const explicitPeriod = jamMatch[3] as 'pagi' | 'siang' | 'sore' | 'malam' | undefined;
+    const period = explicitPeriod || detectPeriodContext(jamMatch.index, jamMatch.index + jamMatch[0].length);
+
+    hour = applyPeriodToHour(hour, period);
+
+    const baseJakarta = getJakartaDateParts(base);
+    return createJakartaDate(baseJakarta.year, baseJakarta.month, baseJakarta.day, hour, minute, 0);
   }
 
   return base;
