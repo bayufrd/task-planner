@@ -969,8 +969,20 @@ const handleWhatsappInbound = async (req: Request, res: Response): Promise<void>
             };
           } else {
             const match = await findBestTaskMatch(linkedUser.id, resolvedAction.targetText, resolvedAction.dateHint);
-            const updateInput = sanitizeTaskUpdateInput(resolvedAction.updates);
+            const updateInput = sanitizeTaskUpdateInput(resolvedAction.updates) as Record<string, unknown>;
+            const hasExplicitTimeChange = /\b(hari ini|besok|lusa|jam|pukul|pagi|siang|sore|malam|\d{1,2}(?::|\.)\d{2})\b/i.test(command);
 
+            if (!updateInput.deadline && hasExplicitTimeChange) {
+              try {
+                const parsedUpdate = await aiService.parseTaskCommand(command);
+                if (parsedUpdate.deadline) {
+                  updateInput.deadline = parsedUpdate.deadline;
+                }
+              } catch {
+                // Keep the original update payload when fallback parsing fails.
+              }
+            }
+ 
             if (!match.bestMatch) {
               actionReply = buildTaskNotFoundMessage('diedit', resolvedAction.targetText, resolvedAction.dateHint);
               actionOperation = {
