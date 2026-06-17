@@ -31,7 +31,7 @@ export default function LoginScreen() {
 
   return (
     <View className="flex-1 justify-center p-6 bg-white">
-      <Text className="text-3xl font-bold mb-8 text-center text-primary">Smart Study Planner</Text>
+      <Text className="text-3xl font-bold mb-8 text-center text-primary">Smart Task Planner</Text>
       <View className="mb-4">
         <Text className="mb-2 text-gray-600">Email</Text>
         <Controller
