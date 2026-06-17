@@ -689,9 +689,11 @@ export class TaskService {
     });
   }
 
-  async markSkippedNotificationSent(_taskId: string) {
-    // The generated Prisma client in this environment does not include the
-    // skipped notification tracking field yet, so avoid crashing the scheduler.
+  async markSkippedNotificationSent(taskId: string) {
+    await prisma.task.update({
+      where: { id: taskId },
+      data: { skippedNotificationSent: true },
+    });
   }
 
   async calculateTaskPriority(userId: string, taskId: string) {

@@ -35,12 +35,19 @@ export class TaskAutoSkipScheduler {
   }
 
   private getWhatsappAuthToken(): string {
-    return process.env.WHATSAPP_API_TOKEN || env.TOKEN_WHATSAPP || process.env.ADMIN_TOKEN || '';
+    return env.TOKEN_WHATSAPP || process.env.WHATSAPP_API_TOKEN || process.env.ADMIN_TOKEN || '';
   }
 
   private async postWhatsappPayload(payload: WhatsappPersonalPayload, errorPrefix: string): Promise<void> {
     const token = this.getWhatsappAuthToken();
-    if (!env.WHATSAPP_BOT_URL || !token) {
+    
+    if (!env.WHATSAPP_BOT_URL) {
+      console.warn(`[Scheduler] Skipping WhatsApp: WHATSAPP_BOT_URL is not configured`);
+      return;
+    }
+
+    if (!token) {
+      console.warn(`[Scheduler] Skipping WhatsApp: TOKEN_WHATSAPP is not configured`);
       return;
     }
 
