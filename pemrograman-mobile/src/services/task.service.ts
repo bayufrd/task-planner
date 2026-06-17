@@ -15,7 +15,7 @@ export const taskService = {
     return response.data;
   },
   updateTask: async (id: string, data: Partial<Task>) => {
-    const response = await api.put<Task>(`/tasks/${id}`, data);
+    const response = await api.patch<Task>(`/tasks/${id}`, data);
     return response.data;
   },
   deleteTask: async (id: string) => {

@@ -1,78 +1,93 @@
-import React from "react";
-import { View, Text, TextInput, TouchableOpacity } from "react-native";
-import { useForm, Controller } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
+import React, { useState, useEffect } from "react";
+import { View, Text, StyleSheet, Alert } from "react-native";
 import { useRouter } from "expo-router";
-import { authService } from "../../services/auth.service";
+import WebViewAuth from "../../components/WebViewAuth";
 import { useAuthStore } from "../../store/auth.store";
-
-const schema = z.object({
-  email: z.string().email(),
-  password: z.string().min(6),
-});
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function LoginScreen() {
   const router = useRouter();
   const setAuth = useAuthStore((state) => state.setAuth);
-  const { control, handleSubmit, formState: { errors } } = useForm({
-    resolver: zodResolver(schema),
-  });
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  const onSubmit = async (data: any) => {
+  useEffect(() => {
+    // Check if already logged in
+    checkExistingAuth();
+  }, []);
+
+  const checkExistingAuth = async () => {
     try {
-      const res = await authService.login(data);
-      setAuth(res.user, res.token);
-      router.replace("/(main)/dashboard");
-    } catch (error) {
-      console.error(error);
+      const token = await AsyncStorage.getItem("auth-token");
+      const userStr = await AsyncStorage.getItem("user");
+      
+      if (token && userStr) {
+        const user = JSON.parse(userStr);
+        setAuth(user, token);
+        setIsAuthenticated(true);
+        router.replace("/(main)/dashboard");
+      }
+    } catch (e) {
+      console.error("Error checking auth:", e);
     }
   };
 
+  const handleSuccess = async (token: string, user: any) => {
+    try {
+      // Save to AsyncStorage
+      await AsyncStorage.setItem("auth-token", token);
+      if (user) {
+        await AsyncStorage.setItem("user", JSON.stringify(user));
+      }
+      
+      // Update auth store
+      setAuth(user, token);
+      
+      // Navigate to dashboard
+      router.replace("/(main)/dashboard");
+    } catch (e) {
+      console.error("Error saving auth:", e);
+      Alert.alert("Error", "Failed to save login data");
+    }
+  };
+
+  const handleError = (error: string) => {
+    console.error("WebView auth error:", error);
+    Alert.alert("Login Failed", error);
+  };
+
   return (
-    <View className="flex-1 justify-center p-6 bg-white">
-      <Text className="text-3xl font-bold mb-8 text-center text-primary">Smart Task Planner</Text>
-      <View className="mb-4">
-        <Text className="mb-2 text-gray-600">Email</Text>
-        <Controller
-          control={control}
-          name="email"
-          render={({ field: { onChange, value } }) => (
-            <TextInput
-              className="border border-gray-300 p-3 rounded-lg"
-              onChangeText={onChange}
-              value={value}
-              autoCapitalize="none"
-            />
-          )}
-        />
-        {errors.email && <Text className="text-danger mt-1">{errors.email.message}</Text>}
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.title}>Smart Task Planner</Text>
+        <Text style={styles.subtitle}>Login to continue</Text>
       </View>
-      <View className="mb-6">
-        <Text className="mb-2 text-gray-600">Password</Text>
-        <Controller
-          control={control}
-          name="password"
-          render={({ field: { onChange, value } }) => (
-            <TextInput
-              className="border border-gray-300 p-3 rounded-lg"
-              onChangeText={onChange}
-              value={value}
-              secureTextEntry
-            />
-          )}
-        />
-        {errors.password && <Text className="text-danger mt-1">{errors.password.message}</Text>}
-      </View>
-      <TouchableOpacity
-        className="bg-primary p-4 rounded-lg"
-        onPress={handleSubmit(onSubmit)}
-      >
-        <Text className="text-white text-center font-bold">Login</Text>
-      </TouchableOpacity>
-      <TouchableOpacity onPress={() => router.push("/(auth)/register")} className="mt-4">
-        <Text className="text-center text-primary">Don't have an account? Register</Text>
-      </TouchableOpacity>
+      
+      <WebViewAuth onSuccess={handleSuccess} onError={handleError} />
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#ffffff',
+  },
+  header: {
+    paddingTop: 60,
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+    backgroundColor: '#ffffff',
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#1e293b',
+    textAlign: 'center',
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#64748b',
+    textAlign: 'center',
+    marginTop: 8,
+  },
+});

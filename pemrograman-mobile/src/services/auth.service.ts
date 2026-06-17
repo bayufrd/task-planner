@@ -18,7 +18,7 @@ export const authService = {
     await AsyncStorage.removeItem("auth-token");
   },
   getProfile: async () => {
-    const response = await api.get<User>("/auth/profile");
+    const response = await api.get<User>("/auth/me");
     return response.data;
   },
 };
