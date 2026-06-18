@@ -82,6 +82,18 @@ export default function WebViewAuth({ onSuccess, onError }: WebViewAuthProps) {
   // Combined injection script - clear first, then override, then extract
   const injectedJS = clearStorageScript + ';\n' + storageOverrideScript + ';\n' + extractTokenScript;
 
+  // Clear stale AsyncStorage on mount
+  React.useEffect(() => {
+    const clearStaleStorage = async () => {
+      try {
+        await AsyncStorage.multiRemove(['auth-token', 'auth-user', 'user']);
+      } catch (e) {
+        console.error('Failed to clear storage:', e);
+      }
+    };
+    clearStaleStorage();
+  }, []);
+
   const handleMessage = useCallback(async (event: any) => {
     try {
       const data = JSON.parse(event.nativeEvent.data);
@@ -89,7 +101,7 @@ export default function WebViewAuth({ onSuccess, onError }: WebViewAuthProps) {
       if ((data.type === 'AUTH_SUCCESS' || data.type === 'AUTH_TOKEN_SAVED') && data.token) {
         await AsyncStorage.setItem('auth-token', data.token);
         if (data.user) {
-          await AsyncStorage.setItem('user', JSON.stringify(data.user));
+          await AsyncStorage.setItem('auth-user', JSON.stringify(data.user));
         }
         onSuccess(data.token, data.user || null);
       }
