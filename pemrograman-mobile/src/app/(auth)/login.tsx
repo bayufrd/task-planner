@@ -11,34 +11,24 @@ export default function LoginScreen() {
   const [showWebView, setShowWebView] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
 
+  const user = useAuthStore((state) => state.user);
+  const token = useAuthStore((state) => state.token);
+
   useEffect(() => {
-    checkExistingAuth();
-  }, []);
-
-  const checkExistingAuth = async () => {
-    try {
-      const token = await AsyncStorage.getItem("auth-token");
-      const userStr = await AsyncStorage.getItem("user");
-      
-      if (token && userStr) {
-        const user = JSON.parse(userStr);
-        setAuth(user, token);
-        router.replace("/(main)/dashboard");
-        return;
-      }
-    } catch (e) {
-      console.error("Error checking auth:", e);
+    if (user && token) {
+      router.replace("/(main)/dashboard");
+    } else {
+      setIsChecking(false);
     }
-    setIsChecking(false);
-  };
+  }, [user, token]);
 
-  const handleSuccess = async (token: string, user: any) => {
+  const handleSuccess = async (authToken: string, authUser: any) => {
     try {
-      await AsyncStorage.setItem("auth-token", token);
-      if (user) {
-        await AsyncStorage.setItem("user", JSON.stringify(user));
+      await AsyncStorage.setItem("auth-token", authToken);
+      if (authUser) {
+        await AsyncStorage.setItem("user", JSON.stringify(authUser));
       }
-      setAuth(user, token);
+      setAuth(authUser, authToken);
       router.replace("/(main)/dashboard");
     } catch (e) {
       console.error("Error saving auth:", e);
