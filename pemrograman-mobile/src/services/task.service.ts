@@ -34,6 +34,10 @@ export const taskService = {
   deleteTask: async (id: string): Promise<void> => {
     await api.delete(`/tasks/${id}`);
   },
+  updateTaskStatus: async (id: string, status: string): Promise<Task> => {
+    const response = await api.patch<ApiResponse<Task>>(`/tasks/${id}/status`, { status });
+    return response.data?.data;
+  },
   getStats: async (): Promise<TaskStats> => {
     try {
       const response = await api.get<ApiResponse<RawTaskStats>>("/tasks/stats");

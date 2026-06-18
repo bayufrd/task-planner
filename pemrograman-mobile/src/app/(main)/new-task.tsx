@@ -1,9 +1,10 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Alert, Modal, KeyboardAvoidingView, Platform } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { taskService } from "../../services/task.service";
 import { ChevronLeft, ChevronRight, Check, X, Calendar, Clock, Zap, Timer, FileText, Target, Edit3 } from "lucide-react-native";
+import SuccessModal from "../../components/SuccessModal";
 
 type Priority = 'HIGH' | 'MEDIUM' | 'LOW';
 type TaskStep = 'title' | 'description' | 'date' | 'time' | 'priority' | 'duration' | 'review';
@@ -37,6 +38,9 @@ const getCurrentDateTime = () => {
 export default function NewTaskScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const params = useLocalSearchParams();
+  const taskId = params.taskId as string | undefined;
+  const isEditMode = !!taskId;
   const defaultDateTime = getCurrentDateTime();
 
   const [title, setTitle] = useState('');
@@ -48,8 +52,30 @@ export default function NewTaskScreen() {
   const [currentStep, setCurrentStep] = useState(0);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [timeInputMode, setTimeInputMode] = useState<'select' | 'manual'>('select');
   const [manualTime, setManualTime] = useState('');
+  const [isLoadingTask, setIsLoadingTask] = useState(isEditMode);
+
+  // Load task data when editing
+  useEffect(() => {
+    if (isEditMode && taskId) {
+      taskService.getTask(taskId).then((task) => {
+        setTitle(task.title || '');
+        setDescription(task.description || '');
+        setPriority((task.priority as Priority) || 'MEDIUM');
+        if (task.deadline) {
+          const d = new Date(task.deadline);
+          setDeadline(d.toISOString().slice(0, 10));
+          setDeadlineTime(d.toISOString().slice(11, 16));
+        }
+        setEstimatedDuration(String(task.estimatedDuration || 60));
+        setIsLoadingTask(false);
+      }).catch(() => {
+        setIsLoadingTask(false);
+      });
+    }
+  }, [isEditMode, taskId]);
 
   const currentConfig = TASK_STEPS[currentStep];
   const isLastStep = currentStep === TASK_STEPS.length - 1;
@@ -72,7 +98,7 @@ export default function NewTaskScreen() {
     }
   }, [currentStep, estimatedDuration, title, timeInputMode, manualTime]);
 
-  const nextLabel = isLastStep ? 'Create Task' : 'Continue';
+  const nextLabel = isLastStep ? (isEditMode ? 'Update Task' : 'Create Task') : 'Continue';
 
   const goNext = () => {
     if (!canContinue) {
@@ -96,17 +122,20 @@ export default function NewTaskScreen() {
     setCurrentStep((step) => Math.max(step - 1, 0));
   };
 
-  const createTaskMutation = useMutation({
-    mutationFn: (data: any) => taskService.createTask(data),
+  const taskMutation = useMutation({
+    mutationFn: (data: any) => {
+      if (isEditMode && taskId) {
+        return taskService.updateTask(taskId, data);
+      }
+      return taskService.createTask(data);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
       queryClient.invalidateQueries({ queryKey: ["taskStats"] });
-      Alert.alert("Success", "Task created successfully!", [
-        { text: "OK", onPress: () => router.back() }
-      ]);
+      setShowSuccessModal(true);
     },
     onError: (error: any) => {
-      Alert.alert("Error", error?.message || "Failed to create task");
+      Alert.alert("Error", error?.message || `Failed to ${isEditMode ? 'update' : 'create'} task`);
     },
   });
 
@@ -120,7 +149,7 @@ export default function NewTaskScreen() {
       return;
     }
 
-    createTaskMutation.mutate({
+    taskMutation.mutate({
       title: title.trim(),
       description: description.trim() || undefined,
       priority,
@@ -410,64 +439,75 @@ export default function NewTaskScreen() {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
-    >
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => currentStep === 0 ? router.back() : goBack()} style={styles.backButton}>
-          <ChevronLeft size={24} color="#1e293b" />
-        </TouchableOpacity>
-        <View style={styles.headerCenter}>
-          <Text style={styles.stepCounter}>Step {currentStep + 1} of {TASK_STEPS.length}</Text>
-          <Text style={styles.stepTitle}>{currentConfig.label}</Text>
-        </View>
-        <TouchableOpacity onPress={() => router.back()} style={styles.closeButton}>
-          <X size={24} color="#64748b" />
-        </TouchableOpacity>
-      </View>
-
-      {/* Progress Bar */}
-      <View style={styles.progressContainer}>
-        <View style={styles.progressBar}>
-          <View style={[styles.progressFill, { width: `${((currentStep + 1) / TASK_STEPS.length) * 100}%`}]} />
-        </View>
-      </View>
-
-      {/* Helper Text */}
-      <View style={styles.helperContainer}>
-        <Text style={styles.helperText}>{currentConfig.helper}</Text>
-      </View>
-
-      {/* Step Content */}
-      {renderStepContent()}
-
-      {/* Footer */}
-      <View style={styles.footer}>
-        {isLastStep ? (
-          <TouchableOpacity
-            style={[styles.primaryButton, createTaskMutation.isPending && styles.primaryButtonDisabled]}
-            onPress={handleSubmit}
-            disabled={createTaskMutation.isPending}
-          >
-            <Check size={20} color="#ffffff" />
-            <Text style={styles.primaryButtonText}>Create Task</Text>
+    <>
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+      >
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => currentStep === 0 ? router.back() : goBack()} style={styles.backButton}>
+            <ChevronLeft size={24} color="#1e293b" />
           </TouchableOpacity>
-        ) : (
-          <TouchableOpacity
-            style={[styles.primaryButton, !canContinue && styles.primaryButtonDisabled]}
-            onPress={goNext}
-            disabled={!canContinue}
-          >
-            <Text style={styles.primaryButtonText}>{nextLabel}</Text>
-            <ChevronRight size={20} color="#ffffff" />
+          <View style={styles.headerCenter}>
+            <Text style={styles.stepCounter}>{isEditMode ? 'Edit Task' : `Step ${currentStep + 1} of ${TASK_STEPS.length}`}</Text>
+            <Text style={styles.stepTitle}>{currentConfig.label}</Text>
+          </View>
+          <TouchableOpacity onPress={() => router.back()} style={styles.closeButton}>
+            <X size={24} color="#64748b" />
           </TouchableOpacity>
-        )}
-      </View>
-    </View>
-    </KeyboardAvoidingView>
+        </View>
+
+        {/* Progress Bar */}
+        <View style={styles.progressContainer}>
+          <View style={styles.progressBar}>
+            <View style={[styles.progressFill, { width: `${((currentStep + 1) / TASK_STEPS.length) * 100}%`}]} />
+          </View>
+        </View>
+
+        {/* Helper Text */}
+        <View style={styles.helperContainer}>
+          <Text style={styles.helperText}>{currentConfig.helper}</Text>
+        </View>
+
+        {/* Step Content */}
+        {renderStepContent()}
+
+        {/* Footer */}
+        <View style={styles.footer}>
+          {isLastStep ? (
+            <TouchableOpacity
+              style={[styles.primaryButton, taskMutation.isPending && styles.primaryButtonDisabled]}
+              onPress={handleSubmit}
+              disabled={taskMutation.isPending}
+            >
+              <Check size={20} color="#ffffff" />
+              <Text style={styles.primaryButtonText}>{isEditMode ? 'Update Task' : 'Create Task'}</Text>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity
+              style={[styles.primaryButton, !canContinue && styles.primaryButtonDisabled]}
+              onPress={goNext}
+              disabled={!canContinue}
+            >
+              <Text style={styles.primaryButtonText}>{nextLabel}</Text>
+              <ChevronRight size={20} color="#ffffff" />
+            </TouchableOpacity>
+          )}
+        </View>
+      </KeyboardAvoidingView>
+
+      <SuccessModal
+        visible={showSuccessModal}
+        title={isEditMode ? "Task Updated!" : "Task Created!"}
+        message={isEditMode ? "Your task has been updated successfully." : "Your new task has been added successfully."}
+        onClose={() => {
+          setShowSuccessModal(false);
+          router.back();
+        }}
+      />
+    </>
   );
 }
 
@@ -777,7 +817,7 @@ const styles = StyleSheet.create({
   },
   footer: {
     padding: 24,
-    paddingBottom: 40,
+    paddingBottom: 45,
   },
   primaryButton: {
     flexDirection: 'row',

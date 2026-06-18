@@ -5,9 +5,12 @@ import { useFocusEffect } from "expo-router";
 import { taskService } from "../../../services/task.service";
 import { useAuthStore } from "../../../store/auth.store";
 import { useRouter } from "expo-router";
-import { ChevronLeft, ChevronRight, Plus, Clock, CheckCircle2, XCircle, BarChart3, Timer, FileText, TrendingUp, Tag, CircleAlert } from "lucide-react-native";
+import { ChevronLeft, ChevronRight, Plus, Clock, CheckCircle2, XCircle, BarChart3, Timer, FileText, TrendingUp, Tag, CircleAlert, Trash2 } from "lucide-react-native";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addMonths, subMonths } from "date-fns";
 import { Task } from "../../types";
+import ConfirmationModal from "../../../components/ConfirmationModal";
+import SuccessModal from "../../../components/SuccessModal";
+import TaskDetailModal from "../../../components/TaskDetailModal";
 
 export default function DashboardScreen() {
   const router = useRouter();
@@ -16,6 +19,27 @@ export default function DashboardScreen() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [refreshing, setRefreshing] = useState(false);
+  
+  // Confirmation modal state
+  const [confirmModal, setConfirmModal] = useState<{
+    visible: boolean;
+    type: 'done' | 'delete';
+    taskId: string;
+    taskTitle: string;
+  }>({ visible: false, type: 'done', taskId: '', taskTitle: '' });
+  
+  // Success modal state
+  const [successModal, setSuccessModal] = useState({
+    visible: false,
+    title: '',
+    message: '',
+  });
+
+  // Task detail modal state
+  const [detailModal, setDetailModal] = useState<{
+    visible: boolean;
+    task: Task | null;
+  }>({ visible: false, task: null });
 
   const { data: stats, isLoading, refetch: refetchStats } = useQuery({
     queryKey: ["taskStats"],
@@ -44,6 +68,51 @@ export default function DashboardScreen() {
     await Promise.all([refetchTasks(), refetchStats()]);
     setRefreshing(false);
   }, [refetchTasks, refetchStats]);
+
+  const handleCompleteTask = (taskId: string, taskTitle: string) => {
+    setConfirmModal({
+      visible: true,
+      type: 'done',
+      taskId,
+      taskTitle,
+    });
+  };
+
+  const handleDeleteTask = (taskId: string, taskTitle: string) => {
+    setConfirmModal({
+      visible: true,
+      type: 'delete',
+      taskId,
+      taskTitle,
+    });
+  };
+
+  const handleConfirmAction = async () => {
+    const { type, taskId } = confirmModal;
+    setConfirmModal(prev => ({ ...prev, visible: false }));
+    
+    try {
+      if (type === 'done') {
+        await taskService.updateTaskStatus(taskId, 'DONE');
+        setSuccessModal({
+          visible: true,
+          title: 'Task Completed!',
+          message: 'Great job! Keep up the good work.',
+        });
+      } else {
+        await taskService.deleteTask(taskId);
+        setSuccessModal({
+          visible: true,
+          title: 'Task Deleted',
+          message: 'The task has been removed.',
+        });
+      }
+      refetchTasks();
+      refetchStats();
+    } catch (error) {
+      console.error(`Failed to ${type} task:`, error);
+    }
+  };
 
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
@@ -275,7 +344,7 @@ export default function DashboardScreen() {
               <TouchableOpacity
                 key={task.id}
                 style={styles.taskCard}
-                onPress={() => router.push("/(main)/new-task")}
+                onPress={() => setDetailModal({ visible: true, task })}
               >
                 <View style={styles.taskLeft}>
                   <View style={[styles.priorityIndicator, { backgroundColor: difficultyColors[task.difficulty || 'medium'] }]} />
@@ -318,18 +387,19 @@ export default function DashboardScreen() {
                     )}
                   </View>
                 </View>
-                <View style={[styles.statusBadge, {
-                  backgroundColor: task.status === 'DONE' ? '#dcfce7' :
-                                   task.status === 'PENDING' ? '#fef3c7' : '#f3f4f6'
-                }]}>
-                  <Text style={[styles.statusText, {
-                    color: task.status === 'DONE' ? '#16a34a' :
-                           task.status === 'PENDING' ? '#d97706' : '#6b7280'
-                  }]}>
-                    {task.status === 'PENDING' ? 'Pending' :
-                     task.status === 'DONE' ? 'Done' :
-                     task.status === 'SKIPPED' ? 'Skipped' : task.status}
-                  </Text>
+                <View style={styles.taskActions}>
+                  <TouchableOpacity
+                    style={[styles.actionButton, styles.doneButton]}
+                    onPress={() => handleCompleteTask(task.id, task.title)}
+                  >
+                    <CheckCircle2 size={18} color="#22c55e" />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.actionButton, styles.deleteButton]}
+                    onPress={() => handleDeleteTask(task.id, task.title)}
+                  >
+                    <Trash2 size={18} color="#ef4444" />
+                  </TouchableOpacity>
                 </View>
               </TouchableOpacity>
             ))
@@ -381,6 +451,48 @@ export default function DashboardScreen() {
           {getProgressMessage()}
         </Text>
       </View>
+
+      {/* Confirmation Modal */}
+      <ConfirmationModal
+        visible={confirmModal.visible}
+        type={confirmModal.type}
+        taskTitle={confirmModal.taskTitle}
+        onConfirm={handleConfirmAction}
+        onCancel={() => setConfirmModal(prev => ({ ...prev, visible: false }))}
+      />
+
+      {/* Success Modal */}
+      <SuccessModal
+        visible={successModal.visible}
+        title={successModal.title}
+        message={successModal.message}
+        onClose={() => setSuccessModal(prev => ({ ...prev, visible: false }))}
+      />
+
+      {/* Task Detail Modal */}
+      <TaskDetailModal
+        visible={detailModal.visible}
+        task={detailModal.task}
+        onClose={() => setDetailModal({ visible: false, task: null })}
+        onEdit={() => {
+          if (detailModal.task) {
+            setDetailModal({ visible: false, task: null });
+            router.push({ pathname: "/(main)/new-task", params: { taskId: detailModal.task.id } });
+          }
+        }}
+        onDone={() => {
+          if (detailModal.task) {
+            handleCompleteTask(detailModal.task.id, detailModal.task.title);
+            setDetailModal({ visible: false, task: null });
+          }
+        }}
+        onDelete={() => {
+          if (detailModal.task) {
+            handleDeleteTask(detailModal.task.id, detailModal.task.title);
+            setDetailModal({ visible: false, task: null });
+          }
+        }}
+      />
     </ScrollView>
   );
 }
@@ -725,6 +837,25 @@ const styles = StyleSheet.create({
   statusText: {
     fontSize: 11,
     fontWeight: '600',
+  },
+  taskActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginLeft: 8,
+  },
+  actionButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  doneButton: {
+    backgroundColor: '#dcfce7',
+  },
+  deleteButton: {
+    backgroundColor: '#fee2e2',
   },
   summaryCard: {
     marginHorizontal: 16,
