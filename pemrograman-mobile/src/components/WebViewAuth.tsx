@@ -15,6 +15,19 @@ export default function WebViewAuth({ onSuccess, onError }: WebViewAuthProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Clear localStorage script - run this when WebView opens
+  const clearStorageScript = `
+    (function() {
+      localStorage.removeItem('auth-token');
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('backendUser');
+      localStorage.removeItem('user');
+      localStorage.removeItem('auth-storage');
+      console.log('Cleared WebView localStorage');
+    })();
+    true;
+  `;
+
   // Extract token script
   const extractTokenScript = `
     (function() {
@@ -59,8 +72,8 @@ export default function WebViewAuth({ onSuccess, onError }: WebViewAuthProps) {
     true;
   `;
 
-  // Combined injection script
-  const injectedJS = storageOverrideScript + '\n' + extractTokenScript;
+  // Combined injection script - clear first, then override, then extract
+  const injectedJS = clearStorageScript + ';\n' + storageOverrideScript + ';\n' + extractTokenScript;
 
   const handleMessage = useCallback(async (event: any) => {
     try {
