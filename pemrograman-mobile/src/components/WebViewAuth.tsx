@@ -14,23 +14,27 @@ export default function WebViewAuth({ onSuccess, onError }: WebViewAuthProps) {
   const webViewRef = useRef<WebView>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const pendingTokenRef = useRef<string | null>(null);
+  const pendingUserRef = useRef<any>(null);
 
-  // Clear localStorage and cookies script - run this when WebView opens
+  // Clear storage only once per WebView session; clearing on every navigation logs the user out mid-login.
   const clearStorageScript = `
     (function() {
-      // Clear localStorage
-      localStorage.removeItem('auth-token');
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('backendUser');
-      localStorage.removeItem('user');
-      localStorage.removeItem('auth-storage');
-      
-      // Clear cookies for this domain
-      document.cookie.split(";").forEach(function(c) {
-        document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
-      });
-      
-      console.log('Cleared WebView localStorage and cookies');
+      if (!window.__RN_WEBVIEW_AUTH_CLEARED__) {
+        window.__RN_WEBVIEW_AUTH_CLEARED__ = true;
+
+        localStorage.removeItem('auth-token');
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('backendUser');
+        localStorage.removeItem('user');
+        localStorage.removeItem('auth-storage');
+
+        document.cookie.split(";").forEach(function(c) {
+          document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+        });
+
+        console.log('Cleared WebView localStorage and cookies');
+      }
     })();
     true;
   `;
@@ -97,13 +101,34 @@ export default function WebViewAuth({ onSuccess, onError }: WebViewAuthProps) {
   const handleMessage = useCallback(async (event: any) => {
     try {
       const data = JSON.parse(event.nativeEvent.data);
+      console.log('[WebViewAuth] message:', data.type, {
+        hasToken: Boolean(data.token),
+        hasUser: Boolean(data.user),
+      });
+
+      if (data.type === 'AUTH_USER_SAVED' && data.user) {
+        pendingUserRef.current = data.user;
+
+        if (pendingTokenRef.current) {
+          await AsyncStorage.setItem('auth-user', JSON.stringify(data.user));
+          await AsyncStorage.setItem('auth-token', pendingTokenRef.current);
+          onSuccess(pendingTokenRef.current, data.user);
+        }
+        return;
+      }
       
       if ((data.type === 'AUTH_SUCCESS' || data.type === 'AUTH_TOKEN_SAVED') && data.token) {
-        await AsyncStorage.setItem('auth-token', data.token);
-        if (data.user) {
-          await AsyncStorage.setItem('auth-user', JSON.stringify(data.user));
+        pendingTokenRef.current = data.token;
+
+        const user = data.user || pendingUserRef.current;
+        if (!user) {
+          console.log('[WebViewAuth] token received before user payload');
+          return;
         }
-        onSuccess(data.token, data.user || null);
+
+        await AsyncStorage.setItem('auth-token', data.token);
+        await AsyncStorage.setItem('auth-user', JSON.stringify(user));
+        onSuccess(data.token, user);
       }
     } catch (e) {
       console.error('Message parse error:', e);
@@ -113,23 +138,21 @@ export default function WebViewAuth({ onSuccess, onError }: WebViewAuthProps) {
   // Intercept navigation requests
   const shouldStartLoadWithRequest = useCallback((request: any) => {
     const { url } = request;
+    console.log('[WebViewAuth] request:', url);
     
-    // When navigating to protected pages, extract token
     if (url.includes('/dashboard') || url.includes('/overview')) {
-      // Delay to ensure page loads first
       setTimeout(() => {
         webViewRef.current?.injectJavaScript(extractTokenScript);
       }, 1500);
     }
     
-    // Allow all navigation
     return true;
   }, []);
 
   const handleNavigationStateChange = useCallback((navState: any) => {
     const { url, loading } = navState;
+    console.log('[WebViewAuth] nav:', { url, loading });
     
-    // When navigation completes to protected page
     if (!loading && url && (url.includes('/dashboard') || url.includes('/overview'))) {
       setTimeout(() => {
         webViewRef.current?.injectJavaScript(extractTokenScript);
@@ -137,11 +160,11 @@ export default function WebViewAuth({ onSuccess, onError }: WebViewAuthProps) {
     }
   }, []);
 
-  const handleWebViewError = useCallback(() => {
+  const handleWebViewError = useCallback((event?: any) => {
+    console.error('[WebViewAuth] load error:', event?.nativeEvent);
     setError('Failed to load login page. Check internet connection.');
     setLoading(false);
-    onError?.('WebView failed');
-  }, [onError]);
+  }, []);
 
   const handleReload = useCallback(() => {
     setError(null);

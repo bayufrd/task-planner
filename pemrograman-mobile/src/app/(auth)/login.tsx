@@ -44,6 +44,11 @@ export default function LoginScreen() {
   }, [user, token, isHydrated]);
 
   const handleSuccess = async (authToken: string, authUser: any) => {
+    if (!authToken || !authUser) {
+      console.error("[Login] WebView auth completed without full auth payload");
+      return;
+    }
+
     try {
       await setAuth(authUser, authToken);
       router.replace("/(main)/dashboard");
