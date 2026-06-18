@@ -2,6 +2,14 @@
 
 Complete technical documentation for the Smart Task Planner mobile application.
 
+## Session Log
+
+| Date | Agent | Changes |
+|------|-------|---------|
+| 2026-06-18 | Dastrevas Agent | Added `priorityScore` to getTasks/getTaskById responses. Updated dashboard.tsx task cards to show time remaining (overdue/left/days) and priority badge. Fixed TypeScript errors. Updated Task interface with priority field and tags format. |
+| 2025-06-18 | Dastrevas Agent | Fixed `createTaskMutation` reference error in `new-task.tsx` (line 481) - changed to `taskMutation`. Created `TaskDetailModal.tsx` component showing full task details with Edit/Done/Delete actions. Modified `dashboard.tsx` to open detail modal on card tap instead of navigating directly to edit. Added 12 new documentation files (00-ERD through 10-troubleshooting + CHANGELOG). Deleted duplicate legacy docs (api-spec.md, architecture.md, etc). |
+| 2025-06-18 | Dastrevas Agent | Initial Expo SDK 54 setup, WebView authentication, CORS configuration, API URL setup |
+
 ## Documentation Index
 
 ### Getting Started

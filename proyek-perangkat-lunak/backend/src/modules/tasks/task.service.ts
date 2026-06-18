@@ -71,7 +71,21 @@ export class TaskService {
       ],
     });
 
-    return tasks;
+    // Calculate priorityScore for each task
+    const tasksWithScore = tasks.map((task) => {
+      const score = calculatePriorityScore({
+        deadline: task.deadline,
+        priority: task.priority as 'HIGH' | 'MEDIUM' | 'LOW',
+        reminderTime: task.reminderTime,
+        estimatedDuration: task.estimatedDuration || 60,
+      });
+      return {
+        ...task,
+        priorityScore: score,
+      };
+    });
+
+    return tasksWithScore;
   }
 
   async getTaskById(userId: string, taskId: string) {
@@ -90,7 +104,18 @@ export class TaskService {
       throw new ForbiddenError('Access denied');
     }
 
-    return task;
+    // Calculate priorityScore
+    const score = calculatePriorityScore({
+      deadline: task.deadline,
+      priority: task.priority as 'HIGH' | 'MEDIUM' | 'LOW',
+      reminderTime: task.reminderTime,
+      estimatedDuration: task.estimatedDuration || 60,
+    });
+
+    return {
+      ...task,
+      priorityScore: score,
+    };
   }
 
   async updateTask(userId: string, taskId: string, data: UpdateTaskInput) {

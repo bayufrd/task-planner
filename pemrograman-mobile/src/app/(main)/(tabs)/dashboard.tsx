@@ -1,13 +1,13 @@
 import React, { useState } from "react";
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl } from "react-native";
-import { useQuery, useIsFocused } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useFocusEffect } from "expo-router";
 import { taskService } from "../../../services/task.service";
 import { useAuthStore } from "../../../store/auth.store";
 import { useRouter } from "expo-router";
 import { ChevronLeft, ChevronRight, Plus, Clock, CheckCircle2, XCircle, BarChart3, Timer, FileText, TrendingUp, Tag, CircleAlert, Trash2 } from "lucide-react-native";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addMonths, subMonths } from "date-fns";
-import { Task } from "../../types";
+import { Task } from "../../../types";
 import ConfirmationModal from "../../../components/ConfirmationModal";
 import SuccessModal from "../../../components/SuccessModal";
 import TaskDetailModal from "../../../components/TaskDetailModal";
@@ -174,10 +174,10 @@ export default function DashboardScreen() {
     return Array(day).fill(null);
   };
 
-  const difficultyColors: Record<string, string> = {
-    hard: '#ef4444',
-    medium: '#f97316',
-    easy: '#22c55e',
+  const priorityColors: Record<string, string> = {
+    HIGH: '#ef4444',
+    MEDIUM: '#f97316',
+    LOW: '#22c55e',
   };
 
   return (
@@ -347,7 +347,7 @@ export default function DashboardScreen() {
                 onPress={() => setDetailModal({ visible: true, task })}
               >
                 <View style={styles.taskLeft}>
-                  <View style={[styles.priorityIndicator, { backgroundColor: difficultyColors[task.difficulty || 'medium'] }]} />
+                  <View style={[styles.priorityIndicator, { backgroundColor: priorityColors[task.priority || 'MEDIUM'] }]} />
                   <View style={styles.taskInfo}>
                     <Text style={styles.taskTitle} numberOfLines={1}>{task.title}</Text>
                     {task.description && (
@@ -355,22 +355,57 @@ export default function DashboardScreen() {
                     )}
                     {/* Task Meta Row */}
                     <View style={styles.taskMetaRow}>
-                      {/* Time */}
+                      {/* Time Left / Overdue */}
                       <View style={styles.taskMetaItem}>
-                        <Clock size={12} color="#64748b" />
-                        <Text style={styles.taskMetaText}>
-                          {format(new Date(task.deadline), 'HH:mm')}
-                        </Text>
+                        {(() => {
+                          const now = new Date();
+                          const deadline = new Date(task.deadline);
+                          const diffMs = deadline.getTime() - now.getTime();
+                          const isOverdue = diffMs < 0;
+                          const absDiff = Math.abs(diffMs);
+                          const hours = Math.floor(absDiff / (1000 * 60 * 60));
+                          const minutes = Math.floor((absDiff % (1000 * 60 * 60)) / (1000 * 60));
+                          
+                          if (isOverdue) {
+                            return (
+                              <>
+                                <CircleAlert size={12} color="#ef4444" />
+                                <Text style={[styles.taskMetaText, { color: '#ef4444' }]}>
+                                  {hours}h {minutes}m overdue
+                                </Text>
+                              </>
+                            );
+                          } else if (hours < 24) {
+                            return (
+                              <>
+                                <Timer size={12} color="#f97316" />
+                                <Text style={[styles.taskMetaText, { color: '#f97316' }]}>
+                                  {hours}h {minutes}m left
+                                </Text>
+                              </>
+                            );
+                          } else {
+                            const days = Math.floor(hours / 24);
+                            return (
+                              <>
+                                <Clock size={12} color="#64748b" />
+                                <Text style={styles.taskMetaText}>
+                                  {days}d left
+                                </Text>
+                              </>
+                            );
+                          }
+                        })()}
                       </View>
                       {/* Duration */}
                       <View style={styles.taskMetaItem}>
                         <Timer size={12} color="#64748b" />
                         <Text style={styles.taskMetaText}>{task.estimatedDuration || 30}min</Text>
                       </View>
-                      {/* Difficulty Badge */}
-                      <View style={[styles.taskDifficultyBadge, { backgroundColor: difficultyColors[task.difficulty || 'medium'] + '20' }]}>
-                        <Text style={[styles.taskDifficultyText, { color: difficultyColors[task.difficulty || 'medium'] }]}>
-                          {task.difficulty?.toUpperCase() || 'MEDIUM'}
+                      {/* Priority Badge */}
+                      <View style={[styles.taskDifficultyBadge, { backgroundColor: priorityColors[task.priority || 'MEDIUM'] + '20' }]}>
+                        <Text style={[styles.taskDifficultyText, { color: priorityColors[task.priority || 'MEDIUM'] }]}>
+                          {task.priority || 'MEDIUM'}
                         </Text>
                       </View>
                     </View>
@@ -378,11 +413,11 @@ export default function DashboardScreen() {
                     {task.tags && task.tags.length > 0 && (
                       <View style={styles.taskTagsRow}>
                         <Tag size={10} color="#3b82f6" />
-                        {task.tags.slice(0, 3).map((tag, index) => (
-                          <View key={index} style={styles.taskTag}>
-                            <Text style={styles.taskTagText}>#{tag}</Text>
-                          </View>
-                        ))}
+                        {task.tags.slice(0, 3).map((tag: { tagName: string }, index: number) => (
+                            <View key={index} style={styles.taskTag}>
+                              <Text style={styles.taskTagText}>#{tag.tagName}</Text>
+                            </View>
+                          ))}
                       </View>
                     )}
                   </View>
@@ -923,6 +958,12 @@ const styles = StyleSheet.create({
     height: '100%',
     backgroundColor: '#3b82f6',
     borderRadius: 4,
+  },
+  progressBarLabel: {
+    fontSize: 12,
+    color: '#64748b',
+    textAlign: 'center',
+    marginTop: 4,
   },
   summaryFooter: {
     fontSize: 12,

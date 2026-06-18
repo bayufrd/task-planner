@@ -12,8 +12,9 @@ interface TaskDetailModalProps {
     deadline?: string;
     estimatedDuration?: number;
     status?: string;
-    tags?: string[];
+    tags?: { id: string; tagName: string }[];
     difficulty?: 'easy' | 'medium' | 'hard';
+    priorityScore?: number;
   } | null;
   onClose: () => void;
   onEdit: () => void;
@@ -198,7 +199,7 @@ export default function TaskDetailModal({
                 <View style={styles.tagsContainer}>
                   {task.tags.map((tag, index) => (
                     <View key={index} style={styles.tag}>
-                      <Text style={styles.tagText}>{tag}</Text>
+                      <Text style={styles.tagText}>#{tag.tagName}</Text>
                     </View>
                   ))}
                 </View>

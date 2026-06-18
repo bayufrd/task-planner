@@ -9,14 +9,16 @@ export type TaskDifficulty = "easy" | "medium" | "hard";
 
 export interface Task {
   id: string;
+  userId?: string;
   title: string;
   description?: string;
   deadline: string;
-  difficulty: TaskDifficulty;
+  priority: 'HIGH' | 'MEDIUM' | 'LOW';
   estimatedDuration: number;
+  reminderTime?: number;
   status: TaskStatus;
   priorityScore?: number;
-  tags?: string[];
+  tags?: { id: string; tagName: string }[];
   createdAt: string;
   updatedAt: string;
 }
