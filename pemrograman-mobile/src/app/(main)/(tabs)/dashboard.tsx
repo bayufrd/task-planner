@@ -5,7 +5,7 @@ import { useFocusEffect } from "expo-router";
 import { taskService } from "../../../services/task.service";
 import { useAuthStore } from "../../../store/auth.store";
 import { useRouter } from "expo-router";
-import { ChevronLeft, ChevronRight, Plus, Clock, CheckCircle2, XCircle } from "lucide-react-native";
+import { ChevronLeft, ChevronRight, Plus, Clock, CheckCircle2, XCircle, BarChart3, Timer, FileText, TrendingUp, Tag, CircleAlert } from "lucide-react-native";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addMonths, subMonths } from "date-fns";
 import { Task } from "../../types";
 
@@ -90,10 +90,10 @@ export default function DashboardScreen() {
     const done = stats?.done || 0;
     const total = stats?.total || 0;
     if (total === 0) return 'Start your first task to track progress!';
-    if (rate >= 80) return `🎉 Excellent! You've completed ${done} of ${total} tasks!`;
-    if (rate >= 50) return `💪 Keep going! ${total - done} tasks remaining.`;
-    if (rate >= 25) return `🚀 Good start! ${total - done} more to go.`;
-    return `📋 ${total - done} tasks pending. Let's get started!`;
+    if (rate >= 80) return `Excellent! You've completed ${done} of ${total} tasks!`;
+    if (rate >= 50) return `Keep going! ${total - done} tasks remaining.`;
+    if (rate >= 25) return `Good start! ${total - done} more to go.`;
+    return `${total - done} tasks pending. Let's get started!`;
   };
 
   const todayTasks = getTasksForDay(new Date());
@@ -112,14 +112,25 @@ export default function DashboardScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.scrollContent}
+      showsVerticalScrollIndicator={false}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          tintColor="#3b82f6"
+        />
+      }
+    >
       {/* Header */}
       <View style={styles.header}>
         <View>
           <Text style={styles.headerTitle}>Tasks</Text>
           <Text style={styles.headerSubtitle}>{format(new Date(), 'EEEE, MMMM d, yyyy')}</Text>
         </View>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.addButton}
           onPress={() => router.push("/(main)/new-task")}
         >
@@ -131,7 +142,7 @@ export default function DashboardScreen() {
       {/* Calendar Section */}
       <View style={styles.calendarSection}>
         {/* Today Quick View */}
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.todayCard}
           onPress={() => setSelectedDate(new Date())}
         >
@@ -202,12 +213,12 @@ export default function DashboardScreen() {
                 {dayTasks.length > 0 && (
                   <View style={styles.taskDots}>
                     {dayTasks.slice(0, 3).map((_, i) => (
-                      <View 
-                        key={i} 
+                      <View
+                        key={i}
                         style={[
                           styles.taskDot,
                           isToday && styles.todayTaskDot,
-                        ]} 
+                        ]}
                       />
                     ))}
                   </View>
@@ -237,8 +248,8 @@ export default function DashboardScreen() {
         <View style={styles.statItem}>
           <XCircle size={18} color="#f97316" />
           <View style={styles.statContent}>
-            <Text style={styles.statValue}>{(stats?.total || 0) - (stats?.done || 0)}</Text>
-            <Text style={styles.statLabel}>Remaining</Text>
+            <Text style={styles.statValue}>{stats?.skipped || 0}</Text>
+            <Text style={styles.statLabel}>Skipped</Text>
           </View>
         </View>
       </View>
@@ -251,24 +262,18 @@ export default function DashboardScreen() {
         <ScrollView
           style={styles.tasksList}
           showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              tintColor="#3b82f6"
-            />
-          }
+          nestedScrollEnabled
         >
           {selectedDateTasks.length === 0 ? (
             <View style={styles.emptyState}>
-              <Text style={styles.emptyIcon}>📋</Text>
+              <FileText size={40} color="#94a3b8" />
               <Text style={styles.emptyText}>No tasks for this day</Text>
               <Text style={styles.emptySubtext}>Tap + to add a new task</Text>
             </View>
           ) : (
             selectedDateTasks.map((task) => (
-              <TouchableOpacity 
-                key={task.id} 
+              <TouchableOpacity
+                key={task.id}
                 style={styles.taskCard}
                 onPress={() => router.push("/(main)/new-task")}
               >
@@ -278,6 +283,38 @@ export default function DashboardScreen() {
                     <Text style={styles.taskTitle} numberOfLines={1}>{task.title}</Text>
                     {task.description && (
                       <Text style={styles.taskDesc} numberOfLines={1}>{task.description}</Text>
+                    )}
+                    {/* Task Meta Row */}
+                    <View style={styles.taskMetaRow}>
+                      {/* Time */}
+                      <View style={styles.taskMetaItem}>
+                        <Clock size={12} color="#64748b" />
+                        <Text style={styles.taskMetaText}>
+                          {format(new Date(task.deadline), 'HH:mm')}
+                        </Text>
+                      </View>
+                      {/* Duration */}
+                      <View style={styles.taskMetaItem}>
+                        <Timer size={12} color="#64748b" />
+                        <Text style={styles.taskMetaText}>{task.estimatedDuration || 30}min</Text>
+                      </View>
+                      {/* Difficulty Badge */}
+                      <View style={[styles.taskDifficultyBadge, { backgroundColor: difficultyColors[task.difficulty || 'medium'] + '20' }]}>
+                        <Text style={[styles.taskDifficultyText, { color: difficultyColors[task.difficulty || 'medium'] }]}>
+                          {task.difficulty?.toUpperCase() || 'MEDIUM'}
+                        </Text>
+                      </View>
+                    </View>
+                    {/* Tags */}
+                    {task.tags && task.tags.length > 0 && (
+                      <View style={styles.taskTagsRow}>
+                        <Tag size={10} color="#3b82f6" />
+                        {task.tags.slice(0, 3).map((tag, index) => (
+                          <View key={index} style={styles.taskTag}>
+                            <Text style={styles.taskTagText}>#{tag}</Text>
+                          </View>
+                        ))}
+                      </View>
                     )}
                   </View>
                 </View>
@@ -302,33 +339,34 @@ export default function DashboardScreen() {
 
       {/* Statistics Summary Card */}
       <View style={styles.summaryCard}>
-        <Text style={styles.summaryTitle}>📊 Progress Summary</Text>
-        
-        <View style={styles.summaryRow}>
-          <View style={styles.summaryItem}>
-            <Text style={styles.summaryIcon}>⭐</Text>
-            <Text style={styles.summaryValue}>{stats?.done || 0}</Text>
-            <Text style={styles.summaryLabel}>Score</Text>
-          </View>
-          <View style={styles.summaryDivider} />
-          <View style={styles.summaryItem}>
-            <Text style={styles.summaryIcon}>⏱️</Text>
-            <Text style={styles.summaryValue}>{calculateTotalHoursLogged()}</Text>
-            <Text style={styles.summaryLabel}>Hours Logged</Text>
-          </View>
+        <View style={styles.summaryHeader}>
+          <BarChart3 size={20} color="#3b82f6" />
+          <Text style={styles.summaryTitle}>Task Statistics</Text>
         </View>
         
         <View style={styles.summaryRow}>
           <View style={styles.summaryItem}>
-            <Text style={styles.summaryIcon}>📝</Text>
-            <Text style={styles.summaryValue}>{calculateEstimatedHoursNeeded()}</Text>
-            <Text style={styles.summaryLabel}>Hours Needed</Text>
+            <View style={styles.summaryIconContainer}>
+              <Clock size={20} color="#3b82f6" />
+            </View>
+            <Text style={styles.summaryValue}>{stats?.pending || 0}</Text>
+            <Text style={styles.summaryLabel}>Pending</Text>
           </View>
           <View style={styles.summaryDivider} />
           <View style={styles.summaryItem}>
-            <Text style={styles.summaryIcon}>📈</Text>
-            <Text style={styles.summaryValue}>{Math.round(stats?.completionRate || 0)}%</Text>
-            <Text style={styles.summaryLabel}>Progress</Text>
+            <View style={styles.summaryIconContainer}>
+              <CheckCircle2 size={20} color="#22c55e" />
+            </View>
+            <Text style={styles.summaryValue}>{stats?.done || 0}</Text>
+            <Text style={styles.summaryLabel}>Done</Text>
+          </View>
+          <View style={styles.summaryDivider} />
+          <View style={styles.summaryItem}>
+            <View style={styles.summaryIconContainer}>
+              <XCircle size={20} color="#f97316" />
+            </View>
+            <Text style={styles.summaryValue}>{stats?.skipped || 0}</Text>
+            <Text style={styles.summaryLabel}>Skipped</Text>
           </View>
         </View>
         
@@ -336,13 +374,14 @@ export default function DashboardScreen() {
           <View style={styles.progressBarBg}>
             <View style={[styles.progressBarFill, { width: `${Math.min(stats?.completionRate || 0, 100)}%` }]} />
           </View>
+          <Text style={styles.progressBarLabel}>{Math.round(stats?.completionRate || 0)}% Completed</Text>
         </View>
         
         <Text style={styles.summaryFooter}>
           {getProgressMessage()}
         </Text>
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
@@ -350,6 +389,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f8fafc',
+  },
+  scrollContent: {
+    paddingBottom: 40,
   },
   header: {
     flexDirection: 'row',
@@ -633,6 +675,48 @@ const styles = StyleSheet.create({
     color: '#64748b',
     marginTop: 2,
   },
+  taskMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 6,
+    gap: 12,
+  },
+  taskMetaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  taskMetaText: {
+    fontSize: 11,
+    color: '#64748b',
+  },
+  taskDifficultyBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  taskDifficultyText: {
+    fontSize: 9,
+    fontWeight: '700',
+  },
+  taskTagsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 6,
+    gap: 6,
+    flexWrap: 'wrap',
+  },
+  taskTag: {
+    backgroundColor: '#eff6ff',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  taskTagText: {
+    fontSize: 10,
+    color: '#3b82f6',
+    fontWeight: '500',
+  },
   statusBadge: {
     paddingHorizontal: 10,
     paddingVertical: 4,
@@ -659,7 +743,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
     color: '#1e293b',
-    marginBottom: 16,
   },
   summaryRow: {
     flexDirection: 'row',
@@ -671,9 +754,14 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
   },
-  summaryIcon: {
-    fontSize: 20,
+  summaryIconContainer: {
     marginBottom: 4,
+  },
+  summaryHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+    gap: 8,
   },
   summaryValue: {
     fontSize: 18,

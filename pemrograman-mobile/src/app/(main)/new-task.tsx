@@ -1,9 +1,9 @@
 import React, { useState, useMemo } from "react";
-import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Alert, Modal } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Alert, Modal, KeyboardAvoidingView, Platform } from "react-native";
 import { useRouter } from "expo-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { taskService } from "../../services/task.service";
-import { ChevronLeft, ChevronRight, Check, X, Calendar, Clock, Zap, Timer, FileText, Target } from "lucide-react-native";
+import { ChevronLeft, ChevronRight, Check, X, Calendar, Clock, Zap, Timer, FileText, Target, Edit3 } from "lucide-react-native";
 
 type Priority = 'HIGH' | 'MEDIUM' | 'LOW';
 type TaskStep = 'title' | 'description' | 'date' | 'time' | 'priority' | 'duration' | 'review';
@@ -48,6 +48,8 @@ export default function NewTaskScreen() {
   const [currentStep, setCurrentStep] = useState(0);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
+  const [timeInputMode, setTimeInputMode] = useState<'select' | 'manual'>('select');
+  const [manualTime, setManualTime] = useState('');
 
   const currentConfig = TASK_STEPS[currentStep];
   const isLastStep = currentStep === TASK_STEPS.length - 1;
@@ -58,10 +60,17 @@ export default function NewTaskScreen() {
         return title.trim().length > 0;
       case 'duration':
         return (parseInt(estimatedDuration, 10) || 0) >= 5;
+      case 'time':
+        if (timeInputMode === 'manual') {
+          // Validate HH:MM format
+          const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
+          return timeRegex.test(manualTime);
+        }
+        return true;
       default:
         return true;
     }
-  }, [currentStep, estimatedDuration, title]);
+  }, [currentStep, estimatedDuration, title, timeInputMode, manualTime]);
 
   const nextLabel = isLastStep ? 'Create Task' : 'Continue';
 
@@ -71,8 +80,14 @@ export default function NewTaskScreen() {
         Alert.alert('Error', 'Please enter a task title');
       } else if (TASK_STEPS[currentStep].key === 'duration') {
         Alert.alert('Error', 'Duration must be at least 5 minutes');
+      } else if (TASK_STEPS[currentStep].key === 'time' && timeInputMode === 'manual') {
+        Alert.alert('Error', 'Please enter time in HH:MM format (e.g., 14:30)');
       }
       return;
+    }
+    // If manual time mode, use manualTime value
+    if (TASK_STEPS[currentStep].key === 'time' && timeInputMode === 'manual' && manualTime) {
+      setDeadlineTime(manualTime);
     }
     setCurrentStep((step) => Math.min(step + 1, TASK_STEPS.length - 1));
   };
@@ -223,23 +238,75 @@ export default function NewTaskScreen() {
       case 'time':
         return (
           <View style={styles.stepContent}>
-            <ScrollView style={styles.optionsList} showsVerticalScrollIndicator={false}>
-              {timeOptions.map((option) => (
-                <TouchableOpacity
-                  key={option.value}
-                  style={[styles.optionItem, deadlineTime === option.value && styles.optionItemSelected]}
-                  onPress={() => {
-                    setDeadlineTime(option.value);
-                    goNext();
+            {/* Mode Toggle */}
+            <View style={styles.modeToggle}>
+              <TouchableOpacity
+                style={[styles.modeToggleButton, timeInputMode === 'select' && styles.modeToggleActive]}
+                onPress={() => setTimeInputMode('select')}
+              >
+                <Clock size={16} color={timeInputMode === 'select' ? '#3b82f6' : '#64748b'} />
+                <Text style={[styles.modeToggleText, timeInputMode === 'select' && styles.modeToggleTextActive]}>
+                  Select Time
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modeToggleButton, timeInputMode === 'manual' && styles.modeToggleActive]}
+                onPress={() => setTimeInputMode('manual')}
+              >
+                <Edit3 size={16} color={timeInputMode === 'manual' ? '#3b82f6' : '#64748b'} />
+                <Text style={[styles.modeToggleText, timeInputMode === 'manual' && styles.modeToggleTextActive]}>
+                  Type Time
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {timeInputMode === 'manual' ? (
+              /* Manual Time Input */
+              <View style={styles.manualTimeContainer}>
+                <Text style={styles.manualTimeHint}>Enter time in 24-hour format</Text>
+                <TextInput
+                  style={styles.manualTimeInput}
+                  value={manualTime}
+                  onChangeText={(text) => {
+                    // Auto-format: add colon after 2 digits
+                    let formatted = text.replace(/[^0-9]/g, '');
+                    if (formatted.length > 2) {
+                      formatted = formatted.slice(0, 2) + ':' + formatted.slice(2, 4);
+                    }
+                    setManualTime(formatted.toUpperCase());
                   }}
-                >
-                  <Text style={[styles.optionText, deadlineTime === option.value && styles.optionTextSelected]}>
-                    {option.label}
-                  </Text>
-                  {deadlineTime === option.value && <Check size={20} color="#3b82f6" />}
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
+                  placeholder="HH:MM"
+                  placeholderTextColor="#94a3b8"
+                  keyboardType="numbers-and-punctuation"
+                  maxLength={5}
+                  autoFocus
+                />
+                <Text style={styles.manualTimeExample}>Example: 14:30, 09:00, 23:45</Text>
+              </View>
+            ) : (
+              /* Scrollable Time Options - Takes half screen height */
+              <ScrollView
+                style={styles.timeScrollList}
+                showsVerticalScrollIndicator={true}
+                contentContainerStyle={styles.timeScrollContent}
+              >
+                {timeOptions.map((option) => (
+                  <TouchableOpacity
+                    key={option.value}
+                    style={[styles.optionItem, deadlineTime === option.value && styles.optionItemSelected]}
+                    onPress={() => {
+                      setDeadlineTime(option.value);
+                      goNext();
+                    }}
+                  >
+                    <Text style={[styles.optionText, deadlineTime === option.value && styles.optionTextSelected]}>
+                      {option.label}
+                    </Text>
+                    {deadlineTime === option.value && <Check size={20} color="#3b82f6" />}
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            )}
           </View>
         );
 
@@ -343,7 +410,11 @@ export default function NewTaskScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+    >
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => currentStep === 0 ? router.back() : goBack()} style={styles.backButton}>
@@ -396,6 +467,7 @@ export default function NewTaskScreen() {
         )}
       </View>
     </View>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -476,6 +548,71 @@ const styles = StyleSheet.create({
   },
   optionsList: {
     flex: 1,
+  },
+  modeToggle: {
+    flexDirection: 'row',
+    backgroundColor: '#f1f5f9',
+    borderRadius: 12,
+    padding: 4,
+    marginBottom: 20,
+  },
+  modeToggleButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  modeToggleActive: {
+    backgroundColor: '#ffffff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  modeToggleText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#64748b',
+  },
+  modeToggleTextActive: {
+    color: '#3b82f6',
+    fontWeight: '600',
+  },
+  timeScrollList: {
+    maxHeight: 300,
+  },
+  timeScrollContent: {
+    paddingBottom: 16,
+  },
+  manualTimeContainer: {
+    alignItems: 'center',
+    paddingVertical: 20,
+  },
+  manualTimeHint: {
+    fontSize: 14,
+    color: '#64748b',
+    marginBottom: 16,
+  },
+  manualTimeInput: {
+    width: 150,
+    height: 60,
+    fontSize: 32,
+    fontWeight: '700',
+    textAlign: 'center',
+    backgroundColor: '#f8fafc',
+    borderWidth: 2,
+    borderColor: '#e2e8f0',
+    borderRadius: 12,
+    color: '#1e293b',
+  },
+  manualTimeExample: {
+    fontSize: 12,
+    color: '#94a3b8',
+    marginTop: 12,
   },
   optionItem: {
     flexDirection: 'row',

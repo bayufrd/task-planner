@@ -16,6 +16,7 @@ export interface Task {
   estimatedDuration: number;
   status: TaskStatus;
   priorityScore?: number;
+  tags?: string[];
   createdAt: string;
   updatedAt: string;
 }
