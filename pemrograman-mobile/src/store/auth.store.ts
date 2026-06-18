@@ -6,9 +6,10 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 interface AuthState {
   user: User | null;
   token: string | null;
+  isLoggingOut: boolean;
   setAuth: (user: User, token: string) => void;
   logout: () => Promise<void>;
-  initAuth: () => Promise<void>;
+  clearAuth: () => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -16,23 +17,38 @@ export const useAuthStore = create<AuthState>()(
     (set) => ({
       user: null,
       token: null,
+      isLoggingOut: false,
       setAuth: (user, token) => {
         set({ user, token });
       },
-      logout: async () => {
-        // Clear ALL keys
-        const keys = await AsyncStorage.getAllKeys();
-        await AsyncStorage.multiRemove(keys);
-        // Clear state
-        set({ user: null, token: null });
+      clearAuth: () => {
+        set({ user: null, token: null, isLoggingOut: false });
       },
-      initAuth: async () => {
-        // Persist middleware handles loading from storage
+      logout: async () => {
+        // Mark as logging out immediately
+        set({ isLoggingOut: true });
+        
+        try {
+          // Clear ALL AsyncStorage keys first
+          const keys = await AsyncStorage.getAllKeys();
+          if (keys.length > 0) {
+            await AsyncStorage.multiRemove(keys);
+          }
+        } catch (e) {
+          console.error("Error clearing AsyncStorage:", e);
+        }
+        
+        // Clear state without persist (use raw set)
+        set({ user: null, token: null, isLoggingOut: false });
       },
     }),
     {
       name: "auth-storage",
       storage: createJSONStorage(() => AsyncStorage),
+      partialize: (state) => ({
+        user: state.user,
+        token: state.token
+      }),
     }
   )
 );

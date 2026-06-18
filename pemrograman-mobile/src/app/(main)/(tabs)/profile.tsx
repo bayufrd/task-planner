@@ -1,30 +1,22 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect } from "react";
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet, ActivityIndicator } from "react-native";
 import { useAuthStore } from "../../../store/auth.store";
-import { useRouter, useNavigation } from "expo-router";
+import { useRouter } from "expo-router";
 import { LogOut, User, Settings, Bell, ChevronRight, Award, Calendar } from "lucide-react-native";
 
 export default function ProfileScreen() {
-  const { user, logout } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
+  const token = useAuthStore((state) => state.token);
+  const isLoggingOut = useAuthStore((state) => state.isLoggingOut);
+  const logout = useAuthStore((state) => state.logout);
   const router = useRouter();
-  const [loggingOut, setLoggingOut] = useState(false);
 
-  // Watch user state and redirect when logged out
+  // Watch auth state and redirect when logged out
   useEffect(() => {
-    if (!loggingOut && !user) {
+    if (!token && !user && !isLoggingOut) {
       router.replace("/(auth)/login");
     }
-  }, [user, loggingOut]);
-
-  const handleLogout = async () => {
-    setLoggingOut(true);
-    try {
-      await logout();
-      // Navigation will be handled by useEffect above
-    } catch (error) {
-      setLoggingOut(false);
-    }
-  };
+  }, [user, token, isLoggingOut]);
 
   const stats = [
     { label: "Total Tasks", value: "24", color: "#3b82f6" },
@@ -123,17 +115,17 @@ export default function ProfileScreen() {
       </View>
 
       <TouchableOpacity
-        style={[styles.logoutButton, loggingOut && styles.logoutButtonDisabled]}
-        onPress={handleLogout}
-        disabled={loggingOut}
+        style={[styles.logoutButton, isLoggingOut && styles.logoutButtonDisabled]}
+        onPress={() => logout()}
+        disabled={isLoggingOut}
       >
-        {loggingOut ? (
+        {isLoggingOut ? (
           <ActivityIndicator size="small" color="#ef4444" />
         ) : (
           <LogOut size={20} color="#ef4444" />
         )}
-        <Text style={[styles.logoutText, loggingOut && styles.logoutTextDisabled]}>
-          {loggingOut ? "Logging out..." : "Logout"}
+        <Text style={[styles.logoutText, isLoggingOut && styles.logoutTextDisabled]}>
+          {isLoggingOut ? "Logging out..." : "Logout"}
         </Text>
       </TouchableOpacity>
 

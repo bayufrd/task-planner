@@ -3,31 +3,35 @@ import { View, Text, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platfor
 import { useRouter } from "expo-router";
 import WebViewAuth from "../../components/WebViewAuth";
 import { useAuthStore } from "../../store/auth.store";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function LoginScreen() {
   const router = useRouter();
   const setAuth = useAuthStore((state) => state.setAuth);
+  const clearAuth = useAuthStore((state) => state.clearAuth);
   const [showWebView, setShowWebView] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
 
   const user = useAuthStore((state) => state.user);
   const token = useAuthStore((state) => state.token);
+  const isLoggingOut = useAuthStore((state) => state.isLoggingOut);
 
   useEffect(() => {
+    // Clear any stale auth state on login screen
+    if (!user && !token) {
+      clearAuth();
+      setIsChecking(false);
+      return;
+    }
+    
     if (user && token) {
       router.replace("/(main)/dashboard");
     } else {
       setIsChecking(false);
     }
-  }, [user, token]);
+  }, [user, token, isLoggingOut]);
 
   const handleSuccess = async (authToken: string, authUser: any) => {
     try {
-      await AsyncStorage.setItem("auth-token", authToken);
-      if (authUser) {
-        await AsyncStorage.setItem("user", JSON.stringify(authUser));
-      }
       setAuth(authUser, authToken);
       router.replace("/(main)/dashboard");
     } catch (e) {
