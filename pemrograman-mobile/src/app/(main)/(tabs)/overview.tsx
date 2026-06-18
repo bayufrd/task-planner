@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Dimensions, ActivityIndicator, Image } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Dimensions, ActivityIndicator, Image, RefreshControl } from "react-native";
 import { useQuery } from "@tanstack/react-query";
 import { taskService, DailyStat, WeeklyStat } from "../../../services/task.service";
 import { RefreshCw, Trophy, Star, Zap, TrendingUp, Calendar, CheckCircle2, AlertCircle } from "lucide-react-native";
@@ -71,7 +71,17 @@ export default function OverviewScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.content}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={handleRefresh}
+            tintColor="#3b82f6"
+          />
+        }
+      >
         {/* Level Card */}
         <View style={[styles.levelCard, { borderLeftColor: level.color }]}>
           <View style={styles.levelHeader}>

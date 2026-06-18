@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl } from "react-native";
 import { useQuery, useIsFocused } from "@tanstack/react-query";
 import { useFocusEffect } from "expo-router";
 import { taskService } from "../../../services/task.service";
@@ -15,6 +15,7 @@ export default function DashboardScreen() {
   
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [refreshing, setRefreshing] = useState(false);
 
   const { data: stats, isLoading, refetch: refetchStats } = useQuery({
     queryKey: ["taskStats"],
@@ -38,6 +39,12 @@ export default function DashboardScreen() {
     }, [])
   );
 
+  const onRefresh = React.useCallback(async () => {
+    setRefreshing(true);
+    await Promise.all([refetchTasks(), refetchStats()]);
+    setRefreshing(false);
+  }, [refetchTasks, refetchStats]);
+
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
   const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });
@@ -57,6 +64,36 @@ export default function DashboardScreen() {
         task.status !== 'SKIPPED'
       );
     });
+  };
+
+  // Calculate total hours logged (based on completed tasks' estimated duration)
+  const calculateTotalHoursLogged = (): string => {
+    if (!tasks || !Array.isArray(tasks)) return '0';
+    const completedTasks = tasks.filter((t) => t.status === 'DONE');
+    const totalMinutes = completedTasks.reduce((sum, t) => sum + (t.estimatedDuration || 30), 0);
+    const hours = Math.floor(totalMinutes / 60);
+    return hours > 0 ? `${hours}h ${totalMinutes % 60}m` : `${totalMinutes}m`;
+  };
+
+  // Calculate estimated hours still needed for pending tasks
+  const calculateEstimatedHoursNeeded = (): string => {
+    if (!tasks || !Array.isArray(tasks)) return '0';
+    const pendingTasks = tasks.filter((t) => t.status === 'PENDING');
+    const totalMinutes = pendingTasks.reduce((sum, t) => sum + (t.estimatedDuration || 30), 0);
+    const hours = Math.floor(totalMinutes / 60);
+    return hours > 0 ? `${hours}h ${totalMinutes % 60}m` : `${totalMinutes}m`;
+  };
+
+  // Get progress message based on completion rate
+  const getProgressMessage = (): string => {
+    const rate = stats?.completionRate || 0;
+    const done = stats?.done || 0;
+    const total = stats?.total || 0;
+    if (total === 0) return 'Start your first task to track progress!';
+    if (rate >= 80) return `🎉 Excellent! You've completed ${done} of ${total} tasks!`;
+    if (rate >= 50) return `💪 Keep going! ${total - done} tasks remaining.`;
+    if (rate >= 25) return `🚀 Good start! ${total - done} more to go.`;
+    return `📋 ${total - done} tasks pending. Let's get started!`;
   };
 
   const todayTasks = getTasksForDay(new Date());
@@ -211,7 +248,17 @@ export default function DashboardScreen() {
         <Text style={styles.tasksSectionTitle}>
           {format(selectedDate, 'EEEE, MMMM d')}
         </Text>
-        <ScrollView style={styles.tasksList} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          style={styles.tasksList}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor="#3b82f6"
+            />
+          }
+        >
           {selectedDateTasks.length === 0 ? (
             <View style={styles.emptyState}>
               <Text style={styles.emptyIcon}>📋</Text>
@@ -251,6 +298,49 @@ export default function DashboardScreen() {
             ))
           )}
         </ScrollView>
+      </View>
+
+      {/* Statistics Summary Card */}
+      <View style={styles.summaryCard}>
+        <Text style={styles.summaryTitle}>📊 Progress Summary</Text>
+        
+        <View style={styles.summaryRow}>
+          <View style={styles.summaryItem}>
+            <Text style={styles.summaryIcon}>⭐</Text>
+            <Text style={styles.summaryValue}>{stats?.done || 0}</Text>
+            <Text style={styles.summaryLabel}>Score</Text>
+          </View>
+          <View style={styles.summaryDivider} />
+          <View style={styles.summaryItem}>
+            <Text style={styles.summaryIcon}>⏱️</Text>
+            <Text style={styles.summaryValue}>{calculateTotalHoursLogged()}</Text>
+            <Text style={styles.summaryLabel}>Hours Logged</Text>
+          </View>
+        </View>
+        
+        <View style={styles.summaryRow}>
+          <View style={styles.summaryItem}>
+            <Text style={styles.summaryIcon}>📝</Text>
+            <Text style={styles.summaryValue}>{calculateEstimatedHoursNeeded()}</Text>
+            <Text style={styles.summaryLabel}>Hours Needed</Text>
+          </View>
+          <View style={styles.summaryDivider} />
+          <View style={styles.summaryItem}>
+            <Text style={styles.summaryIcon}>📈</Text>
+            <Text style={styles.summaryValue}>{Math.round(stats?.completionRate || 0)}%</Text>
+            <Text style={styles.summaryLabel}>Progress</Text>
+          </View>
+        </View>
+        
+        <View style={styles.progressBarContainer}>
+          <View style={styles.progressBarBg}>
+            <View style={[styles.progressBarFill, { width: `${Math.min(stats?.completionRate || 0, 100)}%` }]} />
+          </View>
+        </View>
+        
+        <Text style={styles.summaryFooter}>
+          {getProgressMessage()}
+        </Text>
       </View>
     </View>
   );
@@ -551,5 +641,74 @@ const styles = StyleSheet.create({
   statusText: {
     fontSize: 11,
     fontWeight: '600',
+  },
+  summaryCard: {
+    marginHorizontal: 16,
+    marginBottom: 100,
+    marginTop: 16,
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  summaryTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#1e293b',
+    marginBottom: 16,
+  },
+  summaryRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  summaryItem: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  summaryIcon: {
+    fontSize: 20,
+    marginBottom: 4,
+  },
+  summaryValue: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#3b82f6',
+  },
+  summaryLabel: {
+    fontSize: 11,
+    color: '#64748b',
+    marginTop: 2,
+  },
+  summaryDivider: {
+    width: 1,
+    height: 40,
+    backgroundColor: '#e2e8f0',
+  },
+  progressBarContainer: {
+    marginTop: 8,
+    marginBottom: 8,
+  },
+  progressBarBg: {
+    height: 8,
+    backgroundColor: '#e2e8f0',
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: '100%',
+    backgroundColor: '#3b82f6',
+    borderRadius: 4,
+  },
+  summaryFooter: {
+    fontSize: 12,
+    color: '#64748b',
+    textAlign: 'center',
+    marginTop: 4,
   },
 });
