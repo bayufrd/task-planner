@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet, ActivityIndicator } from "react-native";
 import { useAuthStore } from "../../../store/auth.store";
-import { useRouter } from "expo-router";
+import { useRouter, useNavigation } from "expo-router";
 import { LogOut, User, Settings, Bell, ChevronRight, Award, Calendar } from "lucide-react-native";
 
 export default function ProfileScreen() {
@@ -9,11 +9,18 @@ export default function ProfileScreen() {
   const router = useRouter();
   const [loggingOut, setLoggingOut] = useState(false);
 
+  // Watch user state and redirect when logged out
+  useEffect(() => {
+    if (!loggingOut && !user) {
+      router.replace("/(auth)/login");
+    }
+  }, [user, loggingOut]);
+
   const handleLogout = async () => {
     setLoggingOut(true);
     try {
       await logout();
-      router.replace("/(auth)/login");
+      // Navigation will be handled by useEffect above
     } catch (error) {
       setLoggingOut(false);
     }
