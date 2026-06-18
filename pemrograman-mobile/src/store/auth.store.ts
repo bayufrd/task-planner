@@ -7,7 +7,7 @@ interface AuthState {
   user: User | null;
   token: string | null;
   setAuth: (user: User, token: string) => void;
-  logout: () => void;
+  logout: () => Promise<void>;
   initAuth: () => Promise<void>;
 }
 
@@ -19,7 +19,10 @@ export const useAuthStore = create<AuthState>()(
       setAuth: (user, token) => {
         set({ user, token });
       },
-      logout: () => {
+      logout: async () => {
+        // Clear AsyncStorage first
+        await AsyncStorage.removeItem("auth-storage");
+        // Then clear state
         set({ user: null, token: null });
       },
       initAuth: async () => {

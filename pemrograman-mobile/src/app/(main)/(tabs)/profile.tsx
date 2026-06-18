@@ -1,5 +1,5 @@
-import React from "react";
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from "react-native";
+import React, { useState } from "react";
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet, ActivityIndicator } from "react-native";
 import { useAuthStore } from "../../../store/auth.store";
 import { useRouter } from "expo-router";
 import { LogOut, User, Settings, Bell, ChevronRight, Award, Calendar } from "lucide-react-native";
@@ -7,10 +7,16 @@ import { LogOut, User, Settings, Bell, ChevronRight, Award, Calendar } from "luc
 export default function ProfileScreen() {
   const { user, logout } = useAuthStore();
   const router = useRouter();
+  const [loggingOut, setLoggingOut] = useState(false);
 
   const handleLogout = async () => {
-    await logout();
-    router.replace("/(auth)/login");
+    setLoggingOut(true);
+    try {
+      await logout();
+      router.replace("/(auth)/login");
+    } catch (error) {
+      setLoggingOut(false);
+    }
   };
 
   const stats = [
@@ -109,9 +115,19 @@ export default function ProfileScreen() {
         </View>
       </View>
 
-      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-        <LogOut size={20} color="#ef4444" />
-        <Text style={styles.logoutText}>Logout</Text>
+      <TouchableOpacity
+        style={[styles.logoutButton, loggingOut && styles.logoutButtonDisabled]}
+        onPress={handleLogout}
+        disabled={loggingOut}
+      >
+        {loggingOut ? (
+          <ActivityIndicator size="small" color="#ef4444" />
+        ) : (
+          <LogOut size={20} color="#ef4444" />
+        )}
+        <Text style={[styles.logoutText, loggingOut && styles.logoutTextDisabled]}>
+          {loggingOut ? "Logging out..." : "Logout"}
+        </Text>
       </TouchableOpacity>
 
       <View style={styles.bottomSpacing} />
@@ -312,6 +328,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     color: "#ef4444",
+  },
+  logoutButtonDisabled: {
+    opacity: 0.6,
+  },
+  logoutTextDisabled: {
+    color: "#fca5a5",
   },
   bottomSpacing: {
     height: 40,

@@ -347,7 +347,7 @@ export default function DashboardScreen() {
                 onPress={() => setDetailModal({ visible: true, task })}
               >
                 <View style={styles.taskLeft}>
-                  <View style={[styles.priorityIndicator, { backgroundColor: priorityColors[task.priority || 'MEDIUM'] }]} />
+                  <View style={[styles.priorityIndicator, { backgroundColor: priorityColors[task.priority || 'MEDIUM'] || '#f97316' }]} />
                   <View style={styles.taskInfo}>
                     <Text style={styles.taskTitle} numberOfLines={1}>{task.title}</Text>
                     {task.description && (
@@ -403,8 +403,8 @@ export default function DashboardScreen() {
                         <Text style={styles.taskMetaText}>{task.estimatedDuration || 30}min</Text>
                       </View>
                       {/* Priority Badge */}
-                      <View style={[styles.taskDifficultyBadge, { backgroundColor: priorityColors[task.priority || 'MEDIUM'] + '20' }]}>
-                        <Text style={[styles.taskDifficultyText, { color: priorityColors[task.priority || 'MEDIUM'] }]}>
+                      <View style={[styles.taskDifficultyBadge, { backgroundColor: (priorityColors[task.priority || 'MEDIUM'] || '#f97316') + '20' }]}>
+                        <Text style={[styles.taskDifficultyText, { color: priorityColors[task.priority || 'MEDIUM'] || '#f97316' }]}>
                           {task.priority || 'MEDIUM'}
                         </Text>
                       </View>
