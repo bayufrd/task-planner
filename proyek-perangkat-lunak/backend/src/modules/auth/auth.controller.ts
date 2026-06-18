@@ -128,8 +128,9 @@ export class AuthController {
 
       const result = await googleOAuthService.handleCallback(code);
 
-      // Redirect to frontend with token
-      const redirectUrl = `${env.FRONTEND_URL}/auth/callback?token=${result.token}`;
+      // Redirect to frontend with token and user
+      const userParam = encodeURIComponent(JSON.stringify(result.user));
+      const redirectUrl = `${env.FRONTEND_URL}/auth/callback?token=${result.token}&user=${userParam}`;
       res.redirect(redirectUrl);
     } catch (error) {
       next(error);

@@ -10,10 +10,20 @@ function CallbackContent() {
 
   useEffect(() => {
     const token = searchParams.get('token')
+    const user = searchParams.get('user')
     
     if (token) {
       // Save token to unified key
       localStorage.setItem('auth-token', token)
+      // Save user if provided
+      if (user) {
+        try {
+          const userObj = JSON.parse(decodeURIComponent(user))
+          localStorage.setItem('backendUser', JSON.stringify(userObj))
+        } catch (e) {
+          console.error('Failed to parse user:', e)
+        }
+      }
       // Redirect to dashboard
       router.push('/dashboard')
     } else {
