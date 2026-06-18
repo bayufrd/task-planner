@@ -1,5 +1,4 @@
 import { create } from "zustand";
-import { persist, createJSONStorage } from "zustand/middleware";
 import { User } from "../types";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -7,52 +6,64 @@ interface AuthState {
   user: User | null;
   token: string | null;
   isLoggingOut: boolean;
-  setAuth: (user: User, token: string) => void;
+  isHydrated: boolean;
+  setAuth: (user: User, token: string) => Promise<void>;
   logout: () => Promise<void>;
-  clearAuth: () => void;
+  hydrate: () => Promise<void>;
 }
 
-export const useAuthStore = create<AuthState>()(
-  persist(
-    (set) => ({
-      user: null,
-      token: null,
-      isLoggingOut: false,
-      setAuth: (user, token) => {
-        set({ user, token });
-      },
-      clearAuth: () => {
-        set({ user: null, token: null, isLoggingOut: false });
-      },
-      logout: async () => {
-        console.log("[AuthStore] logout called");
-        // Mark as logging out immediately
-        set({ isLoggingOut: true });
-        
-        try {
-          // Clear ALL AsyncStorage keys first
-          const keys = await AsyncStorage.getAllKeys();
-          console.log("[AuthStore] Keys in storage:", keys);
-          if (keys.length > 0) {
-            await AsyncStorage.multiRemove(keys);
-            console.log("[AuthStore] Cleared all keys");
-          }
-        } catch (e) {
-          console.error("Error clearing AsyncStorage:", e);
-        }
-        
-        // Clear state without persist (use raw set)
-        set({ user: null, token: null, isLoggingOut: false });
-        console.log("[AuthStore] State cleared - user: null, token: null, isLoggingOut: false");
-      },
-    }),
-    {
-      name: "auth-storage",
-      storage: createJSONStorage(() => AsyncStorage),
-      partialize: (state) => ({
-        user: state.user,
-        token: state.token
-      }),
+export const useAuthStore = create<AuthState>((set, get) => ({
+  user: null,
+  token: null,
+  isLoggingOut: false,
+  isHydrated: false,
+
+  hydrate: async () => {
+    try {
+      const userStr = await AsyncStorage.getItem("auth-user");
+      const token = await AsyncStorage.getItem("auth-token");
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        set({ user, token, isHydrated: true });
+        console.log("[AuthStore] Hydrated - user:", user.email);
+      } else {
+        set({ isHydrated: true });
+      }
+    } catch (e) {
+      console.error("[AuthStore] Hydrate error:", e);
+      set({ isHydrated: true });
     }
-  )
-);
+  },
+
+  setAuth: async (user, token) => {
+    try {
+      await AsyncStorage.setItem("auth-user", JSON.stringify(user));
+      await AsyncStorage.setItem("auth-token", token);
+      set({ user, token });
+      console.log("[AuthStore] Auth saved - user:", user.email);
+    } catch (e) {
+      console.error("[AuthStore] setAuth error:", e);
+    }
+  },
+
+  logout: async () => {
+    console.log("[AuthStore] logout called");
+    set({ isLoggingOut: true });
+    
+    // Clear state FIRST
+    set({ user: null, token: null, isLoggingOut: false });
+    console.log("[AuthStore] State cleared in memory");
+    
+    // Then clear AsyncStorage
+    try {
+      const keys = await AsyncStorage.getAllKeys();
+      console.log("[AuthStore] Keys in storage:", keys);
+      if (keys.length > 0) {
+        await AsyncStorage.multiRemove(keys);
+        console.log("[AuthStore] Cleared all AsyncStorage keys");
+      }
+    } catch (e) {
+      console.error("[AuthStore] Error clearing AsyncStorage:", e);
+    }
+  },
+}));

@@ -7,21 +7,30 @@ import { useAuthStore } from "../../store/auth.store";
 export default function LoginScreen() {
   const router = useRouter();
   const setAuth = useAuthStore((state) => state.setAuth);
-  const clearAuth = useAuthStore((state) => state.clearAuth);
+  const hydrate = useAuthStore((state) => state.hydrate);
   const [showWebView, setShowWebView] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
 
   const user = useAuthStore((state) => state.user);
   const token = useAuthStore((state) => state.token);
-  const isLoggingOut = useAuthStore((state) => state.isLoggingOut);
+  const isHydrated = useAuthStore((state) => state.isHydrated);
 
   useEffect(() => {
-    console.log("[Login] useEffect - user:", user, "token:", token ? "exists" : "null", "isLoggingOut:", isLoggingOut);
+    // Hydrate auth state on mount
+    hydrate();
+  }, []);
+
+  useEffect(() => {
+    console.log("[Login] useEffect - user:", user, "token:", token ? "exists" : "null", "isHydrated:", isHydrated);
+    
+    // Wait for hydration
+    if (!isHydrated) {
+      return;
+    }
     
     // Clear any stale auth state on login screen
     if (!user && !token) {
-      console.log("[Login] No user/token, clearing and showing login form");
-      clearAuth();
+      console.log("[Login] No user/token, showing login form");
       setIsChecking(false);
       return;
     }
@@ -32,11 +41,11 @@ export default function LoginScreen() {
     } else {
       setIsChecking(false);
     }
-  }, [user, token, isLoggingOut]);
+  }, [user, token, isHydrated]);
 
   const handleSuccess = async (authToken: string, authUser: any) => {
     try {
-      setAuth(authUser, authToken);
+      await setAuth(authUser, authToken);
       router.replace("/(main)/dashboard");
     } catch (e) {
       console.error("Error saving auth:", e);
