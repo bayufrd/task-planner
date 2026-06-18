@@ -15,15 +15,22 @@ export default function WebViewAuth({ onSuccess, onError }: WebViewAuthProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Clear localStorage script - run this when WebView opens
+  // Clear localStorage and cookies script - run this when WebView opens
   const clearStorageScript = `
     (function() {
+      // Clear localStorage
       localStorage.removeItem('auth-token');
       localStorage.removeItem('authToken');
       localStorage.removeItem('backendUser');
       localStorage.removeItem('user');
       localStorage.removeItem('auth-storage');
-      console.log('Cleared WebView localStorage');
+      
+      // Clear cookies for this domain
+      document.cookie.split(";").forEach(function(c) {
+        document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+      });
+      
+      console.log('Cleared WebView localStorage and cookies');
     })();
     true;
   `;
@@ -176,6 +183,8 @@ export default function WebViewAuth({ onSuccess, onError }: WebViewAuthProps) {
         mediaPlaybackRequiresUserAction
         startInLoadingState
         cacheEnabled={false}
+        incognito={true}
+        sharedCookiesEnabled={false}
       />
       
       <View style={styles.footer}>
