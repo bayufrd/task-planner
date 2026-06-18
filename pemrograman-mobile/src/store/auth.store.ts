@@ -20,8 +20,8 @@ export const useAuthStore = create<AuthState>()(
         set({ user, token });
       },
       logout: async () => {
-        // Clear AsyncStorage first
-        await AsyncStorage.removeItem("auth-storage");
+        // Clear both storage locations
+        await AsyncStorage.multiRemove(["auth-storage", "auth-token"]);
         // Then clear state
         set({ user: null, token: null });
       },
