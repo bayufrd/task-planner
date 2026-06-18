@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, Linking } from 'react-native';
+import React, { useState, useRef, useCallback } from 'react';
+import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, Alert, BackHandler } from 'react-native';
 import { WebView } from 'react-native-webview';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -9,38 +9,23 @@ interface WebViewAuthProps {
 }
 
 const WEB_URL = 'https://taskplanner.dastrevas.com';
-const AUTH_TOKEN_KEY = 'auth-token';
-const AUTH_USER_KEY = 'backendUser';
 
 export default function WebViewAuth({ onSuccess, onError }: WebViewAuthProps) {
   const webViewRef = useRef<WebView>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Clear any existing session in WebView first
-  const clearWebViewData = `
-    (function() {
-      localStorage.removeItem('${AUTH_TOKEN_KEY}');
-      localStorage.removeItem('${AUTH_USER_KEY}');
-      localStorage.removeItem('next-auth.session-token');
-      localStorage.removeItem('__Secure-next-auth.session-token');
-      document.cookie.split(";").forEach(function(c) { 
-        document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
-      });
-    })();
-    true;
-  `;
-
-  // Inject script to extract token after login
+  // Extract token script
   const extractTokenScript = `
     (function() {
-      var token = localStorage.getItem('${AUTH_TOKEN_KEY}');
-      var userStr = localStorage.getItem('${AUTH_USER_KEY}');
-      var user = userStr ? JSON.parse(userStr) : null;
+      var token = localStorage.getItem('auth-token') || localStorage.getItem('authToken');
+      var userStr = localStorage.getItem('backendUser') || localStorage.getItem('user');
+      var user = null;
+      try { user = userStr ? JSON.parse(userStr) : null; } catch(e) {}
       
       if (token) {
         window.ReactNativeWebView.postMessage(JSON.stringify({
-          type: 'AUTH_TOKEN',
+          type: 'AUTH_SUCCESS',
           token: token,
           user: user
         }));
@@ -49,114 +34,104 @@ export default function WebViewAuth({ onSuccess, onError }: WebViewAuthProps) {
     true;
   `;
 
-  // Check if logged in periodically
-  const checkAuthScript = `
+  // Script to override localStorage.setItem
+  const storageOverrideScript = `
     (function() {
-      var token = localStorage.getItem('${AUTH_TOKEN_KEY}');
-      var userStr = localStorage.getItem('${AUTH_USER_KEY}');
-      
-      if (token) {
-        try {
-          var user = userStr ? JSON.parse(userStr) : null;
+      var originalSetItem = localStorage.setItem.bind(localStorage);
+      localStorage.setItem = function(key, value) {
+        if (key === 'auth-token' || key === 'authToken') {
           window.ReactNativeWebView.postMessage(JSON.stringify({
-            type: 'AUTH_TOKEN',
-            token: token,
-            user: user
-          }));
-        } catch(e) {
-          console.error('Parse error', e);
-        }
-      }
-    })();
-    true;
-  `;
-
-  const handleMessage = async (event: any) => {
-    try {
-      const data = JSON.parse(event.nativeEvent.data);
-      
-      if (data.type === 'AUTH_TOKEN' && data.token) {
-        // Save token to AsyncStorage
-        await AsyncStorage.setItem('auth-token', data.token);
-        if (data.user) {
-          await AsyncStorage.setItem('user', JSON.stringify(data.user));
-        }
-        
-        // Notify parent
-        onSuccess(data.token, data.user);
-      }
-    } catch (e) {
-      console.error('Message parse error:', e);
-    }
-  };
-
-  const handleNavigationStateChange = (navState: any) => {
-    // Check auth after any navigation
-    if (webViewRef.current && !navState.loading) {
-      setTimeout(() => {
-        webViewRef.current?.injectJavaScript(checkAuthScript);
-      }, 500);
-    }
-  };
-
-  const handleWebViewError = () => {
-    setError('Failed to load login page. Please check your internet connection.');
-    setLoading(false);
-    onError?.('WebView failed to load');
-  };
-
-  const handleReload = () => {
-    setError(null);
-    setLoading(true);
-    webViewRef.current?.reload();
-  };
-
-  // Inject clear script on load
-  const handleLoadStart = () => {
-    setLoading(true);
-    setError(null);
-  };
-
-  const handleLoadEnd = () => {
-    setLoading(false);
-    // Clear existing session
-    webViewRef.current?.injectJavaScript(clearWebViewData);
-    // Check if already logged in
-    setTimeout(() => {
-      webViewRef.current?.injectJavaScript(checkAuthScript);
-    }, 1000);
-  };
-
-  const injectedJS = `
-    (function() {
-      // Listen for storage events (for when login completes)
-      window.addEventListener('storage', function(e) {
-        if (e.key === '${AUTH_TOKEN_KEY}' && e.newValue) {
-          window.ReactNativeWebView.postMessage(JSON.stringify({
-            type: 'AUTH_TOKEN',
-            token: e.newValue
+            type: 'AUTH_TOKEN_SAVED',
+            token: value
           }));
         }
-      });
-      
-      // Also check on any page change
-      var originalPushState = history.pushState;
-      history.pushState = function() {
-        originalPushState.apply(history, arguments);
-        setTimeout(function() {
-          window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'PAGE_CHANGED' }));
-        }, 500);
+        if (key === 'backendUser' || key === 'user') {
+          try {
+            window.ReactNativeWebView.postMessage(JSON.stringify({
+              type: 'AUTH_USER_SAVED',
+              user: JSON.parse(value)
+            }));
+          } catch(e) {}
+        }
+        return originalSetItem(key, value);
       };
     })();
     true;
   `;
+
+  // Combined injection script
+  const injectedJS = storageOverrideScript + '\n' + extractTokenScript;
+
+  const handleMessage = useCallback(async (event: any) => {
+    try {
+      const data = JSON.parse(event.nativeEvent.data);
+      
+      if ((data.type === 'AUTH_SUCCESS' || data.type === 'AUTH_TOKEN_SAVED') && data.token) {
+        await AsyncStorage.setItem('auth-token', data.token);
+        if (data.user) {
+          await AsyncStorage.setItem('user', JSON.stringify(data.user));
+        }
+        onSuccess(data.token, data.user || null);
+      }
+    } catch (e) {
+      console.error('Message parse error:', e);
+    }
+  }, [onSuccess]);
+
+  // Intercept navigation requests
+  const shouldStartLoadWithRequest = useCallback((request: any) => {
+    const { url } = request;
+    
+    // When navigating to protected pages, extract token
+    if (url.includes('/dashboard') || url.includes('/overview')) {
+      // Delay to ensure page loads first
+      setTimeout(() => {
+        webViewRef.current?.injectJavaScript(extractTokenScript);
+      }, 1500);
+    }
+    
+    // Allow all navigation
+    return true;
+  }, []);
+
+  const handleNavigationStateChange = useCallback((navState: any) => {
+    const { url, loading } = navState;
+    
+    // When navigation completes to protected page
+    if (!loading && url && (url.includes('/dashboard') || url.includes('/overview'))) {
+      setTimeout(() => {
+        webViewRef.current?.injectJavaScript(extractTokenScript);
+      }, 1000);
+    }
+  }, []);
+
+  const handleWebViewError = useCallback(() => {
+    setError('Failed to load login page. Check internet connection.');
+    setLoading(false);
+    onError?.('WebView failed');
+  }, [onError]);
+
+  const handleReload = useCallback(() => {
+    setError(null);
+    setLoading(true);
+    webViewRef.current?.reload();
+  }, []);
+
+  const handleLoadStart = useCallback(() => {
+    setLoading(true);
+    setError(null);
+  }, []);
+
+  const handleLoadEnd = useCallback(() => {
+    setLoading(false);
+  }, []);
 
   return (
     <View style={styles.container}>
       {loading && (
         <View style={styles.loadingOverlay}>
           <ActivityIndicator size="large" color="#3b82f6" />
-          <Text style={styles.loadingText}>Loading login page...</Text>
+          <Text style={styles.loadingText}>Loading...</Text>
         </View>
       )}
       
@@ -179,6 +154,7 @@ export default function WebViewAuth({ onSuccess, onError }: WebViewAuthProps) {
         onLoadEnd={handleLoadEnd}
         onError={handleWebViewError}
         onHttpError={handleWebViewError}
+        onShouldStartLoadWithRequest={shouldStartLoadWithRequest}
         injectedJavaScript={injectedJS}
         javaScriptEnabled
         domStorageEnabled
@@ -186,18 +162,11 @@ export default function WebViewAuth({ onSuccess, onError }: WebViewAuthProps) {
         allowsInlineMediaPlayback
         mediaPlaybackRequiresUserAction
         startInLoadingState
-        renderLoading={() => (
-          <View style={styles.webviewLoading}>
-            <ActivityIndicator size="large" color="#3b82f6" />
-          </View>
-        )}
+        cacheEnabled={false}
       />
       
       <View style={styles.footer}>
-        <Text style={styles.footerText}>
-          You will be redirected to the web login page.{'\n'}
-          Your credentials are secured.
-        </Text>
+        <Text style={styles.footerText}>Secure authentication</Text>
       </View>
     </View>
   );
@@ -211,16 +180,6 @@ const styles = StyleSheet.create({
   webview: {
     flex: 1,
   },
-  webviewLoading: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#ffffff',
-  },
   loadingOverlay: {
     position: 'absolute',
     top: 0,
@@ -229,12 +188,12 @@ const styles = StyleSheet.create({
     bottom: 0,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.9)',
+    backgroundColor: 'rgba(255,255,255,0.95)',
     zIndex: 10,
   },
   loadingText: {
-    marginTop: 16,
-    fontSize: 16,
+    marginTop: 12,
+    fontSize: 14,
     color: '#64748b',
   },
   errorContainer: {
@@ -250,31 +209,31 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   errorText: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#dc2626',
     textAlign: 'center',
-    marginBottom: 20,
+    marginBottom: 16,
   },
   retryButton: {
     backgroundColor: '#3b82f6',
     paddingHorizontal: 24,
-    paddingVertical: 12,
+    paddingVertical: 10,
     borderRadius: 8,
   },
   retryText: {
     color: '#ffffff',
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
   },
   footer: {
-    padding: 16,
+    padding: 10,
     borderTopWidth: 1,
     borderTopColor: '#e2e8f0',
     backgroundColor: '#f8fafc',
   },
   footerText: {
-    fontSize: 12,
-    color: '#64748b',
+    fontSize: 11,
+    color: '#94a3b8',
     textAlign: 'center',
   },
 });

@@ -25,10 +25,14 @@ export interface AuthResponse {
   token: string;
 }
 
+// Backend response format
 export interface TaskStats {
+  pending: number;
+  done: number;
+  skipped: number;
+  // Computed fields
   total: number;
   completed: number;
-  pending: number;
   completionRate: number;
   streakDays: number;
 }

@@ -1,28 +1,93 @@
 import api from "./api";
 import { Task, TaskStats } from "../types";
 
+interface ApiResponse<T> {
+  success: boolean;
+  data: T;
+  message?: string;
+}
+
+// Raw stats from backend
+interface RawTaskStats {
+  pending: number;
+  done: number;
+  skipped: number;
+}
+
 export const taskService = {
-  getTasks: async () => {
-    const response = await api.get<Task[]>("/tasks");
-    return response.data;
+  getTasks: async (): Promise<Task[]> => {
+    const response = await api.get<ApiResponse<Task[]>>("/tasks");
+    return response.data?.data || [];
   },
-  getTask: async (id: string) => {
-    const response = await api.get<Task>(`/tasks/${id}`);
-    return response.data;
+  getTask: async (id: string): Promise<Task> => {
+    const response = await api.get<ApiResponse<Task>>(`/tasks/${id}`);
+    return response.data?.data;
   },
-  createTask: async (data: Partial<Task>) => {
-    const response = await api.post<Task>("/tasks", data);
-    return response.data;
+  createTask: async (data: Partial<Task>): Promise<Task> => {
+    const response = await api.post<ApiResponse<Task>>("/tasks", data);
+    return response.data?.data;
   },
-  updateTask: async (id: string, data: Partial<Task>) => {
-    const response = await api.patch<Task>(`/tasks/${id}`, data);
-    return response.data;
+  updateTask: async (id: string, data: Partial<Task>): Promise<Task> => {
+    const response = await api.patch<ApiResponse<Task>>(`/tasks/${id}`, data);
+    return response.data?.data;
   },
-  deleteTask: async (id: string) => {
+  deleteTask: async (id: string): Promise<void> => {
     await api.delete(`/tasks/${id}`);
   },
-  getStats: async () => {
-    const response = await api.get<TaskStats>("/tasks/stats");
-    return response.data;
+  getStats: async (): Promise<TaskStats> => {
+    try {
+      const response = await api.get<ApiResponse<RawTaskStats>>("/tasks/stats");
+      const raw = response.data?.data;
+      if (!raw) {
+        return { pending: 0, done: 0, skipped: 0, total: 0, completed: 0, completionRate: 0, streakDays: 0 };
+      }
+      const total = raw.pending + raw.done + raw.skipped;
+      const completed = raw.done;
+      const completionRate = total > 0 ? (completed / total) * 100 : 0;
+      return {
+        ...raw,
+        total,
+        completed,
+        completionRate,
+        streakDays: 0,
+      };
+    } catch (error) {
+      console.error("Error fetching stats:", error);
+      return { pending: 0, done: 0, skipped: 0, total: 0, completed: 0, completionRate: 0, streakDays: 0 };
+    }
+  },
+  getDailyStats: async (days: number = 30): Promise<{ date: string; count: number }[]> => {
+    try {
+      const response = await api.get<ApiResponse<{ date: string; count: number }[]>>(`/tasks/stats/daily?days=${days}`);
+      return response.data?.data || [];
+    } catch (error) {
+      console.error("Error fetching daily stats:", error);
+      return [];
+    }
+  },
+  getWeeklyStats: async (weeks: number = 12): Promise<{ week: string; count: number }[]> => {
+    try {
+      const response = await api.get<ApiResponse<{ week: string; count: number }[]>>(`/tasks/stats/weekly?weeks=${weeks}`);
+      return response.data?.data || [];
+    } catch (error) {
+      console.error("Error fetching weekly stats:", error);
+      return [];
+    }
   },
 };
+
+export interface DailyStat {
+  date: string;
+  count: number;
+}
+
+export interface WeeklyStat {
+  week: string;
+  count: number;
+}
+
+export interface TaskStatsResponse {
+  pending: number;
+  done: number;
+  total: number;
+}
