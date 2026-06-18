@@ -25,14 +25,17 @@ export const useAuthStore = create<AuthState>()(
         set({ user: null, token: null, isLoggingOut: false });
       },
       logout: async () => {
+        console.log("[AuthStore] logout called");
         // Mark as logging out immediately
         set({ isLoggingOut: true });
         
         try {
           // Clear ALL AsyncStorage keys first
           const keys = await AsyncStorage.getAllKeys();
+          console.log("[AuthStore] Keys in storage:", keys);
           if (keys.length > 0) {
             await AsyncStorage.multiRemove(keys);
+            console.log("[AuthStore] Cleared all keys");
           }
         } catch (e) {
           console.error("Error clearing AsyncStorage:", e);
@@ -40,6 +43,7 @@ export const useAuthStore = create<AuthState>()(
         
         // Clear state without persist (use raw set)
         set({ user: null, token: null, isLoggingOut: false });
+        console.log("[AuthStore] State cleared - user: null, token: null, isLoggingOut: false");
       },
     }),
     {

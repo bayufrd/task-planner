@@ -13,10 +13,18 @@ export default function ProfileScreen() {
 
   // Watch auth state and redirect when logged out
   useEffect(() => {
+    console.log("[Profile] useEffect - user:", user ? user.email : "null", "token:", token ? "exists" : "null", "isLoggingOut:", isLoggingOut);
     if (!token && !user && !isLoggingOut) {
+      console.log("[Profile] No auth, redirecting to login");
       router.replace("/(auth)/login");
     }
   }, [user, token, isLoggingOut]);
+
+  const handleLogout = async () => {
+    console.log("[Profile] handleLogout called");
+    await logout();
+    console.log("[Profile] logout completed");
+  };
 
   const stats = [
     { label: "Total Tasks", value: "24", color: "#3b82f6" },
@@ -116,7 +124,7 @@ export default function ProfileScreen() {
 
       <TouchableOpacity
         style={[styles.logoutButton, isLoggingOut && styles.logoutButtonDisabled]}
-        onPress={() => logout()}
+        onPress={handleLogout}
         disabled={isLoggingOut}
       >
         {isLoggingOut ? (

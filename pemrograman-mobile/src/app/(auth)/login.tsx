@@ -16,14 +16,18 @@ export default function LoginScreen() {
   const isLoggingOut = useAuthStore((state) => state.isLoggingOut);
 
   useEffect(() => {
+    console.log("[Login] useEffect - user:", user, "token:", token ? "exists" : "null", "isLoggingOut:", isLoggingOut);
+    
     // Clear any stale auth state on login screen
     if (!user && !token) {
+      console.log("[Login] No user/token, clearing and showing login form");
       clearAuth();
       setIsChecking(false);
       return;
     }
     
     if (user && token) {
+      console.log("[Login] Has user/token, redirecting to dashboard");
       router.replace("/(main)/dashboard");
     } else {
       setIsChecking(false);
