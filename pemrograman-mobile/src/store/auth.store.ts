@@ -22,15 +22,18 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       const userStr = await AsyncStorage.getItem("auth-user");
       const token = await AsyncStorage.getItem("auth-token");
-      if (userStr) {
+      if (userStr && token) {
         const user = JSON.parse(userStr);
         set({ user, token, isHydrated: true });
-        console.log("[AuthStore] Hydrated - user:", user.email);
+        console.log("[AuthStore] Hydrated - user:", user?.email);
       } else {
+        // Clear stale data
+        await AsyncStorage.multiRemove(["auth-token", "auth-user"]);
         set({ isHydrated: true });
       }
     } catch (e) {
       console.error("[AuthStore] Hydrate error:", e);
+      await AsyncStorage.multiRemove(["auth-token", "auth-user"]);
       set({ isHydrated: true });
     }
   },
@@ -40,7 +43,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       await AsyncStorage.setItem("auth-user", JSON.stringify(user));
       await AsyncStorage.setItem("auth-token", token);
       set({ user, token });
-      console.log("[AuthStore] Auth saved - user:", user.email);
+      console.log("[AuthStore] Auth saved - user:", user?.email);
     } catch (e) {
       console.error("[AuthStore] setAuth error:", e);
     }
