@@ -11,7 +11,7 @@ import {
   ActivityIndicator,
   Linking,
 } from "react-native";
-import Svg, { Path } from "react-native-svg";
+import Svg, { Defs, LinearGradient, Path, Rect, Stop } from "react-native-svg";
 import * as WebBrowser from "expo-web-browser";
 import * as Google from "expo-auth-session/providers/google";
 import { makeRedirectUri, ResponseType } from "expo-auth-session";
@@ -441,6 +441,17 @@ export default function LoginScreen() {
             activeOpacity={0.8}
             disabled={isSubmitting}
           >
+            <View pointerEvents="none" style={styles.primaryButtonGradient}>
+              <Svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
+                <Defs>
+                  <LinearGradient id="loginPrimaryGradient" x1="0" y1="0" x2="1" y2="0">
+                    <Stop offset="0%" stopColor="#2563eb" />
+                    <Stop offset="100%" stopColor="#4f46e5" />
+                  </LinearGradient>
+                </Defs>
+                <Rect x="0" y="0" width="100" height="100" rx="12" ry="12" fill="url(#loginPrimaryGradient)" />
+              </Svg>
+            </View>
             {isSubmitting ? (
               <ActivityIndicator color="#ffffff" size="small" />
             ) : (
@@ -576,6 +587,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#dbeafe',
   },
   linkButtonText: {
     color: '#2563eb',
@@ -598,7 +611,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modeButtonActive: {
-    backgroundColor: '#3b82f6',
+    backgroundColor: '#2563eb',
+    shadowColor: '#2563eb',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.18,
+    shadowRadius: 10,
+    elevation: 3,
   },
   modeButtonText: {
     fontSize: 14,
@@ -631,16 +649,22 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   primaryButton: {
-    backgroundColor: '#3b82f6',
+    position: 'relative',
+    overflow: 'hidden',
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: 12,
-    shadowColor: '#3b82f6',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowColor: '#2563eb',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.28,
+    shadowRadius: 12,
+    elevation: 5,
+  },
+  primaryButtonGradient: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: 12,
   },
   buttonDisabled: {
     opacity: 0.7,
