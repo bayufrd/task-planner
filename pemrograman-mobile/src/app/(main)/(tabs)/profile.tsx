@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { Alert, View, Text, TouchableOpacity, ScrollView, StyleSheet, ActivityIndicator } from "react-native";
+import { Alert, View, Text, TouchableOpacity, ScrollView, StyleSheet, ActivityIndicator, Image } from "react-native";
 import { useAuthStore } from "../../../store/auth.store";
 import { useRouter } from "expo-router";
 import { LogOut, User, Settings, Bell, ChevronRight, Award, Calendar } from "lucide-react-native";
@@ -83,6 +83,14 @@ export default function ProfileScreen() {
             <Text style={styles.statLabel}>{stat.label}</Text>
           </View>
         ))}
+      </View>
+
+      <View style={styles.heroCard}>
+        <Image
+          source={require('../../../../assets/nextjs-profile-hero.webp')}
+          style={styles.heroImage}
+          resizeMode="cover"
+        />
       </View>
 
       <View style={styles.section}>
@@ -273,6 +281,22 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#64748b",
     marginTop: 4,
+  },
+  heroCard: {
+    marginHorizontal: 20,
+    marginTop: 24,
+    borderRadius: 20,
+    overflow: "hidden",
+    backgroundColor: "#dbeafe",
+    shadowColor: "#0f172a",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.08,
+    shadowRadius: 20,
+    elevation: 3,
+  },
+  heroImage: {
+    width: "100%",
+    height: 160,
   },
   section: {
     marginTop: 24,

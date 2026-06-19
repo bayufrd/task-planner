@@ -157,6 +157,37 @@ export default function OverviewScreen() {
             </View>
             <Text style={styles.progressText}>{formattedCompletionRate} Complete</Text>
           </View>
+
+          <View style={styles.inlineInsightCard}>
+            <View style={styles.insightHeader}>
+              <Zap size={20} color="#f59e0b" />
+              <Text style={styles.insightTitle}>AI Productivity Insights</Text>
+            </View>
+
+            {analysisLoading ? (
+              <ActivityIndicator color="#3b82f6" style={styles.loader} />
+            ) : (
+              <View style={styles.insightContent}>
+                {summaryInsights.map((insight, index) => {
+                  const InsightIcon = index === 0 ? TrendingUp : index === 1 ? Trophy : Star;
+                  const iconColor = index === 0 ? "#22c55e" : index === 1 ? "#f59e0b" : "#8b5cf6";
+
+                  return (
+                    <View key={`${insight}-${index}`} style={styles.insightItem}>
+                      <InsightIcon size={16} color={iconColor} />
+                      <Text style={styles.insightText}>{insight}</Text>
+                    </View>
+                  );
+                })}
+
+                {analysisError ? (
+                  <Text style={styles.insightErrorText}>
+                    AI analysis failed. Backend cache stays available on next successful fetch.
+                  </Text>
+                ) : null}
+              </View>
+            )}
+          </View>
         </View>
 
         {/* Stats Cards */}
@@ -176,12 +207,20 @@ export default function OverviewScreen() {
             <Text style={styles.statLabel}>Done</Text>
           </View>
           <View style={styles.statCard}>
-            <View style={[styles.statIcon, { backgroundColor: '#fef3c7' }]}>
-              <AlertCircle size={20} color="#f59e0b" />
+            <View style={[styles.statIcon, { backgroundColor: '#ffedd5' }]}>
+              <AlertCircle size={20} color="#f97316" />
             </View>
-            <Text style={styles.statValue}>{(stats?.total || 0) - (stats?.completed || 0)}</Text>
-            <Text style={styles.statLabel}>Remaining</Text>
+            <Text style={styles.statValue}>{stats?.skipped || 0}</Text>
+            <Text style={styles.statLabel}>Skipped</Text>
           </View>
+        </View>
+
+        <View style={styles.heroCard}>
+          <Image
+            source={require('../../../../assets/nextjs-overview-hero.webp')}
+            style={styles.heroImage}
+            resizeMode="cover"
+          />
         </View>
 
         {/* Daily Activity Chart */}
@@ -250,38 +289,6 @@ export default function OverviewScreen() {
                 })}
               </View>
             </ScrollView>
-          )}
-        </View>
-
-        {/* AI Insights Card */}
-        <View style={styles.insightCard}>
-          <View style={styles.insightHeader}>
-            <Zap size={20} color="#f59e0b" />
-            <Text style={styles.insightTitle}>AI Productivity Insights</Text>
-          </View>
-
-          {analysisLoading ? (
-            <ActivityIndicator color="#3b82f6" style={styles.loader} />
-          ) : (
-            <View style={styles.insightContent}>
-              {summaryInsights.map((insight, index) => {
-                const InsightIcon = index === 0 ? TrendingUp : index === 1 ? Trophy : Star;
-                const iconColor = index === 0 ? "#22c55e" : index === 1 ? "#f59e0b" : "#8b5cf6";
-
-                return (
-                  <View key={`${insight}-${index}`} style={styles.insightItem}>
-                    <InsightIcon size={16} color={iconColor} />
-                    <Text style={styles.insightText}>{insight}</Text>
-                  </View>
-                );
-              })}
-
-              {analysisError ? (
-                <Text style={styles.insightErrorText}>
-                  AI analysis failed. Backend cache stays available on next successful fetch.
-                </Text>
-              ) : null}
-            </View>
           )}
         </View>
 
@@ -392,6 +399,12 @@ const styles = StyleSheet.create({
   levelProgress: {
     marginTop: 8,
   },
+  inlineInsightCard: {
+    marginTop: 18,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#e2e8f0',
+  },
   levelScoreRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -458,6 +471,21 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#64748b',
     marginTop: 2,
+  },
+  heroCard: {
+    borderRadius: 20,
+    overflow: 'hidden',
+    backgroundColor: '#dbeafe',
+    marginBottom: 16,
+    shadowColor: '#0f172a',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.08,
+    shadowRadius: 20,
+    elevation: 3,
+  },
+  heroImage: {
+    width: '100%',
+    height: 160,
   },
   chartCard: {
     backgroundColor: '#ffffff',

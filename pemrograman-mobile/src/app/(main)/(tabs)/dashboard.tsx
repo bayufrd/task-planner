@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl, Image } from "react-native";
 import { useQuery } from "@tanstack/react-query";
 import { useFocusEffect } from "expo-router";
 import { taskService } from "../../../services/task.service";
@@ -321,6 +321,14 @@ export default function DashboardScreen() {
             <Text style={styles.statLabel}>Skipped</Text>
           </View>
         </View>
+      </View>
+
+      <View style={styles.heroCard}>
+        <Image
+          source={require('../../../../assets/nextjs-dashboard-hero.webp')}
+          style={styles.heroImage}
+          resizeMode="cover"
+        />
       </View>
 
       {/* Selected Date Tasks */}
@@ -747,6 +755,23 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: '#64748b',
     fontWeight: '500',
+  },
+  heroCard: {
+    marginHorizontal: 16,
+    marginTop: 16,
+    marginBottom: 4,
+    borderRadius: 20,
+    overflow: 'hidden',
+    backgroundColor: '#dbeafe',
+    shadowColor: '#0f172a',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.08,
+    shadowRadius: 20,
+    elevation: 3,
+  },
+  heroImage: {
+    width: '100%',
+    height: 150,
   },
   tasksSection: {
     flex: 1,
