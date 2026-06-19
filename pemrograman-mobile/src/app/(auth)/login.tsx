@@ -1,8 +1,19 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, Image } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  KeyboardAvoidingView,
+  Platform,
+  Image,
+  TextInput,
+  ActivityIndicator,
+} from "react-native";
 import { useRouter } from "expo-router";
 import WebViewAuth from "../../components/WebViewAuth";
 import { useAuthStore } from "../../store/auth.store";
+import { authService } from "../../services/auth.service";
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -14,6 +25,10 @@ export default function LoginScreen() {
   const user = useAuthStore((state) => state.user);
   const token = useAuthStore((state) => state.token);
   const isHydrated = useAuthStore((state) => state.isHydrated);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     // Hydrate auth state on mount
@@ -54,6 +69,38 @@ export default function LoginScreen() {
       router.replace("/(main)/dashboard");
     } catch (e) {
       console.error("Error saving auth:", e);
+    }
+  };
+
+  const handleEmailLogin = async () => {
+    if (!email.trim() || !password) {
+      setError("Email dan password wajib diisi.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    setError(null);
+
+    try {
+      const result = await authService.login({
+        email: email.trim(),
+        password,
+      });
+
+      if (!result.token || !result.user) {
+        throw new Error("Respons login tidak lengkap.");
+      }
+
+      await setAuth(result.user, result.token);
+      router.replace("/(main)/dashboard");
+    } catch (e: any) {
+      const message =
+        e?.response?.data?.error?.message ||
+        e?.message ||
+        "Login gagal. Silakan coba lagi.";
+      setError(message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -114,17 +161,49 @@ export default function LoginScreen() {
           </View>
         </View>
 
+        <View style={styles.formContainer}>
+          <TextInput
+            style={styles.input}
+            placeholder="Email"
+            placeholderTextColor="#94a3b8"
+            value={email}
+            onChangeText={(text) => {
+              setEmail(text);
+              if (error) setError(null);
+            }}
+            autoCapitalize="none"
+            keyboardType="email-address"
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Password"
+            placeholderTextColor="#94a3b8"
+            value={password}
+            onChangeText={(text) => {
+              setPassword(text);
+              if (error) setError(null);
+            }}
+            secureTextEntry
+          />
+          {error ? <Text style={styles.errorText}>{error}</Text> : null}
+        </View>
+
         {/* Login Buttons */}
         <View style={styles.buttonContainer}>
-          <TouchableOpacity 
-            style={styles.primaryButton}
-            onPress={() => setShowWebView(true)}
+          <TouchableOpacity
+            style={[styles.primaryButton, isSubmitting && styles.buttonDisabled]}
+            onPress={handleEmailLogin}
             activeOpacity={0.8}
+            disabled={isSubmitting}
           >
-            <Text style={styles.primaryButtonText}>Login with Email</Text>
+            {isSubmitting ? (
+              <ActivityIndicator color="#ffffff" size="small" />
+            ) : (
+              <Text style={styles.primaryButtonText}>Login with Email</Text>
+            )}
           </TouchableOpacity>
-          
-          <TouchableOpacity 
+
+          <TouchableOpacity
             style={styles.secondaryButton}
             onPress={() => setShowWebView(true)}
             activeOpacity={0.8}
@@ -196,7 +275,26 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   features: {
-    marginBottom: 32,
+    marginBottom: 24,
+  },
+  formContainer: {
+    marginBottom: 24,
+  },
+  input: {
+    backgroundColor: '#f8fafc',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    fontSize: 15,
+    color: '#1e293b',
+    marginBottom: 12,
+  },
+  errorText: {
+    color: '#dc2626',
+    fontSize: 13,
+    marginTop: -4,
   },
   featureItem: {
     flexDirection: 'row',
@@ -230,6 +328,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 4,
+  },
+  buttonDisabled: {
+    opacity: 0.7,
   },
   primaryButtonText: {
     color: '#ffffff',

@@ -24,8 +24,22 @@ export interface Task {
 }
 
 export interface AuthResponse {
-  user: User;
-  token: string;
+  success?: boolean;
+  user?: User;
+  token?: string;
+  data?: {
+    user: User;
+    token: string;
+  };
+}
+
+export interface ClientAuthPayload {
+  email: string;
+  password: string;
+  clientType?: 'mobile' | 'web' | 'internal' | 'unknown';
+  deviceId?: string;
+  appVersion?: string;
+  platform?: string;
 }
 
 // Backend response format

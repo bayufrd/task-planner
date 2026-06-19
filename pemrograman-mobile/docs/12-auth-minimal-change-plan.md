@@ -342,109 +342,313 @@ Yang paling aman:
 
 Ini benar-benar minim perubahan dan minim risiko.
 
-## 10. Roadmap Bertahap
+## 10. Keputusan Implementasi dan Posisi Dokumen
 
-### 10.1 Quick Win
+### 10.1 Apakah rencana pada dokumen ini layak mulai diterapkan sekarang
 
-Lakukan segera tanpa refactor besar:
+Ya, rencana pada dokumen ini layak mulai diterapkan sekarang dengan status **layak untuk fase implementasi awal**.
 
-1. tambah endpoint `login-client`,
-2. tambah endpoint `register-client`,
-3. tambah schema validasi baru untuk client/mobile,
-4. pertahankan endpoint web lama tanpa perubahan kontrak,
-5. tambahkan logging `clientType`, `platform`, dan `deviceId` bila ada,
-6. tambahkan rate limit khusus endpoint client baru.
+Alasannya praktis:
 
-Hasilnya:
+- perubahan difokuskan pada endpoint baru sehingga tidak memaksa refactor pada flow web lama,
+- kontrak penting web tetap dipertahankan pada [`POST /api/auth/login`](../proyek-perangkat-lunak/backend/src/modules/auth/auth.routes.ts:12), [`POST /api/auth/register`](../proyek-perangkat-lunak/backend/src/modules/auth/auth.routes.ts:11), dan [`POST /api/auth/sync`](../proyek-perangkat-lunak/backend/src/modules/auth/auth.routes.ts:19),
+- reuse service lama di [`AuthService.register()`](../proyek-perangkat-lunak/backend/src/modules/auth/auth.service.ts:9) dan [`AuthService.login()`](../proyek-perangkat-lunak/backend/src/modules/auth/auth.service.ts:43) membuat risiko perubahan tetap kecil,
+- hambatan terbesar mobile saat ini memang ada di layer validasi dan kontrak endpoint, bukan pada domain auth inti.
 
-- mobile bisa mulai integrasi cepat,
-- Next.js nyaris tidak tersentuh.
+Namun, layak diterapkan sekarang tidak berarti seluruh desain auth mobile final sudah siap. Batas keputusan saat ini adalah:
 
-### 10.2 Stabilisasi
+- layak untuk membuka jalur login/register mobile native tanpa merusak web,
+- belum final untuk session lifecycle mobile jangka panjang,
+- belum final untuk refresh token, revocation, dan device session,
+- belum final untuk Google login native production-grade.
 
-Setelah quick win berjalan:
+Keputusan operasionalnya: mulai implementasi fase awal sekarang, tetapi tetap anggap dokumen ini sebagai rollout plan sementara menuju target arsitektur pada [`11-mobile-login-architecture.md`](./11-mobile-login-architecture.md).
 
-1. tambah endpoint `google/mobile`,
-2. tambah error code eksplisit seperti `CAPTCHA_REQUIRED`,
-3. rapikan env config untuk mobile auth bila perlu,
-4. rapikan CORS hanya jika memang ada flow browser-based baru,
-5. tambahkan audit log auth minimal.
+### 10.2 Apakah dokumen 11 dan 12 sebaiknya dipisah atau digabung
 
-### 10.3 Refactor Nanti Jika Diperlukan
+Keputusan yang disarankan: **tetap dipisah**.
 
-Tunda sampai ada kebutuhan nyata:
+Alasan arsitektur:
 
-1. unify auth strategy web/mobile dalam service layer yang lebih formal,
-2. tambahkan refresh token penuh,
-3. tambahkan revocation dan session per device,
-4. revisi flow Google agar scope login dan scope calendar dipisah,
-5. rapikan arsitektur auth controller menjadi client-aware strategy.
+- [`11-mobile-login-architecture.md`](./11-mobile-login-architecture.md) berfungsi sebagai target architecture jangka menengah/panjang,
+- dokumen ini berfungsi sebagai rollout plan jangka pendek yang sangat taktis,
+- jika digabung, batas antara target final dan kompromi sementara akan kabur.
 
-Refactor ini bagus, tetapi tidak perlu jadi syarat untuk membuka integrasi baru.
+Alasan maintainability:
 
-## 11. Checklist Implementasi Backend
+- perubahan jangka pendek akan lebih sering terjadi pada dokumen ini daripada pada dokumen arsitektur,
+- tim bisa memperbarui checklist, phase, dan status rollout tanpa mengganggu narasi desain besar,
+- risiko kontradiksi lebih kecil jika dokumen 11 dijaga sebagai north star dan dokumen 12 dijaga sebagai execution plan.
 
-### 11.1 Bisa dilakukan segera tanpa refactor
+Alasan monitoring progres:
 
-- [ ] Tambah route baru `POST /api/auth/login-client`
-- [ ] Tambah route baru `POST /api/auth/register-client`
-- [ ] Tambah schema validasi baru tanpa `captchaToken` wajib
-- [ ] Tambah controller baru yang reuse service lama
-- [ ] Tambah logging `clientType`, `platform`, `deviceId`
-- [ ] Tambah rate limiting untuk route baru
-- [ ] Pastikan response tetap mengandung `token` dan `user`
-- [ ] Jangan ubah logika [`syncNextAuth()`](../proyek-perangkat-lunak/backend/src/modules/auth/auth.controller.ts:144)
-- [ ] Jangan ubah flow [`googleCallback()`](../proyek-perangkat-lunak/backend/src/modules/auth/auth.controller.ts:121) untuk web
+- progres implementasi lebih mudah dilacak jika checklist fase berada di satu dokumen operasional,
+- reviewer bisa cepat menilai mana yang sudah dieksekusi dan mana yang masih target arsitektur,
+- penghapusan solusi sementara nanti cukup dimonitor dari dokumen ini tanpa menulis ulang dokumen 11.
 
-### 11.2 Sebaiknya fase berikutnya
+Aturan sinkronisasi dua dokumen:
 
-- [ ] Tambah `POST /api/auth/google/mobile`
-- [ ] Tambah `POST /api/auth/refresh`
-- [ ] Tambah revocation/session table
-- [ ] Tambah adaptive challenge/CAPTCHA escalation
+- dokumen 11 menjawab “target akhirnya seperti apa”,
+- dokumen 12 menjawab “langkah transisinya apa yang dikerjakan sekarang”,
+- setiap perubahan future target di dokumen 12 harus tetap mengacu ke arah yang sudah dijelaskan di [`11-mobile-login-architecture.md`](./11-mobile-login-architecture.md).
+
+## 11. Roadmap Implementasi Bertahap
+
+### 11.1 Phase 0 - Baseline dan pagar kompatibilitas
+
+Tujuan:
+
+- menetapkan batas perubahan agar implementasi mobile baru tidak memutus flow web lama.
+
+Ruang lingkup:
+
+- inventaris endpoint auth lama yang tidak boleh berubah kontraknya,
+- tetapkan kontrak minimal response untuk endpoint baru,
+- tetapkan rule kompatibilitas terhadap flow Next.js dan NextAuth sync.
+
+Dependency:
+
+- pemahaman kontrak auth web pada [`page.tsx`](../proyek-perangkat-lunak/src/app/auth/signin/page.tsx:103), [`syncNextAuth()`](../proyek-perangkat-lunak/backend/src/modules/auth/auth.controller.ts:144), dan [`syncNextAuthToExpress()`](../proyek-perangkat-lunak/src/lib/auth/sync.ts:16).
+
+Output/deliverable:
+
+- daftar endpoint yang dipertahankan,
+- kontrak request/response awal untuk endpoint client,
+- keputusan eksplisit bahwa flow web lama tetap baseline kompatibilitas.
+
+Risiko utama:
+
+- tim mengubah endpoint web lama saat menambah endpoint baru,
+- kontrak response baru terlalu berbeda dari kontrak lama.
+
+Indikator selesai:
+
+- semua pihak sepakat bahwa `login`, `register`, dan `sync` lama tidak diubah perilaku default-nya.
+
+Checklist progres:
+
+- [x] Konfirmasi [`POST /api/auth/login`](../proyek-perangkat-lunak/backend/src/modules/auth/auth.routes.ts:12) tetap untuk web lama
+- [x] Konfirmasi [`POST /api/auth/register`](../proyek-perangkat-lunak/backend/src/modules/auth/auth.routes.ts:11) tetap untuk web lama
+- [x] Konfirmasi [`POST /api/auth/sync`](../proyek-perangkat-lunak/backend/src/modules/auth/auth.routes.ts:22) tetap khusus bridge NextAuth web
+- [x] Bekukan format minimal response `token` + `user` untuk endpoint auth baru
+- [x] Dokumentasikan asumsi kompatibilitas di backend dan mobile
+
+### 11.2 Phase 1 - Quick win credentials mobile
+
+Tujuan:
+
+- membuka login dan register native untuk mobile secepat mungkin dengan perubahan paling kecil.
+
+Ruang lingkup:
+
+- tambah `POST /api/auth/login-client`,
+- tambah `POST /api/auth/register-client`,
+- tambah schema validasi baru untuk client/mobile,
+- reuse service auth lama,
+- tambahkan logging dasar dan rate limiting.
+
+Dependency:
+
+- route auth modular di [`auth.routes.ts`](../proyek-perangkat-lunak/backend/src/modules/auth/auth.routes.ts),
+- service auth yang sudah ada di [`auth.service.ts`](../proyek-perangkat-lunak/backend/src/modules/auth/auth.service.ts),
+- policy CAPTCHA web lama di [`auth.validation.ts`](../proyek-perangkat-lunak/backend/src/modules/auth/auth.validation.ts:3).
+
+Output/deliverable:
+
+- route dan controller baru untuk credentials mobile,
+- schema baru tanpa `captchaToken` wajib,
+- response kompatibel dengan `token` dan `user`,
+- logging `clientType`, `platform`, `deviceId` bila tersedia.
+
+Risiko utama:
+
+- endpoint baru membuka abuse surface jika tidak diberi rate limiting,
+- implementasi tanpa guard observability menyulitkan investigasi bila ada brute force.
+
+Indikator selesai:
+
+- mobile dapat login/register tanpa WebView,
+- Next.js tidak perlu diubah,
+- endpoint web lama tetap lulus smoke test yang sama.
+
+Checklist progres:
+
+- [x] Tambah route `POST /api/auth/login-client`
+- [x] Tambah route `POST /api/auth/register-client`
+- [x] Tambah schema request baru tanpa `captchaToken` wajib
+- [x] Reuse [`AuthService.login()`](../proyek-perangkat-lunak/backend/src/modules/auth/auth.service.ts:43)
+- [x] Reuse [`AuthService.register()`](../proyek-perangkat-lunak/backend/src/modules/auth/auth.service.ts:9)
+- [ ] Tambah rate limiting untuk route client baru
+- [x] Tambah logging `clientType`, `platform`, `deviceId`
+- [x] Pastikan response tetap mengandung `token` dan `user`
+- [x] Verifikasi flow web di [`signin`](../proyek-perangkat-lunak/src/app/auth/signin/page.tsx:103) tidak perlu perubahan
+
+### 11.3 Phase 2 - Hardening dan observability
+
+Tujuan:
+
+- membuat endpoint baru cukup aman dan terukur sebelum dipakai lebih luas.
+
+Ruang lingkup:
+
+- tambah error code eksplisit,
+- tambah audit log auth minimal,
+- rapikan telemetry dan fallback challenge,
+- evaluasi kebutuhan penyesuaian CORS hanya jika ada flow browser tambahan.
+
+Dependency:
+
+- endpoint client dari phase 1 sudah aktif,
+- logging backend tersedia,
+- baseline traffic/auth error mulai terlihat.
+
+Output/deliverable:
+
+- error code seperti `CAPTCHA_REQUIRED` atau `RISK_CHALLENGE_REQUIRED`,
+- log auth yang bisa dibedakan antara web dan mobile,
+- catatan threshold abuse untuk endpoint baru.
+
+Risiko utama:
+
+- tim merasa endpoint sudah aman padahal belum ada metrik dasar,
+- challenge ditambahkan terlalu cepat dan mengganggu UX mobile awal.
+
+Indikator selesai:
+
+- error auth client baru dapat dibaca dan dimonitor,
+- ada data cukup untuk menilai apakah mobile perlu challenge tambahan.
+
+Checklist progres:
+
+- [ ] Tambah error code auth yang eksplisit untuk challenge/risk
+- [x] Tambah audit log auth minimal
+- [x] Pisahkan telemetry web vs mobile pada log/monitoring
+- [x] Review [`cors.ts`](../proyek-perangkat-lunak/backend/src/config/cors.ts:5) hanya jika ada kebutuhan origin browser baru
+- [ ] Dokumentasikan kondisi kapan challenge tambahan mulai diaktifkan
+
+### 11.4 Phase 3 - Google mobile terpisah dari web sync
+
+Tujuan:
+
+- membuka jalur login Google mobile tanpa mengganggu alur NextAuth web yang sudah berjalan.
+
+Ruang lingkup:
+
+- tambah `POST /api/auth/google/mobile`,
+- verifikasi token provider mobile di backend,
+- pertahankan [`syncNextAuth()`](../proyek-perangkat-lunak/backend/src/modules/auth/auth.controller.ts:144) khusus web.
+
+Dependency:
+
+- phase 1 stabil,
+- strategi login Google native di mobile disepakati,
+- backend siap memisahkan kontrak Google web dan mobile.
+
+Output/deliverable:
+
+- endpoint Google mobile baru,
+- kontrak request/response terpisah dari web sync,
+- dokumentasi boundary yang jelas antara web Google dan mobile Google.
+
+Risiko utama:
+
+- tim tergoda memakai endpoint `sync` untuk mobile dan mencampur dua konteks auth yang berbeda,
+- scope provider dan callback flow tidak dipisah dengan jelas.
+
+Indikator selesai:
+
+- mobile tidak lagi bergantung pada flow Google web atau WebView untuk login Google,
+- flow web Google tetap memakai jalur lama tanpa regresi.
+
+Checklist progres:
+
+- [x] Tambah route `POST /api/auth/google/mobile`
+- [x] Definisikan payload minimum seperti `idToken`, `clientType`, `deviceId`, `platform`
+- [x] Pertahankan [`POST /api/auth/sync`](../proyek-perangkat-lunak/backend/src/modules/auth/auth.routes.ts:22) khusus web
+- [x] Verifikasi flow [`googleCallback()`](../proyek-perangkat-lunak/backend/src/modules/auth/auth.controller.ts:169) tidak berubah
+- [x] Dokumentasikan perbedaan web Google sync vs mobile Google native
+
+### 11.5 Phase 4 - Transisi ke target arsitektur menengah
+
+Tujuan:
+
+- mengurangi solusi sementara dan bergerak menuju target arsitektur pada dokumen 11.
+
+Ruang lingkup:
+
+- tambah `POST /api/auth/refresh`,
+- tambahkan refresh token rotation,
+- tambahkan session/revocation per device,
+- rapikan strategi auth agar lebih client-aware.
+
+Dependency:
+
+- phase 1 sampai phase 3 stabil,
+- kebutuhan mobile production sudah jelas,
+- model session/device siap ditambahkan.
+
+Output/deliverable:
+
+- refresh flow mobile yang eksplisit,
+- session table atau mekanisme revocation per device,
+- peta migrasi dari JWT tunggal ke token pair yang lebih sehat.
+
+Risiko utama:
+
+- refactor terlalu cepat sebelum endpoint dasar stabil,
+- perubahan session lifecycle memukul kompatibilitas client lama jika tidak dirancang bertahap.
+
+Indikator selesai:
+
+- mobile tidak lagi mengandalkan token jangka panjang tunggal,
+- arah arsitektur mulai selaras dengan target pada [`11-mobile-login-architecture.md`](./11-mobile-login-architecture.md).
+
+Checklist progres:
+
+- [ ] Tambah route `POST /api/auth/refresh`
+- [ ] Definisikan refresh token rotation
+- [ ] Tambah session/revocation per device
+- [ ] Review kebutuhan storage aman di mobile terhadap token pair
+- [ ] Tandai bagian solusi sementara yang siap dipensiunkan
 
 ## 12. Checklist Dampak ke Next.js
 
 ### 12.1 Target dampak minimal
 
-- [ ] Tidak perlu ubah [`src/app/auth/signin/page.tsx`](../proyek-perangkat-lunak/src/app/auth/signin/page.tsx)
-- [ ] Tidak perlu ubah [`src/app/auth/signup/page.tsx`](../proyek-perangkat-lunak/src/app/auth/signup/page.tsx)
-- [ ] Tidak perlu ubah [`src/lib/auth/sync.ts`](../proyek-perangkat-lunak/src/lib/auth/sync.ts)
-- [ ] Tidak perlu ubah middleware auth web di [`src/middleware.ts`](../proyek-perangkat-lunak/src/middleware.ts)
-- [ ] Tidak perlu ubah struktur cookie/token web yang ada sekarang
+- [x] Tidak perlu ubah [`src/app/auth/signin/page.tsx`](../proyek-perangkat-lunak/src/app/auth/signin/page.tsx:103)
+- [x] Tidak perlu ubah [`src/app/auth/signup/page.tsx`](../proyek-perangkat-lunak/src/app/auth/signup/page.tsx:109)
+- [x] Tidak perlu ubah [`src/lib/auth/sync.ts`](../proyek-perangkat-lunak/src/lib/auth/sync.ts:16)
+- [x] Tidak perlu ubah middleware auth web di [`src/middleware.ts`](../proyek-perangkat-lunak/src/middleware.ts:4)
+- [x] Tidak perlu ubah struktur cookie/token web yang ada sekarang
 
 ### 12.2 Hanya jika nanti diperlukan
 
-- [ ] Tambah dokumentasi bahwa endpoint baru tersedia untuk mobile/client lain
-- [ ] Bila ingin telemetry lebih baik, Next.js bisa mengirim `clientType=web` secara eksplisit nanti, tetapi ini bukan kebutuhan awal
+- [x] Tambah dokumentasi bahwa endpoint baru tersedia untuk mobile/client lain
+- [x] Bila ingin telemetry lebih baik, Next.js bisa mengirim `clientType=web` secara eksplisit nanti, tetapi ini bukan kebutuhan awal
+- [x] Evaluasi ulang flow web hanya setelah endpoint client baru stabil
 
-## 13. Mana yang Bisa Dilakukan Segera dan Mana yang Ditunda
+## 13. Jembatan ke Target Arsitektur Dokumen 11
 
-### 13.1 Lakukan segera
+Dokumen ini sengaja tidak menyalin ulang seluruh target arsitektur pada [`11-mobile-login-architecture.md`](./11-mobile-login-architecture.md), tetapi menjadi jembatan transisinya.
 
-- tambah endpoint baru terpisah,
-- tambah schema baru,
-- reuse service auth lama,
-- pertahankan endpoint web lama,
-- tambahkan rate limit dan logging,
-- dokumentasikan kontrak request/response.
+Pemetaan transisinya:
 
-### 13.2 Tunda dulu
+- phase 1 menyelesaikan hambatan paling mendesak: mobile bisa login/register tanpa bergantung pada WebView,
+- phase 2 menambah pagar keamanan dan observability agar endpoint baru tidak menjadi bypass tak terukur,
+- phase 3 memisahkan Google mobile dari jalur [`sync`](../proyek-perangkat-lunak/src/lib/auth/sync.ts:16) yang khusus web,
+- phase 4 mulai mengadopsi token lifecycle yang lebih sehat seperti yang sudah direkomendasikan pada dokumen 11.
 
-- mewajibkan `clientType` di semua endpoint,
-- menghapus CAPTCHA dari flow web lama,
-- menyatukan semua flow Google web dan mobile,
-- mengganti flow login Next.js,
-- mengganti arsitektur sync NextAuth,
-- refactor besar auth menjadi strategy engine penuh.
+Dengan struktur ini, solusi minimal-change tetap punya arah penghentian yang jelas dan tidak berhenti sebagai kompromi permanen.
 
 ## 14. Rekomendasi Final yang Paling Disarankan
 
 Keputusan final yang paling disarankan untuk prioritas sekarang:
 
+- implementasi pada dokumen ini layak dimulai sekarang untuk fase awal,
+- dokumen 11 dan 12 sebaiknya tetap dipisah dengan peran yang berbeda,
 - prioritas endpoint: `POST /api/auth/login-client`, lalu `POST /api/auth/register-client`, lalu `POST /api/auth/google/mobile`,
 - `clientType`: opsional secara global, jangan diwajibkan pada endpoint lama; boleh dinormalisasi dan dicatat di backend,
-- CAPTCHA: jangan skip otomatis hanya karena request mengaku mobile; lebih aman buat endpoint client baru tanpa CAPTCHA wajib, tetapi lindungi dengan rate limiting dan logging,
+- CAPTCHA: jangan skip otomatis hanya karena request mengaku mobile; lebih aman buat endpoint client baru tanpa CAPTCHA wajib, tetapi saat ini baru dilindungi logging dasar dan pemisahan endpoint, sedangkan rate limiting masih follow-up,
 - Next.js: jangan diubah dulu kecuali untuk dokumentasi; flow [`signin`](../proyek-perangkat-lunak/src/app/auth/signin/page.tsx), [`sync`](../proyek-perangkat-lunak/src/lib/auth/sync.ts), dan Google web yang ada sekarang sebaiknya dibiarkan tetap berjalan,
 - compatibility layer: pertahankan endpoint web lama apa adanya dan tambahkan endpoint baru terpisah agar client baru bisa jalan tanpa mengganggu web lama.
 

@@ -3,14 +3,45 @@ import { AuthRequest } from '../../middleware/auth';
 import { AuthService } from './auth.service';
 import { GoogleOAuthService } from './google-oauth.service';
 import { sendSuccess } from '../../lib/response';
-import { RegisterInput, LoginInput } from './auth.validation';
+import {
+  RegisterInput,
+  LoginInput,
+  ClientRegisterInput,
+  ClientLoginInput,
+  MobileGoogleInput,
+} from './auth.validation';
 import { env } from '../../config/env';
 import { verifyTurnstileToken, getErrorMessage } from '../../lib/captcha/turnstile.service';
+import { BadRequestError } from '../../lib/errors';
 
 const authService = new AuthService();
 const googleOAuthService = new GoogleOAuthService();
 
+type ClientAuthMetadata = {
+  clientType?: string;
+  deviceId?: string;
+  appVersion?: string;
+  platform?: string;
+};
+
 export class AuthController {
+  private getClientAuthMetadata(req: AuthRequest): ClientAuthMetadata {
+    const { clientType, deviceId, appVersion, platform } = req.body ?? {};
+
+    return { clientType, deviceId, appVersion, platform };
+  }
+
+  private logClientAuthEvent(action: string, req: AuthRequest, extra?: Record<string, unknown>) {
+    const metadata = this.getClientAuthMetadata(req);
+
+    console.info(`[auth:${action}] client flow`, {
+      email: req.body?.email,
+      ip: req.ip || req.socket.remoteAddress,
+      userAgent: req.headers['user-agent'],
+      ...metadata,
+      ...extra,
+    });
+  }
   async register(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const data: RegisterInput = req.body;
@@ -92,6 +123,74 @@ export class AuthController {
       console.error('[auth:login] failed', {
         email: req.body?.email,
         error: error instanceof Error ? error.message : error,
+      });
+      next(error);
+    }
+  }
+
+  async registerClient(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const data: ClientRegisterInput = req.body;
+      this.logClientAuthEvent('register-client', req);
+      const result = await authService.register(data);
+      sendSuccess(res, result, 'Registration successful', 201);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async loginClient(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const data: ClientLoginInput = req.body;
+      this.logClientAuthEvent('login-client', req);
+      const result = await authService.login(data);
+      sendSuccess(res, result, 'Login successful');
+    } catch (error) {
+      console.error('[auth:login-client] failed', {
+        email: req.body?.email,
+        error: error instanceof Error ? error.message : error,
+        ...this.getClientAuthMetadata(req),
+      });
+      next(error);
+    }
+  }
+
+  async googleMobile(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const data: MobileGoogleInput = req.body;
+      this.logClientAuthEvent('google-mobile', req);
+
+      const tokenInfoResponse = await fetch(
+        `https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(data.idToken)}`
+      );
+
+      if (!tokenInfoResponse.ok) {
+        throw new BadRequestError('Invalid or expired Google ID token');
+      }
+
+      const tokenInfo = await tokenInfoResponse.json() as { email?: string; name?: string };
+      const email = tokenInfo.email;
+      const name = tokenInfo.name || 'Google User';
+
+      if (!email) {
+        throw new BadRequestError('Could not determine email from Google ID token');
+      }
+
+      const user = await authService.findOrCreateFromGoogle(email, name);
+      const token = authService.generateToken(user.id);
+
+      sendSuccess(res, {
+        token,
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+        },
+      }, 'Mobile Google login successful');
+    } catch (error) {
+      console.error('[auth:google-mobile] failed', {
+        error: error instanceof Error ? error.message : error,
+        ...this.getClientAuthMetadata(req),
       });
       next(error);
     }

@@ -600,7 +600,79 @@ Ringkasan akhir:
 
 Jika pertanyaannya adalah “stack pakai apa dan database apa apakah bisa pakai JDBC atau tidak?”, maka jawaban paling tepat adalah:
 
-> Backend ini memakai **Express + TypeScript + Prisma + MySQL**.  
-> Database-nya **MySQL**.  
-> **Tidak memakai JDBC** pada implementasi sekarang.  
+> Backend ini memakai **Express + TypeScript + Prisma + MySQL**.
+> Database-nya **MySQL**.
+> **Tidak memakai JDBC** pada implementasi sekarang.
 > Jika ingin JDBC, harus memakai backend Java terpisah atau migrasi stack ke Java.
+
+## 23. Rekondisi Endpoint Auth untuk Kebutuhan Mobile Sementara
+
+Bagian ini menjelaskan penyesuaian backend yang disarankan agar aplikasi mobile dapat memakai auth native tanpa memaksa refactor besar pada flow web yang sekarang berjalan di [`/auth/signin`](../src/app/auth/signin/page.tsx:103), [`/auth/signup`](../src/app/auth/signup/page.tsx:109), dan sinkronisasi NextAuth ke Express pada [`syncNextAuth()`](../backend/src/modules/auth/auth.controller.ts:144).
+
+### 23.1 Kenapa endpoint khusus mobile diperlukan
+
+Kebutuhan endpoint khusus mobile muncul karena flow auth web saat ini masih browser-centric:
+
+- login/register web lama bergantung pada schema validasi yang mewajibkan `captchaToken` di [`auth.validation.ts`](../backend/src/modules/auth/auth.validation.ts:3),
+- Google login web melewati NextAuth lalu disinkronkan ke backend melalui [`POST /api/auth/sync`](../backend/src/modules/auth/auth.routes.ts:19),
+- aplikasi mobile saat ini masih memakai bridge WebView pada [`WebViewAuth`](../../pemrograman-mobile/src/components/WebViewAuth.tsx:13), bukan kontrak backend native yang bersih.
+
+Karena itu, menambah endpoint client baru lebih aman daripada mengubah default endpoint auth lama yang sudah dipakai web.
+
+### 23.2 Ruang lingkup sementara yang disarankan
+
+Ruang lingkup penyesuaian backend sementara yang kini sudah diterapkan dibatasi pada:
+
+- menambah [`POST /api/auth/login-client`](../backend/src/modules/auth/auth.routes.ts:13) untuk login credentials mobile/non-web,
+- menambah [`POST /api/auth/register-client`](../backend/src/modules/auth/auth.routes.ts:12) untuk registrasi mobile/non-web,
+- menambah [`POST /api/auth/google/mobile`](../backend/src/modules/auth/auth.routes.ts:21) untuk login Google mobile native,
+- tetap menunda [`POST /api/auth/refresh`](../backend/src/modules/auth/auth.routes.ts:1) karena belum masuk fase stabilisasi berikutnya.
+
+Prinsip implementasinya tetap reuse service auth yang sudah ada di [`AuthService.register()`](../backend/src/modules/auth/auth.service.ts:14) dan [`AuthService.login()`](../backend/src/modules/auth/auth.service.ts:48), lalu membedakan validation/controller layer untuk client baru di [`auth.validation.ts`](../backend/src/modules/auth/auth.validation.ts:18) dan [`AuthController`](../backend/src/modules/auth/auth.controller.ts:23).
+
+### 23.3 Dampak ke backend yang sudah ada
+
+Dampak yang diterapkan sengaja dibuat kecil:
+
+- route auth bertambah, tetapi endpoint lama tetap dipertahankan,
+- schema validasi baru ditambahkan tanpa menghapus validasi web lama,
+- service domain auth tetap dipakai ulang,
+- kontrak response tetap mempertahankan pasangan `token` dan `user` agar konsisten dengan pola lama,
+- controller client baru menambahkan logging metadata dasar `clientType`, `platform`, `deviceId`, dan `appVersion` bila tersedia.
+
+Dengan pendekatan ini, perubahan lebih banyak terjadi pada lapisan masuk request daripada pada inti domain auth.
+
+### 23.4 Prinsip kompatibilitas terhadap flow web yang sudah berjalan
+
+Agar flow web tetap stabil, prinsip kompatibilitasnya adalah:
+
+- jangan ubah perilaku default [`POST /api/auth/login`](../backend/src/modules/auth/auth.routes.ts:12),
+- jangan ubah perilaku default [`POST /api/auth/register`](../backend/src/modules/auth/auth.routes.ts:11),
+- jangan ubah fungsi [`POST /api/auth/sync`](../backend/src/modules/auth/auth.routes.ts:19) sebagai bridge dari NextAuth web,
+- jangan ubah callback Google web pada [`googleCallback()`](../backend/src/modules/auth/auth.controller.ts:121),
+- semua perilaku baru untuk mobile harus bersifat opt-in melalui endpoint baru.
+
+CAPTCHA web juga tetap dipertahankan pada flow lama. Endpoint mobile baru tidak mewajibkan CAPTCHA, tetapi saat ini kompensasinya baru berupa pemisahan endpoint dan logging metadata dasar; rate limiting dan challenge adaptif masih menjadi follow-up hardening yang belum diterapkan pada batch ini.
+
+### 23.5 Endpoint yang sekarang tersedia untuk mobile
+
+Endpoint auth tambahan yang sekarang tersedia di backend adalah:
+
+- [`POST /api/auth/register-client`](../backend/src/modules/auth/auth.routes.ts:12) menerima `name`, `email`, `password`, serta metadata opsional seperti `clientType`, `deviceId`, `platform`, dan `appVersion`.
+- [`POST /api/auth/login-client`](../backend/src/modules/auth/auth.routes.ts:13) menerima `email`, `password`, serta metadata opsional yang sama.
+- [`POST /api/auth/google/mobile`](../backend/src/modules/auth/auth.routes.ts:21) menerima `idToken` Google beserta metadata client opsional, lalu memverifikasi token ke Google `tokeninfo` sebelum menerbitkan JWT backend.
+
+Ketiga endpoint baru ini mengembalikan response auth yang tetap kompatibel dengan pola lama, yaitu tetap mengandung `token` dan `user`, sehingga mobile dapat menggunakannya tanpa perubahan kontrak besar di layer penyimpanan auth.
+
+### 23.6 Arah penyatuan atau penghapusan di masa depan
+
+Endpoint khusus mobile ini sebaiknya diperlakukan sebagai **lapisan transisi**, bukan bentuk final arsitektur auth.
+
+Arah jangka menengahnya:
+
+- pisahkan dengan tegas flow Google mobile dari flow sync NextAuth web,
+- tambahkan refresh token dan session per device,
+- ubah backend menjadi auth authority multi-client yang lebih eksplisit seperti arah pada [`11-mobile-login-architecture.md`](../../pemrograman-mobile/docs/11-mobile-login-architecture.md),
+- setelah kontrak multi-client stabil, evaluasi apakah endpoint sementara tetap dipertahankan sebagai public contract atau digabung ke surface auth yang lebih rapi.
+
+Dengan kata lain, backend boleh menambah endpoint khusus mobile sekarang untuk membuka integrasi cepat, tetapi keputusan jangka panjang tetap mengarah pada penyederhanaan surface auth setelah kebutuhan mobile sudah mapan.

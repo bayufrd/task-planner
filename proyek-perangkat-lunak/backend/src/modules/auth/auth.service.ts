@@ -3,10 +3,15 @@ import jwt, { SignOptions } from 'jsonwebtoken';
 import { prisma } from '../../lib/prisma';
 import { env } from '../../config/env';
 import { ConflictError, UnauthorizedError } from '../../lib/errors';
-import { RegisterInput, LoginInput } from './auth.validation';
+import {
+  RegisterInput,
+  LoginInput,
+  ClientRegisterInput,
+  ClientLoginInput,
+} from './auth.validation';
 
 export class AuthService {
-  async register(data: RegisterInput) {
+  async register(data: RegisterInput | ClientRegisterInput) {
     const existingUser = await prisma.user.findUnique({
       where: { email: data.email },
     });
@@ -40,7 +45,7 @@ export class AuthService {
     return { user, token };
   }
 
-  async login(data: LoginInput) {
+  async login(data: LoginInput | ClientLoginInput) {
     const user = await prisma.user.findUnique({
       where: { email: data.email },
     });

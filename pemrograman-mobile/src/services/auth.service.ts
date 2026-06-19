@@ -1,18 +1,30 @@
 import api from "./api";
-import { AuthResponse, User } from "../types";
+import { AuthResponse, ClientAuthPayload, User } from "../types";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Platform } from "react-native";
+
+const normalizeAuthResponse = (payload: AuthResponse) => payload.data ?? payload;
+
+const buildClientPayload = (data: ClientAuthPayload): ClientAuthPayload => ({
+  clientType: "mobile",
+  platform: Platform.OS,
+  ...data,
+});
 
 export const authService = {
-  login: async (data: any) => {
-    const response = await api.post<AuthResponse>("/auth/login", data);
-    if (response.data.token) {
-      await AsyncStorage.setItem("auth-token", response.data.token);
+  login: async (data: ClientAuthPayload) => {
+    const response = await api.post<AuthResponse>("/auth/login-client", buildClientPayload(data));
+    const normalized = normalizeAuthResponse(response.data);
+
+    if (normalized.token) {
+      await AsyncStorage.setItem("auth-token", normalized.token);
     }
-    return response.data;
+
+    return normalized;
   },
-  register: async (data: any) => {
-    const response = await api.post<AuthResponse>("/auth/register", data);
-    return response.data;
+  register: async (data: ClientAuthPayload & { name: string }) => {
+    const response = await api.post<AuthResponse>("/auth/register-client", buildClientPayload(data));
+    return normalizeAuthResponse(response.data);
   },
   logout: async () => {
     await AsyncStorage.removeItem("auth-token");
