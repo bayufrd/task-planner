@@ -182,14 +182,16 @@ Kenapa bukan memakai endpoint [`/api/auth/sync`](../proyek-perangkat-lunak/src/l
 
 ### 4.4 Prioritas 4 — [`POST /api/auth/refresh`](../proyek-perangkat-lunak/backend/src/modules/auth/auth.routes.ts)
 
-Ini penting, tetapi bukan yang paling pertama jika target Anda adalah “integrasi cepat tanpa refactor besar”.
+Endpoint ini sekarang sudah ditambahkan sebagai bagian dari rollout minimal-change, tetapi tetap diposisikan sebagai kontrak mobile terpisah agar tidak mengubah flow login web lama.
 
-Kalau waktu terbatas, endpoint ini bisa ditunda ke fase stabilisasi, dengan catatan:
+Status implementasi saat ini:
 
-- mobile tahap awal masih bisa jalan memakai JWT lama seperti sekarang,
-- nanti saat stabilisasi baru tambahkan refresh flow.
+- mobile auth backend sudah dapat menerbitkan pasangan `token` + `refreshToken`,
+- endpoint [`POST /api/auth/refresh`](../proyek-perangkat-lunak/backend/src/modules/auth/auth.routes.ts:34) sudah tersedia untuk rotasi refresh token,
+- penyimpanan refresh minimal sementara memakai model `Session` yang sudah ada di backend,
+- konsumsi refresh flow di client mobile masih bertahap dan belum menjadi auto-refresh penuh.
 
-Jika tetap ingin ditambahkan sekarang, buat kontraknya terpisah dan jangan ubah cara kerja login web lama.
+Artinya, fase stabilisasi berikutnya lebih berfokus pada konsumsi client, storage aman, dan lifecycle device session; bukan lagi pada ketersediaan route backend dasarnya.
 
 ## 5. Endpoint yang Tidak Perlu Diubah Sekarang
 
@@ -231,6 +233,8 @@ Format response yang direkomendasikan untuk semua endpoint auth baru:
 Field tambahan boleh ditaruh di samping `token` dan `user`, misalnya:
 
 - `refreshToken`,
+- `tokenType`,
+- `expiresIn`,
 - `provider`,
 - `authContext`,
 - `sessionId`.
@@ -328,9 +332,10 @@ Untuk menjaga web lama tetap jalan sambil endpoint baru ditambahkan, gunakan com
 
 ### 9.2 Tambahkan flow baru terpisah
 
-- [`POST /api/auth/login-client`](../proyek-perangkat-lunak/backend/src/modules/auth/auth.routes.ts),
-- [`POST /api/auth/register-client`](../proyek-perangkat-lunak/backend/src/modules/auth/auth.routes.ts),
-- [`POST /api/auth/google/mobile`](../proyek-perangkat-lunak/backend/src/modules/auth/auth.routes.ts).
+- [`POST /api/auth/login-client`](../proyek-perangkat-lunak/backend/src/modules/auth/auth.routes.ts:26),
+- [`POST /api/auth/register-client`](../proyek-perangkat-lunak/backend/src/modules/auth/auth.routes.ts:25),
+- [`POST /api/auth/google/mobile`](../proyek-perangkat-lunak/backend/src/modules/auth/auth.routes.ts:33),
+- [`POST /api/auth/refresh`](../proyek-perangkat-lunak/backend/src/modules/auth/auth.routes.ts:34).
 
 ### 9.3 Reuse service lama, beda validation/controller layer
 
@@ -358,8 +363,8 @@ Alasannya praktis:
 Namun, layak diterapkan sekarang tidak berarti seluruh desain auth mobile final sudah siap. Batas keputusan saat ini adalah:
 
 - layak untuk membuka jalur login/register mobile native tanpa merusak web,
-- belum final untuk session lifecycle mobile jangka panjang,
-- belum final untuk refresh token, revocation, dan device session,
+- refresh token minimal backend sudah tersedia, tetapi lifecycle mobile jangka panjang belum final,
+- revocation per device dan secure storage mobile masih belum final,
 - belum final untuk Google login native production-grade.
 
 Keputusan operasionalnya: mulai implementasi fase awal sekarang, tetapi tetap anggap dokumen ini sebagai rollout plan sementara menuju target arsitektur pada [`11-mobile-login-architecture.md`](./11-mobile-login-architecture.md).
@@ -478,7 +483,7 @@ Checklist progres:
 - [x] Tambah schema request baru tanpa `captchaToken` wajib
 - [x] Reuse [`AuthService.login()`](../proyek-perangkat-lunak/backend/src/modules/auth/auth.service.ts:43)
 - [x] Reuse [`AuthService.register()`](../proyek-perangkat-lunak/backend/src/modules/auth/auth.service.ts:9)
-- [ ] Tambah rate limiting untuk route client baru
+- [x] Tambah rate limiting untuk route client baru
 - [x] Tambah logging `clientType`, `platform`, `deviceId`
 - [x] Pastikan response tetap mengandung `token` dan `user`
 - [x] Tambah metadata response client ringan seperti `authContext` dan `provider` tanpa mengubah kontrak `token` + `user`
@@ -596,12 +601,12 @@ Dependency:
 
 - phase 1 sampai phase 3 stabil,
 - kebutuhan mobile production sudah jelas,
-- model session/device siap ditambahkan.
+- strategi penyimpanan session/device minimum disepakati; implementasi saat ini sementara reuse model `Session` yang sudah ada.
 
 Output/deliverable:
 
 - refresh flow mobile yang eksplisit,
-- session table atau mekanisme revocation per device,
+- mekanisme session/revocation minimum yang bisa dipakai tanpa migrasi schema besar,
 - peta migrasi dari JWT tunggal ke token pair yang lebih sehat.
 
 Risiko utama:
@@ -616,9 +621,9 @@ Indikator selesai:
 
 Checklist progres:
 
-- [ ] Tambah route `POST /api/auth/refresh`
-- [ ] Definisikan refresh token rotation
-- [ ] Tambah session/revocation per device
+- [x] Tambah route `POST /api/auth/refresh`
+- [x] Definisikan refresh token rotation
+- [x] Tambah session/revocation per device minimum via reuse model `Session`
 - [ ] Review kebutuhan storage aman di mobile terhadap token pair
 - [ ] Tandai bagian solusi sementara yang siap dipensiunkan
 
@@ -656,9 +661,10 @@ Dengan struktur ini, solusi minimal-change tetap punya arah penghentian yang jel
 Batch implementasi yang sudah selesai pada fase minimal-change saat ini:
 
 - mobile service di [`auth.service.ts`](../src/services/auth.service.ts:6) sudah menormalkan response `success/data` dan tetap membaca pasangan `token` + `user`,
-- tipe response mobile di [`index.ts`](../src/types/index.ts:26) sudah diperluas secara kompatibel untuk `authContext` dan `provider`,
+- tipe response mobile di [`index.ts`](../src/types/index.ts:26) sudah diperluas secara kompatibel untuk `refreshToken`, `tokenType`, `expiresIn`, `sessionId`, `authContext`, dan `provider`,
 - login screen native di [`login.tsx`](../src/app/(auth)/login.tsx:53) sudah memakai redirect konsisten ke route tab dashboard,
-- backend client auth di [`auth.controller.ts`](../proyek-perangkat-lunak/backend/src/modules/auth/auth.controller.ts:131) sekarang menambahkan `authContext` untuk route client dan `provider` untuk Google mobile,
+- backend client auth di [`auth.controller.ts`](../proyek-perangkat-lunak/backend/src/modules/auth/auth.controller.ts:132) sekarang menambahkan `authContext` untuk route client, `provider` untuk Google mobile, dan token pair untuk route mobile,
+- backend refresh minimal tersedia di [`refresh()`](../proyek-perangkat-lunak/backend/src/modules/auth/auth.controller.ts:239) dengan rotasi token di [`refreshMobileToken()`](../proyek-perangkat-lunak/backend/src/modules/auth/auth.service.ts:145),
 - flow web lama di [`signin`](../proyek-perangkat-lunak/src/app/auth/signin/page.tsx:103), [`callback`](../proyek-perangkat-lunak/src/app/auth/callback/page.tsx:7), dan [`sync`](../proyek-perangkat-lunak/src/lib/auth/sync.ts:16) tidak diubah.
 
 Verifikasi batch ini:
@@ -666,28 +672,30 @@ Verifikasi batch ini:
 - build backend lulus melalui [`npm run build`](../proyek-perangkat-lunak/backend/package.json:7),
 - type-check mobile lulus melalui [`npx tsc --noEmit`](../pemrograman-mobile/package.json).
 
-Follow-up yang masih terbuka untuk batch berikutnya tetap sama:
+Follow-up yang masih terbuka untuk batch berikutnya sekarang lebih sempit:
 
-- refresh/session lifecycle yang masih ditunda ke fase berikutnya.
+- konsumsi `refreshToken` di client mobile masih perlu dirapikan,
+- secure storage untuk token pair masih perlu direview,
+- revocation/device session masih bersifat minimum dan belum device-metadata aware.
 
 ## 14. Rekomendasi Final yang Paling Disarankan
 
 Keputusan final yang paling disarankan untuk prioritas sekarang:
 
-- implementasi pada dokumen ini layak dimulai sekarang untuk fase awal,
+- implementasi pada dokumen ini layak diteruskan dari fase awal ke hardening bertahap,
 - dokumen 11 dan 12 sebaiknya tetap dipisah dengan peran yang berbeda,
-- prioritas endpoint: `POST /api/auth/login-client`, lalu `POST /api/auth/register-client`, lalu `POST /api/auth/google/mobile`,
+- prioritas endpoint dasar sudah tercakup oleh `POST /api/auth/login-client`, `POST /api/auth/register-client`, `POST /api/auth/google/mobile`, dan `POST /api/auth/refresh`,
 - `clientType`: opsional secara global, jangan diwajibkan pada endpoint lama; boleh dinormalisasi dan dicatat di backend,
-- CAPTCHA: jangan skip otomatis hanya karena request mengaku mobile; lebih aman buat endpoint client baru tanpa CAPTCHA wajib, tetapi saat ini baru dilindungi logging dasar dan pemisahan endpoint, sedangkan rate limiting masih follow-up,
+- CAPTCHA: jangan skip otomatis hanya karena request mengaku mobile; endpoint client baru sekarang sudah dilindungi rate limiting in-memory dan challenge code adaptif awal,
 - Next.js: jangan diubah dulu kecuali untuk dokumentasi; flow [`signin`](../proyek-perangkat-lunak/src/app/auth/signin/page.tsx), [`sync`](../proyek-perangkat-lunak/src/lib/auth/sync.ts), dan Google web yang ada sekarang sebaiknya dibiarkan tetap berjalan,
 - compatibility layer: pertahankan endpoint web lama apa adanya dan tambahkan endpoint baru terpisah agar client baru bisa jalan tanpa mengganggu web lama.
 
-Jika hanya boleh memilih satu langkah paling prioritas, pilih ini:
+Jika hanya boleh memilih satu langkah paling prioritas berikutnya, pilih ini:
 
-1. tambahkan `POST /api/auth/login-client`,
+1. simpan dan kelola `refreshToken` mobile dengan aman,
 2. jangan sentuh `POST /api/auth/login` lama,
 3. jangan jadikan `clientType` wajib di web lama,
 4. jangan skip CAPTCHA otomatis berbasis klaim mobile,
-5. pasang rate limit di endpoint baru.
+5. lanjutkan hardening device-session dan auto-refresh secara bertahap.
 
-Itu adalah jalur paling aman, paling cepat, dan paling kecil risiko untuk menjaga aplikasi Next.js tetap stabil sambil membuka jalan integrasi mobile atau client lain.
+Itu adalah jalur paling aman, paling cepat, dan paling kecil risiko untuk menjaga aplikasi Next.js tetap stabil sambil merapikan lifecycle auth mobile yang sudah mulai tersedia di backend.

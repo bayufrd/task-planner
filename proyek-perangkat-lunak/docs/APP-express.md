@@ -623,12 +623,12 @@ Karena itu, menambah endpoint client baru lebih aman daripada mengubah default e
 
 Ruang lingkup penyesuaian backend sementara yang kini sudah diterapkan dibatasi pada:
 
-- menambah [`POST /api/auth/login-client`](../backend/src/modules/auth/auth.routes.ts:13) untuk login credentials mobile/non-web,
-- menambah [`POST /api/auth/register-client`](../backend/src/modules/auth/auth.routes.ts:12) untuk registrasi mobile/non-web,
-- menambah [`POST /api/auth/google/mobile`](../backend/src/modules/auth/auth.routes.ts:21) untuk login Google mobile native,
-- tetap menunda [`POST /api/auth/refresh`](../backend/src/modules/auth/auth.routes.ts:1) karena belum masuk fase stabilisasi berikutnya.
+- menambah [`POST /api/auth/login-client`](../backend/src/modules/auth/auth.routes.ts:26) untuk login credentials mobile/non-web,
+- menambah [`POST /api/auth/register-client`](../backend/src/modules/auth/auth.routes.ts:25) untuk registrasi mobile/non-web,
+- menambah [`POST /api/auth/google/mobile`](../backend/src/modules/auth/auth.routes.ts:33) untuk login Google mobile native,
+- menambah [`POST /api/auth/refresh`](../backend/src/modules/auth/auth.routes.ts:34) untuk rotasi refresh token mobile tanpa mengubah flow web lama.
 
-Prinsip implementasinya tetap reuse service auth yang sudah ada di [`AuthService.register()`](../backend/src/modules/auth/auth.service.ts:14) dan [`AuthService.login()`](../backend/src/modules/auth/auth.service.ts:48), lalu membedakan validation/controller layer untuk client baru di [`auth.validation.ts`](../backend/src/modules/auth/auth.validation.ts:18) dan [`AuthController`](../backend/src/modules/auth/auth.controller.ts:23).
+Prinsip implementasinya tetap reuse service auth yang sudah ada di [`AuthService.register()`](../backend/src/modules/auth/auth.service.ts:21) dan [`AuthService.login()`](../backend/src/modules/auth/auth.service.ts:55), lalu membedakan validation/controller layer untuk client baru di [`auth.validation.ts`](../backend/src/modules/auth/auth.validation.ts:18) dan [`AuthController`](../backend/src/modules/auth/auth.controller.ts:28).
 
 ### 23.3 Dampak ke backend yang sudah ada
 
@@ -652,17 +652,18 @@ Agar flow web tetap stabil, prinsip kompatibilitasnya adalah:
 - jangan ubah callback Google web pada [`googleCallback()`](../backend/src/modules/auth/auth.controller.ts:121),
 - semua perilaku baru untuk mobile harus bersifat opt-in melalui endpoint baru.
 
-CAPTCHA web juga tetap dipertahankan pada flow lama. Endpoint mobile baru tidak mewajibkan CAPTCHA, tetapi saat ini kompensasinya baru berupa pemisahan endpoint dan logging metadata dasar; rate limiting dan challenge adaptif masih menjadi follow-up hardening yang belum diterapkan pada batch ini.
+CAPTCHA web juga tetap dipertahankan pada flow lama. Endpoint mobile baru tidak mewajibkan CAPTCHA, tetapi kini kompensasinya sudah mencakup rate limiting in-memory per route client di [`rate-limit.ts`](../backend/src/middleware/rate-limit.ts:41), logging metadata dasar, serta challenge code awal seperti `CAPTCHA_REQUIRED` dan `RISK_CHALLENGE_REQUIRED` saat threshold abuse terlampaui.
 
 ### 23.5 Endpoint yang sekarang tersedia untuk mobile
 
 Endpoint auth tambahan yang sekarang tersedia di backend adalah:
 
-- [`POST /api/auth/register-client`](../backend/src/modules/auth/auth.routes.ts:12) menerima `name`, `email`, `password`, serta metadata opsional seperti `clientType`, `deviceId`, `platform`, dan `appVersion`.
-- [`POST /api/auth/login-client`](../backend/src/modules/auth/auth.routes.ts:13) menerima `email`, `password`, serta metadata opsional yang sama.
-- [`POST /api/auth/google/mobile`](../backend/src/modules/auth/auth.routes.ts:21) menerima `idToken` Google beserta metadata client opsional, lalu memverifikasi token ke Google `tokeninfo` sebelum menerbitkan JWT backend.
+- [`POST /api/auth/register-client`](../backend/src/modules/auth/auth.routes.ts:25) menerima `name`, `email`, `password`, serta metadata opsional seperti `clientType`, `deviceId`, `platform`, dan `appVersion`.
+- [`POST /api/auth/login-client`](../backend/src/modules/auth/auth.routes.ts:26) menerima `email`, `password`, serta metadata opsional yang sama.
+- [`POST /api/auth/google/mobile`](../backend/src/modules/auth/auth.routes.ts:33) menerima `idToken` Google beserta metadata client opsional, lalu memverifikasi token ke Google `tokeninfo` sebelum menerbitkan JWT backend.
+- [`POST /api/auth/refresh`](../backend/src/modules/auth/auth.routes.ts:34) menerima `refreshToken` beserta metadata client opsional untuk menerbitkan access token baru dan merotasi refresh token.
 
-Ketiga endpoint baru ini mengembalikan response auth yang tetap kompatibel dengan pola lama, yaitu tetap mengandung `token` dan `user`, sehingga mobile dapat menggunakannya tanpa perubahan kontrak besar di layer penyimpanan auth.
+Keempat endpoint baru ini mengembalikan response auth yang tetap kompatibel dengan pola lama, yaitu tetap mengandung `token` dan `user`, lalu secara aditif bisa menambahkan `refreshToken`, `tokenType`, `expiresIn`, `sessionId`, `authContext`, atau `provider`.
 
 ### 23.6 Arah penyatuan atau penghapusan di masa depan
 
@@ -671,7 +672,7 @@ Endpoint khusus mobile ini sebaiknya diperlakukan sebagai **lapisan transisi**, 
 Arah jangka menengahnya:
 
 - pisahkan dengan tegas flow Google mobile dari flow sync NextAuth web,
-- tambahkan refresh token dan session per device,
+- rapikan session per device dari implementasi minimum saat ini yang masih reuse model `Session`,
 - ubah backend menjadi auth authority multi-client yang lebih eksplisit seperti arah pada [`11-mobile-login-architecture.md`](../../pemrograman-mobile/docs/11-mobile-login-architecture.md),
 - setelah kontrak multi-client stabil, evaluasi apakah endpoint sementara tetap dipertahankan sebagai public contract atau digabung ke surface auth yang lebih rapi.
 
@@ -683,7 +684,7 @@ Section ini menambahkan ringkasan implementasi endpoint mobile di bagian paling 
 
 ### 24.1 Prinsip kompatibilitas
 
-Endpoint mobile baru di [`auth.routes.ts`](../backend/src/modules/auth/auth.routes.ts:17) sampai [`auth.routes.ts`](../backend/src/modules/auth/auth.routes.ts:28) ditambahkan tanpa mengubah perilaku default endpoint web lama pada [`POST /api/auth/login`](../backend/src/modules/auth/auth.routes.ts:18), [`POST /api/auth/register`](../backend/src/modules/auth/auth.routes.ts:17), dan [`POST /api/auth/sync`](../backend/src/modules/auth/auth.routes.ts:28).
+Endpoint mobile baru di [`auth.routes.ts`](../backend/src/modules/auth/auth.routes.ts:25) sampai [`auth.routes.ts`](../backend/src/modules/auth/auth.routes.ts:34) ditambahkan tanpa mengubah perilaku default endpoint web lama pada [`POST /api/auth/login`](../backend/src/modules/auth/auth.routes.ts:24), [`POST /api/auth/register`](../backend/src/modules/auth/auth.routes.ts:23), dan [`POST /api/auth/sync`](../backend/src/modules/auth/auth.routes.ts:35).
 
 Artinya:
 
@@ -693,8 +694,8 @@ Artinya:
 
 ### 24.2 `POST /api/auth/register-client`
 
-Route aktif: [`auth.routes.ts`](../backend/src/modules/auth/auth.routes.ts:19)
-Controller: [`registerClient()`](../backend/src/modules/auth/auth.controller.ts:131)
+Route aktif: [`auth.routes.ts`](../backend/src/modules/auth/auth.routes.ts:25)
+Controller: [`registerClient()`](../backend/src/modules/auth/auth.controller.ts:132)
 Schema: [`clientRegisterSchema`](../backend/src/modules/auth/auth.validation.ts:18)
 
 Request minimum:
@@ -712,14 +713,14 @@ Request minimum:
 Karakteristik:
 
 - tidak mewajibkan `captchaToken`,
-- tetap reuse [`AuthService.register()`](../backend/src/modules/auth/auth.service.ts:14),
+- tetap reuse [`AuthService.register()`](../backend/src/modules/auth/auth.service.ts:21),
 - response tetap mengandung `token` dan `user`,
-- response juga menambahkan `authContext.clientType` dan `authContext.captchaRequired=false` untuk konteks client ringan.
+- response juga menambahkan `refreshToken`, `tokenType`, `expiresIn`, `sessionId`, dan `authContext.clientType` untuk konteks client ringan.
 
 ### 24.3 `POST /api/auth/login-client`
 
-Route aktif: [`auth.routes.ts`](../backend/src/modules/auth/auth.routes.ts:20)
-Controller: [`loginClient()`](../backend/src/modules/auth/auth.controller.ts:142)
+Route aktif: [`auth.routes.ts`](../backend/src/modules/auth/auth.routes.ts:26)
+Controller: [`loginClient()`](../backend/src/modules/auth/auth.controller.ts:157)
 Schema: [`clientLoginSchema`](../backend/src/modules/auth/auth.validation.ts:28)
 
 Request minimum:
@@ -736,14 +737,14 @@ Request minimum:
 Karakteristik:
 
 - tidak mengubah endpoint web login lama,
-- tetap reuse [`AuthService.login()`](../backend/src/modules/auth/auth.service.ts:48),
-- logging metadata client dilakukan di [`logClientAuthEvent()`](../backend/src/modules/auth/auth.controller.ts:34),
-- response tetap kompatibel dengan pola lama dan kini menambahkan `authContext` ringan.
+- tetap reuse [`AuthService.login()`](../backend/src/modules/auth/auth.service.ts:55),
+- logging metadata client dilakukan di [`logClientAuthEvent()`](../backend/src/modules/auth/auth.controller.ts:35),
+- response tetap kompatibel dengan pola lama dan kini menambahkan `refreshToken`, `tokenType`, `expiresIn`, `sessionId`, dan `authContext` ringan.
 
 ### 24.4 `POST /api/auth/google/mobile`
 
-Route aktif: [`auth.routes.ts`](../backend/src/modules/auth/auth.routes.ts:27)
-Controller: [`googleMobile()`](../backend/src/modules/auth/auth.controller.ts:158)
+Route aktif: [`auth.routes.ts`](../backend/src/modules/auth/auth.routes.ts:33)
+Controller: [`googleMobile()`](../backend/src/modules/auth/auth.controller.ts:187)
 Schema: [`mobileGoogleSchema`](../backend/src/modules/auth/auth.validation.ts:37)
 
 Request minimum:
@@ -758,19 +759,43 @@ Request minimum:
 
 Karakteristik:
 
-- memverifikasi `idToken` ke endpoint Google `tokeninfo` di [`googleMobile()`](../backend/src/modules/auth/auth.controller.ts:163),
-- tidak memakai flow [`POST /api/auth/sync`](../backend/src/modules/auth/auth.routes.ts:28) yang tetap khusus NextAuth web,
+- memverifikasi `idToken` ke endpoint Google `tokeninfo` di [`googleMobile()`](../backend/src/modules/auth/auth.controller.ts:195),
+- tidak memakai flow [`POST /api/auth/sync`](../backend/src/modules/auth/auth.routes.ts:35) yang tetap khusus NextAuth web,
 - response auth tetap mengandung `token` dan `user`,
-- response menambahkan `provider: "google"` serta `authContext` ringan untuk client mobile.
+- response menambahkan `refreshToken`, `tokenType`, `expiresIn`, `sessionId`, `provider: "google"`, serta `authContext` ringan untuk client mobile.
 
-### 24.5 Catatan keamanan dan follow-up
+### 24.5 `POST /api/auth/refresh`
+
+Route aktif: [`auth.routes.ts`](../backend/src/modules/auth/auth.routes.ts:34)
+Controller: [`refresh()`](../backend/src/modules/auth/auth.controller.ts:239)
+Schema: [`refreshTokenSchema`](../backend/src/modules/auth/auth.validation.ts:45)
+
+Request minimum:
+
+```json
+{
+  "refreshToken": "mobile-refresh-token",
+  "clientType": "mobile",
+  "platform": "android"
+}
+```
+
+Karakteristik:
+
+- refresh token divalidasi terhadap session backend yang saat ini disimpan minimal lewat model [`Session`](../backend/prisma/schema.prisma:60),
+- rotasi token dilakukan di [`refreshMobileToken()`](../backend/src/modules/auth/auth.service.ts:145),
+- response tetap kompatibel karena masih mengandung `token` dan `user`,
+- response juga mengembalikan `refreshToken` baru, `tokenType`, `expiresIn`, `sessionId`, dan `authContext`.
+
+### 24.6 Catatan keamanan dan follow-up
 
 Implementasi saat ini sengaja minimal dan kompatibel, tetapi belum final untuk hardening production mobile.
 
 Follow-up yang masih terbuka:
 
-- rate limiting khusus route client baru belum diterapkan,
-- challenge/risk error code seperti `CAPTCHA_REQUIRED` atau `RISK_CHALLENGE_REQUIRED` belum diterapkan,
-- refresh token dan session per device masih ditunda ke fase berikutnya.
+- rate limiting route client baru sudah diterapkan, tetapi masih in-memory dan belum distributed,
+- challenge/risk error code seperti `CAPTCHA_REQUIRED` atau `RISK_CHALLENGE_REQUIRED` sudah diterapkan sebagai hardening awal,
+- session per device masih bersifat minimum karena reuse model `Session`, belum menyimpan metadata device secara penuh,
+- secure storage dan auto-refresh di aplikasi mobile masih perlu dirapikan.
 
-Jadi status saat ini adalah: endpoint mobile native dasar sudah tersedia, flow web lama tetap tidak disentuh, dan hardening lanjutan masih menjadi batch berikutnya.
+Jadi status saat ini adalah: endpoint mobile native dasar dan refresh minimal sudah tersedia, flow web lama tetap tidak disentuh, dan hardening lanjutan masih menjadi batch berikutnya.

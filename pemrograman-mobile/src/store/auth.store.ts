@@ -28,12 +28,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         console.log("[AuthStore] Hydrated - user:", user?.email);
       } else {
         // Clear stale data
-        await AsyncStorage.multiRemove(["auth-token", "auth-user"]);
+        await AsyncStorage.multiRemove(["auth-token", "auth-refresh-token", "auth-session-id", "auth-user"]);
         set({ isHydrated: true });
       }
     } catch (e) {
       console.error("[AuthStore] Hydrate error:", e);
-      await AsyncStorage.multiRemove(["auth-token", "auth-user"]);
+      await AsyncStorage.multiRemove(["auth-token", "auth-refresh-token", "auth-session-id", "auth-user"]);
       set({ isHydrated: true });
     }
   },

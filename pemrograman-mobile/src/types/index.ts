@@ -56,6 +56,7 @@ export interface AuthResponse {
 export interface ClientAuthPayload {
   email: string;
   password: string;
+  refreshToken?: string;
   clientType?: 'mobile' | 'web' | 'internal' | 'unknown';
   deviceId?: string;
   appVersion?: string;
