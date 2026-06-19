@@ -52,7 +52,7 @@ export default function LoginScreen() {
     
     if (user && token) {
       console.log("[Login] Has user/token, redirecting to dashboard");
-      router.replace("/(main)/dashboard");
+      router.replace("/(main)/(tabs)/dashboard");
     } else {
       setIsChecking(false);
     }
@@ -66,7 +66,7 @@ export default function LoginScreen() {
 
     try {
       await setAuth(authUser, authToken);
-      router.replace("/(main)/dashboard");
+      router.replace("/(main)/(tabs)/dashboard");
     } catch (e) {
       console.error("Error saving auth:", e);
     }
@@ -92,7 +92,7 @@ export default function LoginScreen() {
       }
 
       await setAuth(result.user, result.token);
-      router.replace("/(main)/dashboard");
+      router.replace("/(main)/(tabs)/dashboard");
     } catch (e: any) {
       const message =
         e?.response?.data?.error?.message ||

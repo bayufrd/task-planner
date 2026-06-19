@@ -1,9 +1,18 @@
 import api from "./api";
-import { AuthResponse, ClientAuthPayload, User } from "../types";
+import { AuthResponse, AuthResponseData, ClientAuthPayload, User } from "../types";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Platform } from "react-native";
 
-const normalizeAuthResponse = (payload: AuthResponse) => payload.data ?? payload;
+const normalizeAuthResponse = (payload: AuthResponse): AuthResponseData => {
+  const normalized = payload.data ?? payload;
+
+  return {
+    user: normalized.user as User,
+    token: normalized.token as string,
+    authContext: normalized.authContext,
+    provider: normalized.provider,
+  };
+};
 
 const buildClientPayload = (data: ClientAuthPayload): ClientAuthPayload => ({
   clientType: "mobile",
@@ -24,13 +33,19 @@ export const authService = {
   },
   register: async (data: ClientAuthPayload & { name: string }) => {
     const response = await api.post<AuthResponse>("/auth/register-client", buildClientPayload(data));
-    return normalizeAuthResponse(response.data);
+    const normalized = normalizeAuthResponse(response.data);
+
+    if (normalized.token) {
+      await AsyncStorage.setItem("auth-token", normalized.token);
+    }
+
+    return normalized;
   },
   logout: async () => {
     await AsyncStorage.removeItem("auth-token");
   },
   getProfile: async () => {
-    const response = await api.get<User>("/auth/me");
-    return response.data;
+    const response = await api.get<AuthResponse>("/auth/me");
+    return normalizeAuthResponse(response.data).user;
   },
 };

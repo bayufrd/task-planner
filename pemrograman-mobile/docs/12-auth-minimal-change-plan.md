@@ -481,6 +481,7 @@ Checklist progres:
 - [ ] Tambah rate limiting untuk route client baru
 - [x] Tambah logging `clientType`, `platform`, `deviceId`
 - [x] Pastikan response tetap mengandung `token` dan `user`
+- [x] Tambah metadata response client ringan seperti `authContext` dan `provider` tanpa mengubah kontrak `token` + `user`
 - [x] Verifikasi flow web di [`signin`](../proyek-perangkat-lunak/src/app/auth/signin/page.tsx:103) tidak perlu perubahan
 
 ### 11.3 Phase 2 - Hardening dan observability
@@ -565,6 +566,7 @@ Checklist progres:
 - [x] Tambah route `POST /api/auth/google/mobile`
 - [x] Definisikan payload minimum seperti `idToken`, `clientType`, `deviceId`, `platform`
 - [x] Pertahankan [`POST /api/auth/sync`](../proyek-perangkat-lunak/backend/src/modules/auth/auth.routes.ts:22) khusus web
+- [x] Tambah `provider: "google"` pada response mobile Google tanpa mengubah kontrak auth lama
 - [x] Verifikasi flow [`googleCallback()`](../proyek-perangkat-lunak/backend/src/modules/auth/auth.controller.ts:169) tidak berubah
 - [x] Dokumentasikan perbedaan web Google sync vs mobile Google native
 
@@ -639,6 +641,28 @@ Pemetaan transisinya:
 - phase 4 mulai mengadopsi token lifecycle yang lebih sehat seperti yang sudah direkomendasikan pada dokumen 11.
 
 Dengan struktur ini, solusi minimal-change tetap punya arah penghentian yang jelas dan tidak berhenti sebagai kompromi permanen.
+
+## 13.1 Status implementasi batch saat ini
+
+Batch implementasi yang sudah selesai pada fase minimal-change saat ini:
+
+- mobile service di [`auth.service.ts`](../src/services/auth.service.ts:6) sudah menormalkan response `success/data` dan tetap membaca pasangan `token` + `user`,
+- tipe response mobile di [`index.ts`](../src/types/index.ts:26) sudah diperluas secara kompatibel untuk `authContext` dan `provider`,
+- login screen native di [`login.tsx`](../src/app/(auth)/login.tsx:53) sudah memakai redirect konsisten ke route tab dashboard,
+- backend client auth di [`auth.controller.ts`](../proyek-perangkat-lunak/backend/src/modules/auth/auth.controller.ts:131) sekarang menambahkan `authContext` untuk route client dan `provider` untuk Google mobile,
+- flow web lama di [`signin`](../proyek-perangkat-lunak/src/app/auth/signin/page.tsx:103), [`callback`](../proyek-perangkat-lunak/src/app/auth/callback/page.tsx:7), dan [`sync`](../proyek-perangkat-lunak/src/lib/auth/sync.ts:16) tidak diubah.
+
+Verifikasi batch ini:
+
+- build backend lulus melalui [`npm run build`](../proyek-perangkat-lunak/backend/package.json:7),
+- type-check mobile lulus melalui [`npx tsc --noEmit`](../pemrograman-mobile/package.json).
+
+Follow-up yang masih terbuka untuk batch berikutnya tetap sama:
+
+- rate limiting untuk endpoint client baru,
+- error code challenge/risk yang eksplisit,
+- dokumentasi threshold kapan challenge tambahan diaktifkan,
+- refresh/session lifecycle yang masih ditunda ke fase berikutnya.
 
 ## 14. Rekomendasi Final yang Paling Disarankan
 

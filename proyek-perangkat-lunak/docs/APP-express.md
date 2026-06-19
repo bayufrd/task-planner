@@ -676,3 +676,101 @@ Arah jangka menengahnya:
 - setelah kontrak multi-client stabil, evaluasi apakah endpoint sementara tetap dipertahankan sebagai public contract atau digabung ke surface auth yang lebih rapi.
 
 Dengan kata lain, backend boleh menambah endpoint khusus mobile sekarang untuk membuka integrasi cepat, tetapi keputusan jangka panjang tetap mengarah pada penyederhanaan surface auth setelah kebutuhan mobile sudah mapan.
+
+## 24. Endpoint Mobile Auth yang Sudah Tersedia
+
+Section ini menambahkan ringkasan implementasi endpoint mobile di bagian paling bawah agar mudah dipakai saat integrasi aplikasi native.
+
+### 24.1 Prinsip kompatibilitas
+
+Endpoint mobile baru di [`auth.routes.ts`](../backend/src/modules/auth/auth.routes.ts:17) sampai [`auth.routes.ts`](../backend/src/modules/auth/auth.routes.ts:28) ditambahkan tanpa mengubah perilaku default endpoint web lama pada [`POST /api/auth/login`](../backend/src/modules/auth/auth.routes.ts:18), [`POST /api/auth/register`](../backend/src/modules/auth/auth.routes.ts:17), dan [`POST /api/auth/sync`](../backend/src/modules/auth/auth.routes.ts:28).
+
+Artinya:
+
+- form web lama tetap memakai CAPTCHA wajib,
+- Next.js tetap memakai flow lama di [`signin`](../src/app/auth/signin/page.tsx:103) dan bridge [`syncNextAuthToExpress()`](../src/lib/auth/sync.ts:16),
+- mobile mendapat endpoint opt-in yang lebih native-friendly.
+
+### 24.2 `POST /api/auth/register-client`
+
+Route aktif: [`auth.routes.ts`](../backend/src/modules/auth/auth.routes.ts:19)
+Controller: [`registerClient()`](../backend/src/modules/auth/auth.controller.ts:131)
+Schema: [`clientRegisterSchema`](../backend/src/modules/auth/auth.validation.ts:18)
+
+Request minimum:
+
+```json
+{
+  "name": "User Baru",
+  "email": "baru@example.com",
+  "password": "secret123",
+  "clientType": "mobile",
+  "platform": "android"
+}
+```
+
+Karakteristik:
+
+- tidak mewajibkan `captchaToken`,
+- tetap reuse [`AuthService.register()`](../backend/src/modules/auth/auth.service.ts:14),
+- response tetap mengandung `token` dan `user`,
+- response juga menambahkan `authContext.clientType` dan `authContext.captchaRequired=false` untuk konteks client ringan.
+
+### 24.3 `POST /api/auth/login-client`
+
+Route aktif: [`auth.routes.ts`](../backend/src/modules/auth/auth.routes.ts:20)
+Controller: [`loginClient()`](../backend/src/modules/auth/auth.controller.ts:142)
+Schema: [`clientLoginSchema`](../backend/src/modules/auth/auth.validation.ts:28)
+
+Request minimum:
+
+```json
+{
+  "email": "user@example.com",
+  "password": "secret123",
+  "clientType": "mobile",
+  "platform": "android"
+}
+```
+
+Karakteristik:
+
+- tidak mengubah endpoint web login lama,
+- tetap reuse [`AuthService.login()`](../backend/src/modules/auth/auth.service.ts:48),
+- logging metadata client dilakukan di [`logClientAuthEvent()`](../backend/src/modules/auth/auth.controller.ts:34),
+- response tetap kompatibel dengan pola lama dan kini menambahkan `authContext` ringan.
+
+### 24.4 `POST /api/auth/google/mobile`
+
+Route aktif: [`auth.routes.ts`](../backend/src/modules/auth/auth.routes.ts:27)
+Controller: [`googleMobile()`](../backend/src/modules/auth/auth.controller.ts:158)
+Schema: [`mobileGoogleSchema`](../backend/src/modules/auth/auth.validation.ts:37)
+
+Request minimum:
+
+```json
+{
+  "idToken": "google-id-token",
+  "clientType": "mobile",
+  "platform": "ios"
+}
+```
+
+Karakteristik:
+
+- memverifikasi `idToken` ke endpoint Google `tokeninfo` di [`googleMobile()`](../backend/src/modules/auth/auth.controller.ts:163),
+- tidak memakai flow [`POST /api/auth/sync`](../backend/src/modules/auth/auth.routes.ts:28) yang tetap khusus NextAuth web,
+- response auth tetap mengandung `token` dan `user`,
+- response menambahkan `provider: "google"` serta `authContext` ringan untuk client mobile.
+
+### 24.5 Catatan keamanan dan follow-up
+
+Implementasi saat ini sengaja minimal dan kompatibel, tetapi belum final untuk hardening production mobile.
+
+Follow-up yang masih terbuka:
+
+- rate limiting khusus route client baru belum diterapkan,
+- challenge/risk error code seperti `CAPTCHA_REQUIRED` atau `RISK_CHALLENGE_REQUIRED` belum diterapkan,
+- refresh token dan session per device masih ditunda ke fase berikutnya.
+
+Jadi status saat ini adalah: endpoint mobile native dasar sudah tersedia, flow web lama tetap tidak disentuh, dan hardening lanjutan masih menjadi batch berikutnya.

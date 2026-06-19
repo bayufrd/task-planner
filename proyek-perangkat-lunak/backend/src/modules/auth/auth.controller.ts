@@ -133,7 +133,13 @@ export class AuthController {
       const data: ClientRegisterInput = req.body;
       this.logClientAuthEvent('register-client', req);
       const result = await authService.register(data);
-      sendSuccess(res, result, 'Registration successful', 201);
+      sendSuccess(res, {
+        ...result,
+        authContext: {
+          clientType: data.clientType ?? 'mobile',
+          captchaRequired: false,
+        },
+      }, 'Registration successful', 201);
     } catch (error) {
       next(error);
     }
@@ -144,7 +150,13 @@ export class AuthController {
       const data: ClientLoginInput = req.body;
       this.logClientAuthEvent('login-client', req);
       const result = await authService.login(data);
-      sendSuccess(res, result, 'Login successful');
+      sendSuccess(res, {
+        ...result,
+        authContext: {
+          clientType: data.clientType ?? 'mobile',
+          captchaRequired: false,
+        },
+      }, 'Login successful');
     } catch (error) {
       console.error('[auth:login-client] failed', {
         email: req.body?.email,
@@ -185,6 +197,11 @@ export class AuthController {
           id: user.id,
           name: user.name,
           email: user.email,
+        },
+        provider: 'google',
+        authContext: {
+          clientType: data.clientType ?? 'mobile',
+          captchaRequired: false,
         },
       }, 'Mobile Google login successful');
     } catch (error) {

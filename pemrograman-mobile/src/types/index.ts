@@ -23,14 +23,25 @@ export interface Task {
   updatedAt: string;
 }
 
+export interface AuthContext {
+  clientType?: 'mobile' | 'web' | 'internal' | 'unknown';
+  captchaRequired?: boolean;
+}
+
+export interface AuthResponseData {
+  user: User;
+  token: string;
+  authContext?: AuthContext;
+  provider?: string;
+}
+
 export interface AuthResponse {
   success?: boolean;
   user?: User;
   token?: string;
-  data?: {
-    user: User;
-    token: string;
-  };
+  authContext?: AuthContext;
+  provider?: string;
+  data?: AuthResponseData;
 }
 
 export interface ClientAuthPayload {
