@@ -3,7 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Dimensions, Activ
 import { useQuery } from "@tanstack/react-query";
 import { taskService, DailyStat, WeeklyStat } from "../../../services/task.service";
 import { OverviewAdvice, OverviewAnalysis } from "../../../types";
-import { RefreshCw, Trophy, Star, Zap, TrendingUp, Calendar, CheckCircle2, AlertCircle, Info } from "lucide-react-native";
+import { Trophy, Star, Zap, TrendingUp, Calendar, CheckCircle2, AlertCircle, Info } from "lucide-react-native";
 
 const { width } = Dimensions.get('window');
 
@@ -122,9 +122,6 @@ export default function OverviewScreen() {
           <Text style={styles.headerTitle}>Overview</Text>
           <Text style={styles.headerSubtitle}>Your productivity insights</Text>
         </View>
-        <TouchableOpacity style={styles.refreshButton} onPress={handleRefresh}>
-          <RefreshCw size={18} color={isRefreshing ? "#3b82f6" : "#64748b"} />
-        </TouchableOpacity>
       </View>
 
       <ScrollView
@@ -348,14 +345,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#64748b',
     marginTop: 2,
-  },
-  refreshButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#f1f5f9',
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   content: {
     flex: 1,
