@@ -13,7 +13,7 @@ import {
 import Svg, { Path } from "react-native-svg";
 import * as WebBrowser from "expo-web-browser";
 import * as Google from "expo-auth-session/providers/google";
-import { ResponseType } from "expo-auth-session";
+import { makeRedirectUri, ResponseType } from "expo-auth-session";
 import { useRouter } from "expo-router";
 import { Hand, Sparkles, ChartColumn, Bell } from "lucide-react-native";
 import { useAuthStore } from "../../store/auth.store";
@@ -36,16 +36,42 @@ export default function LoginScreen() {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
-  const googleClientId = process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID || "58234117934-qrbko87bnj96beh88dka59a36pe5fvro.apps.googleusercontent.com";
+  const googleWebClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || "58234117934-qrbko87bnj96beh88dka59a36pe5fvro.apps.googleusercontent.com";
+  const googleIosClientId = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID || "58234117934-83gobmutk6kble2jco0r3v4k2980ild2.apps.googleusercontent.com";
+  const googleAuthRedirectUri = Platform.OS === "web"
+    ? process.env.EXPO_PUBLIC_GOOGLE_AUTH_REDIRECT_URI || "https://auth.expo.io/@bayufrd/smart-task-planner"
+    : makeRedirectUri({ scheme: "smart-task-planner" });
   const googleConfig = useMemo(() => ({
-    clientId: googleClientId,
-    iosClientId: googleClientId,
-    androidClientId: googleClientId,
-    webClientId: googleClientId,
+    clientId: googleWebClientId,
+    iosClientId: googleIosClientId,
+    webClientId: googleWebClientId,
+    redirectUri: googleAuthRedirectUri,
     responseType: ResponseType.IdToken,
     scopes: ["openid", "profile", "email"],
-  }), [googleClientId]);
-  const [, googleResponse, promptGoogleAuth] = Google.useIdTokenAuthRequest(googleConfig);
+  }), [googleWebClientId, googleIosClientId, googleAuthRedirectUri]);
+  const [googleRequest, googleResponse, promptGoogleAuth] = Google.useIdTokenAuthRequest(googleConfig);
+  const describeGoogleResult = (result: any) => ({
+    type: result?.type,
+    paramKeys: result?.params ? Object.keys(result.params) : [],
+    hasAuthentication: Boolean(result?.authentication),
+    hasIdToken: Boolean(result?.authentication?.idToken || result?.params?.id_token),
+    errorCode: result?.params?.error || result?.error?.code,
+    errorName: result?.error?.name,
+    errorMessage: result?.error?.message,
+  });
+
+  useEffect(() => {
+    console.log("[Login][Google] Auth config", {
+      platform: Platform.OS,
+      hasWebClientId: Boolean(googleWebClientId),
+      hasIosClientId: Boolean(googleIosClientId),
+      clientIdsMatch: googleWebClientId === googleIosClientId,
+      redirectUri: googleAuthRedirectUri,
+      responseType: ResponseType.IdToken,
+      scopes: googleConfig.scopes,
+      hasRequest: Boolean(googleRequest),
+    });
+  }, [googleWebClientId, googleIosClientId, googleAuthRedirectUri, googleConfig.scopes, googleRequest]);
 
   useEffect(() => {
     // Hydrate auth state on mount
@@ -68,23 +94,11 @@ export default function LoginScreen() {
     }
     
     if (user && token) {
-      console.log("[Login] Has user/token, preparing redirect", {
+      console.log("[Login] Has user/token, showing login screen redirect via root index", {
         target: postLoginRoute,
         destination: "dashboard-root",
       });
-      try {
-        router.replace(postLoginRoute);
-        console.log("[Login] Redirect dispatched", {
-          target: postLoginRoute,
-          destination: "dashboard-root",
-        });
-      } catch (navigationError) {
-        console.error("[Login] Route resolution failure during hydrated redirect", {
-          target: postLoginRoute,
-          destination: "dashboard-root",
-          error: navigationError instanceof Error ? navigationError.message : navigationError,
-        });
-      }
+      setIsChecking(false);
     } else {
       setIsChecking(false);
     }
@@ -92,22 +106,43 @@ export default function LoginScreen() {
 
   useEffect(() => {
     const syncGoogleLogin = async () => {
+      if (googleResponse) {
+        console.log("[Login][Google] Auth response observed", describeGoogleResult(googleResponse));
+      }
+
       if (googleResponse?.type !== "success") {
         if (googleResponse?.type === "dismiss" || googleResponse?.type === "cancel") {
+          console.log("[Login][Google] Auth flow stopped", describeGoogleResult(googleResponse));
           setIsGoogleSubmitting(false);
         }
         return;
       }
 
       try {
-        const idToken = googleResponse.authentication?.idToken;
+        const idToken = googleResponse.authentication?.idToken || (googleResponse as any).params?.id_token;
+
+        console.log("[Login][Google] ID token check", {
+          hasIdToken: Boolean(idToken),
+          source: googleResponse.authentication?.idToken ? "authentication" : (googleResponse as any).params?.id_token ? "params" : "missing",
+        });
 
         if (!idToken) {
           throw new Error("Google ID token tidak tersedia.");
         }
 
+        console.log("[Login][Google] Backend exchange start", {
+          endpoint: "/auth/google/mobile",
+          hasIdToken: true,
+        });
+
         const result = await authService.googleMobile({
           idToken,
+          platform: Platform.OS,
+        });
+
+        console.log("[Login][Google] Backend exchange success", {
+          hasUser: Boolean(result.user),
+          hasToken: Boolean(result.token),
         });
 
         if (!result.token || !result.user) {
@@ -134,6 +169,12 @@ export default function LoginScreen() {
           throw navigationError;
         }
       } catch (e: any) {
+        console.error("[Login][Google] Auth request fail", {
+          message: e?.response?.data?.error?.message || e?.message || "Unknown Google login error",
+          status: e?.response?.status,
+          endpoint: "/auth/google/mobile",
+          responseType: googleResponse?.type,
+        });
         const message =
           e?.response?.data?.error?.message ||
           e?.message ||
@@ -199,6 +240,7 @@ export default function LoginScreen() {
         destination: "dashboard-root",
       });
 
+      setIsChecking(true);
       try {
         router.replace(postLoginRoute);
         console.log("[Login][Email] Final post-login destination", {
@@ -241,13 +283,28 @@ export default function LoginScreen() {
     setError(null);
     setIsGoogleSubmitting(true);
 
+    console.log("[Login][Google] Login button press", {
+      platform: Platform.OS,
+      hasRequest: Boolean(googleRequest),
+      hasWebClientId: Boolean(googleWebClientId),
+      hasIosClientId: Boolean(googleIosClientId),
+      clientIdsMatch: googleWebClientId === googleIosClientId,
+      redirectUri: googleAuthRedirectUri,
+      responseType: ResponseType.IdToken,
+    });
+
     try {
       const result = await promptGoogleAuth();
+      console.log("[Login][Google] Prompt result", describeGoogleResult(result));
 
       if (result.type !== "success") {
         setIsGoogleSubmitting(false);
       }
     } catch (e: any) {
+      console.error("[Login][Google] Prompt failed", {
+        message: e?.message || "Unknown prompt error",
+        name: e?.name,
+      });
       setIsGoogleSubmitting(false);
       setError(e?.message || "Login Google gagal. Silakan coba lagi.");
     }

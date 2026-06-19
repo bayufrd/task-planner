@@ -1,6 +1,7 @@
 {
   "expo": {
     "name": "Smart Task Planner",
+    "owner": "bayufrd",
     "slug": "smart-task-planner",
     "scheme": "smart-task-planner",
     "version": "1.0.0",

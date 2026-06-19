@@ -6,6 +6,7 @@ Complete technical documentation for the Smart Task Planner mobile application.
 
 | Date | Agent | Changes |
 |------|-------|---------|
+| 2026-06-19 | Dastrevas Agent | Fixed iOS Google login to use native scheme redirect URI via `makeRedirectUri({scheme:'smart-task-planner'})` instead of Expo proxy (400 mismatch). Added `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID`. Sent platform metadata to `/auth/google/mobile`. TypeScript check passed. |
 | 2026-06-18 | Dastrevas Agent | Fixed login/logout by clearing all 3 storage keys (auth-storage, auth-token, user). Login now uses Zustand state for redirect check instead of separate AsyncStorage reads. |
 | 2026-06-18 | Dastrevas Agent | Fixed logout by clearing both `auth-storage` (Zustand) and `auth-token` (API interceptor) from AsyncStorage. Added auth guard to main layout. Updated profile logout button with loading state and proper redirect using useEffect. |
 | 2026-06-18 | Dastrevas Agent | Added `priorityScore` to getTasks/getTaskById responses. Updated dashboard.tsx task cards to show time remaining (overdue/left/days) and priority badge. Fixed TypeScript errors. Updated Task interface with priority field and tags format. |
