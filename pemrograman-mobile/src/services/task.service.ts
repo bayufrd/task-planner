@@ -1,5 +1,5 @@
 import api from "./api";
-import { Task, TaskStats } from "../types";
+import { OverviewAnalysis, Task, TaskStats } from "../types";
 
 interface ApiResponse<T> {
   success: boolean;
@@ -77,6 +77,18 @@ export const taskService = {
       console.error("Error fetching weekly stats:", error);
       return [];
     }
+  },
+  analyzeOverview: async (stats: Pick<TaskStats, "pending" | "done" | "skipped">, dailyData: DailyStat[]): Promise<OverviewAnalysis> => {
+    const response = await api.post<ApiResponse<OverviewAnalysis>>("/ai/overview-analysis", {
+      stats: {
+        pending: stats.pending,
+        done: stats.done,
+        skipped: stats.skipped,
+      },
+      dailyData,
+    });
+
+    return response.data?.data;
   },
 };
 

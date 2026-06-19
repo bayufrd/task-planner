@@ -74,3 +74,15 @@ export interface TaskStats {
   completionRate: number;
   streakDays: number;
 }
+
+export interface OverviewAdvice {
+  title: string;
+  description: string;
+  type: "success" | "warning" | "info";
+}
+
+export interface OverviewAnalysis {
+  score: number;
+  insights: string[];
+  advice: OverviewAdvice[];
+}

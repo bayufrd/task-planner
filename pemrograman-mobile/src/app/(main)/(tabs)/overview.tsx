@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useMemo, useState } from "react";
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Dimensions, ActivityIndicator, Image, RefreshControl } from "react-native";
 import { useQuery } from "@tanstack/react-query";
 import { taskService, DailyStat, WeeklyStat } from "../../../services/task.service";
-import { RefreshCw, Trophy, Star, Zap, TrendingUp, Calendar, CheckCircle2, AlertCircle } from "lucide-react-native";
+import { OverviewAdvice, OverviewAnalysis } from "../../../types";
+import { RefreshCw, Trophy, Star, Zap, TrendingUp, Calendar, CheckCircle2, AlertCircle, Info } from "lucide-react-native";
 
 const { width } = Dimensions.get('window');
 
@@ -26,10 +27,32 @@ const getAnimalLevel = (score: number): AnimalLevel => {
   return { name: 'Naga Deadline', description: 'Mode legenda, task tunduk semua', color: '#ef4444', image: require('../../../../assets/10.webp') };
 };
 
+const formatPercent = (value: number, maxFractionDigits: number = 1): string => {
+  if (!Number.isFinite(value)) {
+    return "0%";
+  }
+
+  return `${new Intl.NumberFormat("en-US", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: maxFractionDigits,
+  }).format(value)}%`;
+};
+
+const getAdviceMeta = (type: OverviewAdvice["type"]) => {
+  switch (type) {
+    case "success":
+      return { icon: CheckCircle2, color: "#16a34a", bg: "#f0fdf4", border: "#bbf7d0" };
+    case "warning":
+      return { icon: AlertCircle, color: "#ea580c", bg: "#fff7ed", border: "#fed7aa" };
+    default:
+      return { icon: Info, color: "#2563eb", bg: "#eff6ff", border: "#bfdbfe" };
+  }
+};
+
 export default function OverviewScreen() {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const { data: stats, isLoading: statsLoading, refetch: refetchStats } = useQuery({
+  const { data: stats, refetch: refetchStats } = useQuery({
     queryKey: ["taskStats"],
     queryFn: taskService.getStats,
   });
@@ -44,19 +67,52 @@ export default function OverviewScreen() {
     queryFn: () => taskService.getWeeklyStats(12),
   });
 
+  const dailyData = Array.isArray(dailyStats) ? dailyStats : [];
+  const weeklyData = Array.isArray(weeklyStats) ? weeklyStats : [];
+
+  const { data: analysis, isLoading: analysisLoading, isError: analysisError, refetch: refetchAnalysis } = useQuery<OverviewAnalysis>({
+    queryKey: ["overviewAnalysis", stats?.pending ?? 0, stats?.done ?? 0, stats?.skipped ?? 0, dailyData.length],
+    enabled: Boolean(stats) && dailyStats !== undefined,
+    queryFn: async () => {
+      if (!stats) {
+        throw new Error("Missing task stats");
+      }
+
+      return taskService.analyzeOverview(
+        {
+          pending: stats.pending,
+          done: stats.done,
+          skipped: stats.skipped,
+        },
+        dailyData
+      );
+    },
+  });
+
   const handleRefresh = async () => {
     setIsRefreshing(true);
-    await Promise.all([refetchStats(), refetchDaily(), refetchWeekly()]);
+    await Promise.all([refetchStats(), refetchDaily(), refetchWeekly(), refetchAnalysis()]);
     setIsRefreshing(false);
   };
 
   const completionRate = stats?.completionRate || 0;
-  const level = getAnimalLevel(completionRate);
-
-  const dailyData = Array.isArray(dailyStats) ? dailyStats : [];
-  const weeklyData = Array.isArray(weeklyStats) ? weeklyStats : [];
+  const formattedCompletionRate = formatPercent(completionRate);
+  const score = analysis?.score ?? completionRate;
+  const level = getAnimalLevel(score);
+  const progressWidth = `${Math.max(0, Math.min(score, 100))}%` as `${number}%`;
   const maxDailyCount = dailyData.length > 0 ? Math.max(...dailyData.map(d => d.count), 1) : 1;
   const maxWeeklyCount = weeklyData.length > 0 ? Math.max(...weeklyData.map(w => w.count), 1) : 1;
+  const summaryInsights = useMemo(() => {
+    if (analysis?.insights?.length) {
+      return analysis.insights.slice(0, 3);
+    }
+
+    return [
+      `${stats?.completed || 0} tasks completed this period`,
+      `Completion rate: ${formattedCompletionRate}`,
+      "AI insight unavailable. Pull to refresh after stats load.",
+    ];
+  }, [analysis?.insights, formattedCompletionRate, stats?.completed]);
 
   return (
     <View style={styles.container}>
@@ -92,10 +148,14 @@ export default function OverviewScreen() {
             </View>
           </View>
           <View style={styles.levelProgress}>
-            <View style={styles.progressBar}>
-              <View style={[styles.progressFill, { width: `${completionRate}%`, backgroundColor: level.color }]} />
+            <View style={styles.levelScoreRow}>
+              <Text style={styles.levelScoreLabel}>AI Score</Text>
+              <Text style={styles.levelScoreValue}>{Math.round(score)}/100</Text>
             </View>
-            <Text style={styles.progressText}>{completionRate}% Complete</Text>
+            <View style={styles.progressBar}>
+              <View style={[styles.progressFill, { width: progressWidth, backgroundColor: level.color }]} />
+            </View>
+            <Text style={styles.progressText}>{formattedCompletionRate} Complete</Text>
           </View>
         </View>
 
@@ -197,29 +257,58 @@ export default function OverviewScreen() {
         <View style={styles.insightCard}>
           <View style={styles.insightHeader}>
             <Zap size={20} color="#f59e0b" />
-            <Text style={styles.insightTitle}>Productivity Insights</Text>
+            <Text style={styles.insightTitle}>AI Productivity Insights</Text>
           </View>
-          <View style={styles.insightContent}>
-            <View style={styles.insightItem}>
-              <TrendingUp size={16} color="#22c55e" />
-              <Text style={styles.insightText}>
-                {stats?.completed || 0} tasks completed this period
-              </Text>
+
+          {analysisLoading ? (
+            <ActivityIndicator color="#3b82f6" style={styles.loader} />
+          ) : (
+            <View style={styles.insightContent}>
+              {summaryInsights.map((insight, index) => {
+                const InsightIcon = index === 0 ? TrendingUp : index === 1 ? Trophy : Star;
+                const iconColor = index === 0 ? "#22c55e" : index === 1 ? "#f59e0b" : "#8b5cf6";
+
+                return (
+                  <View key={`${insight}-${index}`} style={styles.insightItem}>
+                    <InsightIcon size={16} color={iconColor} />
+                    <Text style={styles.insightText}>{insight}</Text>
+                  </View>
+                );
+              })}
+
+              {analysisError ? (
+                <Text style={styles.insightErrorText}>
+                  AI analysis failed. Backend cache stays available on next successful fetch.
+                </Text>
+              ) : null}
             </View>
-            <View style={styles.insightItem}>
-              <Trophy size={16} color="#f59e0b" />
-              <Text style={styles.insightText}>
-                Current streak: {Math.round((stats?.completionRate || 0) / 10)} days
-              </Text>
-            </View>
-            <View style={styles.insightItem}>
-              <Star size={16} color="#8b5cf6" />
-              <Text style={styles.insightText}>
-                Completion rate: {completionRate}%
-              </Text>
-            </View>
-          </View>
+          )}
         </View>
+
+        {analysis?.advice?.length ? (
+          <View style={styles.adviceSection}>
+            {analysis.advice.map((item, index) => {
+              const meta = getAdviceMeta(item.type);
+              const Icon = meta.icon;
+
+              return (
+                <View
+                  key={`${item.title}-${index}`}
+                  style={[
+                    styles.adviceCard,
+                    { backgroundColor: meta.bg, borderColor: meta.border },
+                  ]}
+                >
+                  <View style={styles.adviceHeader}>
+                    <Icon size={18} color={meta.color} />
+                    <Text style={styles.adviceTitle}>{item.title}</Text>
+                  </View>
+                  <Text style={styles.adviceDescription}>{item.description}</Text>
+                </View>
+              );
+            })}
+          </View>
+        ) : null}
 
         <View style={styles.bottomSpacing} />
       </ScrollView>
@@ -302,6 +391,22 @@ const styles = StyleSheet.create({
   },
   levelProgress: {
     marginTop: 8,
+  },
+  levelScoreRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  levelScoreLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#64748b',
+  },
+  levelScoreValue: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#1e293b',
   },
   progressBar: {
     height: 8,
@@ -451,6 +556,37 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#64748b',
     flex: 1,
+  },
+  insightErrorText: {
+    fontSize: 12,
+    color: '#dc2626',
+    marginTop: 4,
+  },
+  adviceSection: {
+    gap: 12,
+    marginBottom: 16,
+  },
+  adviceCard: {
+    borderWidth: 1,
+    borderRadius: 16,
+    padding: 16,
+  },
+  adviceHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 8,
+  },
+  adviceTitle: {
+    flex: 1,
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#1e293b',
+  },
+  adviceDescription: {
+    fontSize: 13,
+    lineHeight: 20,
+    color: '#475569',
   },
   bottomSpacing: {
     height: 40,

@@ -9,13 +9,14 @@ import {
   Image,
   TextInput,
   ActivityIndicator,
+  Linking,
 } from "react-native";
 import Svg, { Path } from "react-native-svg";
 import * as WebBrowser from "expo-web-browser";
 import * as Google from "expo-auth-session/providers/google";
 import { makeRedirectUri, ResponseType } from "expo-auth-session";
 import { useRouter } from "expo-router";
-import { Hand, Sparkles, ChartColumn, Bell } from "lucide-react-native";
+import { Hand, Info } from "lucide-react-native";
 import { useAuthStore } from "../../store/auth.store";
 import { authService } from "../../services/auth.service";
 
@@ -31,6 +32,8 @@ export default function LoginScreen() {
   const user = useAuthStore((state) => state.user);
   const token = useAuthStore((state) => state.token);
   const isHydrated = useAuthStore((state) => state.isHydrated);
+  const [mode, setMode] = useState<"login" | "register">("login");
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -38,17 +41,16 @@ export default function LoginScreen() {
   const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
   const googleWebClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || "58234117934-qrbko87bnj96beh88dka59a36pe5fvro.apps.googleusercontent.com";
   const googleIosClientId = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID || "58234117934-83gobmutk6kble2jco0r3v4k2980ild2.apps.googleusercontent.com";
-  const googleAuthRedirectUri = Platform.OS === "web"
-    ? process.env.EXPO_PUBLIC_GOOGLE_AUTH_REDIRECT_URI || "https://auth.expo.io/@bayufrd/smart-task-planner"
-    : makeRedirectUri({ scheme: "smart-task-planner" });
+  const googleAuthRedirectUri = makeRedirectUri({
+    native: "com.dastrevas.smarttaskplanner:/oauthredirect",
+  });
   const googleConfig = useMemo(() => ({
-    clientId: googleWebClientId,
     iosClientId: googleIosClientId,
     webClientId: googleWebClientId,
     redirectUri: googleAuthRedirectUri,
     responseType: ResponseType.IdToken,
     scopes: ["openid", "profile", "email"],
-  }), [googleWebClientId, googleIosClientId, googleAuthRedirectUri]);
+  }), [googleIosClientId, googleWebClientId, googleAuthRedirectUri]);
   const [googleRequest, googleResponse, promptGoogleAuth] = Google.useIdTokenAuthRequest(googleConfig);
   const describeGoogleResult = (result: any) => ({
     type: result?.type,
@@ -65,7 +67,6 @@ export default function LoginScreen() {
       platform: Platform.OS,
       hasWebClientId: Boolean(googleWebClientId),
       hasIosClientId: Boolean(googleIosClientId),
-      clientIdsMatch: googleWebClientId === googleIosClientId,
       redirectUri: googleAuthRedirectUri,
       responseType: ResponseType.IdToken,
       scopes: googleConfig.scopes,
@@ -188,54 +189,69 @@ export default function LoginScreen() {
     void syncGoogleLogin();
   }, [googleResponse, router, setAuth]);
 
-  const handleEmailLogin = async () => {
+  const handleEmailAuth = async () => {
+    const normalizedName = name.trim();
     const normalizedEmail = email.trim();
-    console.log("[Login][Email] Login button press", {
+    console.log("[Login][Email] Auth button press", {
+      mode,
+      hasName: Boolean(normalizedName),
       hasEmail: Boolean(normalizedEmail),
       hasPassword: Boolean(password),
       isHydrated,
     });
 
+    if (mode === "register" && !normalizedName) {
+      setError("Nama wajib diisi.");
+      return;
+    }
+
     if (!normalizedEmail || !password) {
       console.warn("[Login][Email] Submit blocked by missing fields", {
+        mode,
+        hasName: Boolean(normalizedName),
         hasEmail: Boolean(normalizedEmail),
         hasPassword: Boolean(password),
       });
-      setError("Email dan password wajib diisi.");
+      setError(mode === "register" ? "Nama, email, dan password wajib diisi." : "Email dan password wajib diisi.");
       return;
     }
 
     setIsSubmitting(true);
     setError(null);
     console.log("[Login][Email] Form submit start", {
+      mode,
+      hasName: Boolean(normalizedName),
       hasEmail: true,
       hasPassword: true,
       emailLength: normalizedEmail.length,
     });
 
     try {
-      console.log("[Login][Email] Auth request start", {
-        endpoint: "/auth/login-client",
-        hasEmail: true,
-        hasPassword: true,
-      });
-
-      const result = await authService.login({
-        email: normalizedEmail,
-        password,
-      });
+      const result = mode === "register"
+        ? await authService.register({
+            name: normalizedName,
+            email: normalizedEmail,
+            password,
+          })
+        : await authService.login({
+            email: normalizedEmail,
+            password,
+          });
 
       console.log("[Login][Email] Auth request success", {
+        mode,
+        endpoint: mode === "register" ? "/auth/register-client" : "/auth/login-client",
         hasUser: Boolean(result.user),
         hasToken: Boolean(result.token),
       });
 
       if (!result.token || !result.user) {
-        throw new Error("Respons login tidak lengkap.");
+        throw new Error(mode === "register" ? "Respons register tidak lengkap." : "Respons login tidak lengkap.");
       }
 
       await setAuth(result.user, result.token);
       console.log("[Login][Email] Navigation target before redirect", {
+        mode,
         target: postLoginRoute,
         destination: "dashboard-root",
       });
@@ -244,11 +260,13 @@ export default function LoginScreen() {
       try {
         router.replace(postLoginRoute);
         console.log("[Login][Email] Final post-login destination", {
+          mode,
           target: postLoginRoute,
           destination: "dashboard-root",
         });
       } catch (navigationError) {
         console.error("[Login][Email] Route resolution failure details", {
+          mode,
           target: postLoginRoute,
           destination: "dashboard-root",
           error: navigationError instanceof Error ? navigationError.message : navigationError,
@@ -257,18 +275,24 @@ export default function LoginScreen() {
       }
     } catch (e: any) {
       console.error("[Login][Email] Auth request fail", {
-        message: e?.response?.data?.error?.message || e?.message || "Unknown login error",
+        mode,
+        message: e?.response?.data?.error?.message || e?.message || "Unknown auth error",
         status: e?.response?.status,
         target: postLoginRoute,
       });
       const message =
         e?.response?.data?.error?.message ||
         e?.message ||
-        "Login gagal. Silakan coba lagi.";
+        (mode === "register" ? "Register gagal. Silakan coba lagi." : "Login gagal. Silakan coba lagi.");
       setError(message);
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleOpenLink = async () => {
+    const url = "https://taskplanner.dastrevas.com";
+    await Linking.openURL(url);
   };
 
   if (isChecking) {
@@ -288,7 +312,6 @@ export default function LoginScreen() {
       hasRequest: Boolean(googleRequest),
       hasWebClientId: Boolean(googleWebClientId),
       hasIosClientId: Boolean(googleIosClientId),
-      clientIdsMatch: googleWebClientId === googleIosClientId,
       redirectUri: googleAuthRedirectUri,
       responseType: ResponseType.IdToken,
     });
@@ -325,37 +348,65 @@ export default function LoginScreen() {
         {/* Hero */}
         <View style={styles.heroSection}>
           <View style={styles.heroTitleRow}>
-            <Text style={styles.heroTitle}>Welcome Back!</Text>
+            <Text style={styles.heroTitle}>{mode === "login" ? "Welcome Back!" : "Create Account"}</Text>
             <Hand size={22} color="#3b82f6" strokeWidth={2.2} />
           </View>
           <Text style={styles.heroSubtitle}>
-            Organize your tasks and boost your productivity
+            {mode === "login"
+              ? "Masuk untuk lanjut mengelola tugas harianmu."
+              : "Daftar cepat untuk mulai pakai Task Planner dari mobile."}
           </Text>
         </View>
 
-        {/* Features */}
-        <View style={styles.features}>
-          <View style={styles.featureItem}>
-            <View style={styles.featureIconContainer}>
-              <Sparkles size={18} color="#8b5cf6" strokeWidth={2.2} />
-            </View>
-            <Text style={styles.featureText}>Smart Priority Sorting</Text>
+        <View style={styles.infoCard}>
+          <View style={styles.infoIconContainer}>
+            <Info size={18} color="#3b82f6" strokeWidth={2.2} />
           </View>
-          <View style={styles.featureItem}>
-            <View style={styles.featureIconContainer}>
-              <ChartColumn size={18} color="#3b82f6" strokeWidth={2.2} />
-            </View>
-            <Text style={styles.featureText}>Progress Tracking</Text>
+          <View style={styles.infoContent}>
+            <Text style={styles.infoTitle}>Butuh penjelasan lengkap app?</Text>
+            <Text style={styles.infoText}>Tekan Open link untuk baca versi lengkap di website resmi.</Text>
           </View>
-          <View style={styles.featureItem}>
-            <View style={styles.featureIconContainer}>
-              <Bell size={18} color="#f59e0b" strokeWidth={2.2} />
-            </View>
-            <Text style={styles.featureText}>Deadline Reminders</Text>
-          </View>
+          <TouchableOpacity style={styles.linkButton} onPress={handleOpenLink} activeOpacity={0.8}>
+            <Text style={styles.linkButtonText}>Open link</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.modeSwitch}>
+          <TouchableOpacity
+            style={[styles.modeButton, mode === "login" && styles.modeButtonActive]}
+            onPress={() => {
+              setMode("login");
+              setError(null);
+            }}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.modeButtonText, mode === "login" && styles.modeButtonTextActive]}>Login</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.modeButton, mode === "register" && styles.modeButtonActive]}
+            onPress={() => {
+              setMode("register");
+              setError(null);
+            }}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.modeButtonText, mode === "register" && styles.modeButtonTextActive]}>Register</Text>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.formContainer}>
+          {mode === "register" ? (
+            <TextInput
+              style={styles.input}
+              placeholder="Name"
+              placeholderTextColor="#94a3b8"
+              value={name}
+              onChangeText={(text) => {
+                setName(text);
+                if (error) setError(null);
+              }}
+            />
+          ) : null}
           <TextInput
             style={styles.input}
             placeholder="Email"
@@ -386,14 +437,14 @@ export default function LoginScreen() {
         <View style={styles.buttonContainer}>
           <TouchableOpacity
             style={[styles.primaryButton, isSubmitting && styles.buttonDisabled]}
-            onPress={handleEmailLogin}
+            onPress={handleEmailAuth}
             activeOpacity={0.8}
             disabled={isSubmitting}
           >
             {isSubmitting ? (
               <ActivityIndicator color="#ffffff" size="small" />
             ) : (
-              <Text style={styles.primaryButtonText}>Login with Email</Text>
+              <Text style={styles.primaryButtonText}>{mode === "login" ? "Login with Email" : "Register with Email"}</Text>
             )}
           </TouchableOpacity>
 
@@ -485,8 +536,77 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 22,
   },
-  features: {
+  infoCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f8fafc',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    gap: 12,
+  },
+  infoIconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#ffffff',
+    borderWidth: 1,
+    borderColor: '#dbeafe',
+  },
+  infoContent: {
+    flex: 1,
+  },
+  infoTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1e293b',
+    marginBottom: 4,
+  },
+  infoText: {
+    fontSize: 13,
+    color: '#64748b',
+    lineHeight: 18,
+  },
+  linkButton: {
+    backgroundColor: '#eff6ff',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 10,
+  },
+  linkButtonText: {
+    color: '#2563eb',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  modeSwitch: {
+    flexDirection: 'row',
+    backgroundColor: '#f8fafc',
+    borderRadius: 14,
+    padding: 4,
     marginBottom: 24,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+  },
+  modeButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  modeButtonActive: {
+    backgroundColor: '#3b82f6',
+  },
+  modeButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#64748b',
+  },
+  modeButtonTextActive: {
+    color: '#ffffff',
   },
   formContainer: {
     marginBottom: 24,
@@ -506,31 +626,6 @@ const styles = StyleSheet.create({
     color: '#dc2626',
     fontSize: 13,
     marginTop: -4,
-  },
-  featureItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    backgroundColor: '#f8fafc',
-    borderRadius: 12,
-    marginBottom: 8,
-  },
-  featureIconContainer: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
-    backgroundColor: '#ffffff',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-  },
-  featureText: {
-    fontSize: 15,
-    color: '#475569',
-    fontWeight: '500',
   },
   buttonContainer: {
     marginBottom: 24,
