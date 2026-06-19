@@ -135,6 +135,156 @@ eas build --platform ios --profile production
 eas build --platform android --profile production
 ```
 
+### Build iOS dan Pasang ke HP via TestFlight
+
+#### Prasyarat
+1. MacBook/macOS untuk setup awal dan akses akun Apple
+2. Akun Apple Developer aktif
+3. Aplikasi sudah punya `bundleIdentifier` iOS: `com.dastrevas.smarttaskplanner`
+4. Expo account aktif dan project sudah terhubung ke EAS
+5. Tester memakai iPhone/iPad dan install aplikasi TestFlight dari App Store
+
+#### 1. Cek konfigurasi project
+Pastikan konfigurasi iOS sudah ada di `app.json`:
+
+```json
+{
+  "expo": {
+    "owner": "bayufrd",
+    "slug": "smart-task-planner",
+    "scheme": "smart-task-planner",
+    "ios": {
+      "bundleIdentifier": "com.dastrevas.smarttaskplanner",
+      "supportsTablet": true
+    }
+  }
+}
+```
+
+#### 2. Login dan siapkan EAS Build
+Jalankan dari folder project mobile:
+
+```bash
+cd pemrograman-mobile
+npm install -g eas-cli
+eas login
+eas build:configure
+```
+
+Jika belum ada `eas.json`, buat dulu. Contoh minimal:
+
+```json
+{
+  "cli": {
+    "version": ">= 5.0.0"
+  },
+  "build": {
+    "preview": {
+      "distribution": "internal",
+      "ios": {
+        "simulator": false
+      }
+    },
+    "production": {
+      "ios": {
+        "simulator": false
+      }
+    }
+  },
+  "submit": {
+    "production": {
+      "ios": {}
+    }
+  }
+}
+```
+
+#### 3. Build iOS untuk TestFlight
+Untuk kirim ke TestFlight, pakai profile production:
+
+```bash
+eas build --platform ios --profile production
+```
+
+Saat pertama kali build, EAS biasanya akan:
+1. Meminta login Apple Developer
+2. Membuat atau memilih certificate
+3. Membuat atau memilih provisioning profile
+4. Menghubungkan app ke App Store Connect
+
+Tunggu build selesai lalu buka link hasil build dari EAS dashboard.
+
+#### 4. Upload build ke App Store Connect
+Paling cepat pakai submit command:
+
+```bash
+eas submit --platform ios --profile production
+```
+
+Alternatif manual:
+1. Download file `.ipa` dari hasil build EAS
+2. Install aplikasi Transporter di macOS
+3. Login ke App Store Connect di Transporter
+4. Drag file `.ipa` ke Transporter
+5. Klik Deliver
+
+#### 5. Aktifkan build di TestFlight
+Sesudah upload:
+1. Buka App Store Connect
+2. Pilih aplikasi Smart Task Planner
+3. Buka menu TestFlight
+4. Tunggu status processing selesai dari Apple
+5. Isi informasi compliance bila diminta
+6. Tambahkan tester internal atau external
+
+Catatan:
+- Internal tester biasanya lebih cepat aktif
+- External tester biasanya perlu review beta app dari Apple
+
+#### 6. Pasang di iPhone lewat TestFlight
+Langkah tester:
+1. Install TestFlight dari App Store
+2. Buka undangan email tester atau public link TestFlight
+3. Tap Accept / View in TestFlight
+4. Pilih build tersedia
+5. Tap Install
+6. Setelah selesai, buka aplikasi di iPhone
+
+#### 7. Update build berikutnya
+Kalau ada perubahan kode:
+
+```bash
+eas build --platform ios --profile production
+eas submit --platform ios --profile production
+```
+
+Naikkan `version` di `app.json` bila memang rilis versi baru. Jika butuh pembeda build number iOS, tambahkan field berikut:
+
+```json
+{
+  "expo": {
+    "version": "1.0.1",
+    "ios": {
+      "buildNumber": "2"
+    }
+  }
+}
+```
+
+#### 8. Checklist sebelum kirim tester
+- API production sudah benar di file environment
+- Login berjalan normal di iPhone
+- Navigasi utama aman
+- Create, edit, delete task aman
+- Tidak ada crash saat app dibuka pertama kali
+- Icon dan nama app sudah benar
+
+#### 9. Masalah umum
+- Build gagal di signing: cek akses Apple Developer dan bundle identifier
+- Build tidak muncul di TestFlight: tunggu processing App Store Connect selesai
+- Tester tidak bisa install: pastikan tester sudah ditambahkan ke grup TestFlight
+- Login Google iOS gagal: cek client ID iOS dan redirect scheme mobile
+
 ### Add New Screen
 1. Create file in `src/app/(main)/(tabs)/`
 2. Add tab entry in `_layout.tsx`
