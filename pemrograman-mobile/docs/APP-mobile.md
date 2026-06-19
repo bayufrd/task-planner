@@ -285,6 +285,142 @@ Naikkan `version` di `app.json` bila memang rilis versi baru. Jika butuh pembeda
 - Tester tidak bisa install: pastikan tester sudah ditambahkan ke grup TestFlight
 - Login Google iOS gagal: cek client ID iOS dan redirect scheme mobile
 
+### Build Local iPhone via Xcode tanpa TestFlight
+
+Cara ini cocok kalau:
+1. Tidak punya Apple Developer Program berbayar
+2. Ingin pasang app ke iPhone sendiri untuk testing
+3. Tidak perlu distribusi ke user lain lewat TestFlight
+
+Batasan penting:
+- Tetap butuh Apple ID untuk login di Xcode
+- App hanya bisa dipasang ke device milik sendiri/terdaftar pada sesi development
+- Masa berlaku signing gratis biasanya terbatas, jadi kadang perlu install ulang
+- Tidak bisa dipakai untuk distribusi public atau TestFlight
+
+#### Prasyarat
+1. Install full Xcode dari App Store, bukan hanya Command Line Tools
+2. Jalankan Xcode sekali sampai setup awal selesai
+3. Login Apple ID di Xcode: `Xcode > Settings > Accounts`
+4. iPhone dihubungkan ke Mac via kabel atau trusted wireless debugging
+5. Di iPhone aktifkan `Developer Mode` bila diminta
+
+#### Status project saat ini
+Project ini sudah punya folder native iOS:
+- `pemrograman-mobile/ios/`
+- `pemrograman-mobile/ios/SmartTaskPlanner.xcworkspace`
+
+Tapi pada mesin ini, full Xcode belum aktif. Yang terdeteksi baru Command Line Tools, jadi build lokal ke iPhone belum bisa dijalankan sampai Xcode penuh terpasang dan aktif.
+
+#### 1. Aktifkan Xcode penuh di macOS
+Setelah install Xcode, jalankan command berikut:
+
+```bash
+sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+sudo xcodebuild -runFirstLaunch
+```
+
+Verifikasi:
+
+```bash
+xcodebuild -version
+```
+
+#### 2. Install dependency project
+Dari folder mobile:
+
+```bash
+cd pemrograman-mobile
+npm install
+```
+
+Kalau folder `ios/` belum ada, generate dulu:
+
+```bash
+npx expo prebuild --platform ios
+```
+
+Kalau folder `ios/` sudah ada seperti project ini, tidak wajib prebuild ulang kecuali ada perubahan config native.
+
+#### 3. Buka project iOS di Xcode
+Buka workspace, bukan project biasa:
+
+```bash
+open ios/SmartTaskPlanner.xcworkspace
+```
+
+Di Xcode:
+1. Pilih target `SmartTaskPlanner`
+2. Buka tab `Signing & Capabilities`
+3. Centang `Automatically manage signing`
+4. Pilih `Team` sesuai Apple ID anda
+5. Pastikan `Bundle Identifier` unik, misalnya `com.namaanda.smarttaskplanner`
+
+Kalau `bundleIdentifier` bentrok, ubah juga di `app.json` lalu sync lagi bila perlu.
+
+#### 4. Hubungkan iPhone
+Langkah di device:
+1. Sambungkan iPhone ke Mac
+2. Tap `Trust This Computer`
+3. Masukkan passcode iPhone
+4. Jika iOS meminta `Developer Mode`, aktifkan lalu restart device
+
+Di Xcode, pilih device iPhone anda di dropdown atas.
+
+#### 5. Build dan pasang ke iPhone
+Dari Xcode:
+1. Pilih device iPhone target
+2. Tekan tombol `Run` atau shortcut `Cmd+R`
+3. Tunggu proses compile, signing, install
+4. Jika pertama kali, buka iPhone lalu izinkan developer app bila diminta
+
+Alternatif lewat Expo CLI setelah Xcode siap:
+
+```bash
+npx expo run:ios --device
+```
+
+Command ini akan memakai project native `ios/` dan minta pilih iPhone yang terhubung.
+
+#### 6. Kalau app tidak bisa dibuka di iPhone
+Buka di iPhone:
+`Settings > General > VPN & Device Management`
+
+Lalu:
+1. pilih profil developer anda
+2. tap `Trust`
+3. buka ulang app
+
+#### 7. Menjalankan Metro bundler
+Untuk live reload JavaScript:
+
+```bash
+npx expo start --dev-client
+```
+
+Jika app hasil Xcode/dev build sudah terpasang di iPhone, buka app itu lalu sambungkan ke Metro bundler.
+
+#### 8. Troubleshooting umum build lokal iPhone
+- `xcodebuild requires Xcode` → full Xcode belum terinstall/aktif
+- device tidak muncul di Xcode → cek kabel, trust dialog, dan Developer Mode
+- signing error → cek Apple ID login di Xcode dan team terpilih
+- bundle identifier conflict → ganti `ios.bundleIdentifier` di `app.json`
+- pod error → jalankan `cd ios && pod install`
+
+#### 9. Command ringkas yang nanti anda pakai
+```bash
+cd pemrograman-mobile
+npx expo start --dev-client
+open ios/SmartTaskPlanner.xcworkspace
+```
+
+Atau sesudah Xcode siap:
+
+```bash
+cd pemrograman-mobile
+npx expo run:ios --device
+```
+
 ### Add New Screen
 1. Create file in `src/app/(main)/(tabs)/`
 2. Add tab entry in `_layout.tsx`

@@ -10,7 +10,10 @@
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.dastrevas.smarttaskplanner"
+      "bundleIdentifier": "com.dastrevas.smarttaskplanner",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -27,6 +30,12 @@
     "plugins": [
       "expo-font",
       "expo-router"
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "e4195461-0000-4060-9af4-c24ff5dee99a"
+      }
+    }
   }
 }
