@@ -42,8 +42,17 @@ export const mobileGoogleSchema = z.object({
   platform: z.string().trim().min(1).max(50).optional(),
 });
 
+export const refreshTokenSchema = z.object({
+  refreshToken: z.string().min(1, 'Refresh token is required'),
+  clientType: clientTypeSchema.default('mobile'),
+  deviceId: z.string().trim().min(1).max(191).optional(),
+  appVersion: z.string().trim().min(1).max(50).optional(),
+  platform: z.string().trim().min(1).max(50).optional(),
+});
+
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type ClientRegisterInput = z.infer<typeof clientRegisterSchema>;
 export type ClientLoginInput = z.infer<typeof clientLoginSchema>;
 export type MobileGoogleInput = z.infer<typeof mobileGoogleSchema>;
+export type RefreshTokenInput = z.infer<typeof refreshTokenSchema>;

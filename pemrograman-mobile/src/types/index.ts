@@ -26,11 +26,16 @@ export interface Task {
 export interface AuthContext {
   clientType?: 'mobile' | 'web' | 'internal' | 'unknown';
   captchaRequired?: boolean;
+  deviceId?: string;
 }
 
 export interface AuthResponseData {
   user: User;
   token: string;
+  refreshToken?: string;
+  tokenType?: string;
+  expiresIn?: string;
+  sessionId?: string;
   authContext?: AuthContext;
   provider?: string;
 }
@@ -39,6 +44,10 @@ export interface AuthResponse {
   success?: boolean;
   user?: User;
   token?: string;
+  refreshToken?: string;
+  tokenType?: string;
+  expiresIn?: string;
+  sessionId?: string;
   authContext?: AuthContext;
   provider?: string;
   data?: AuthResponseData;

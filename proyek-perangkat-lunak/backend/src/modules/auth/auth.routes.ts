@@ -13,6 +13,7 @@ import {
   clientRegisterSchema,
   clientLoginSchema,
   mobileGoogleSchema,
+  refreshTokenSchema,
 } from './auth.validation';
 
 const router = Router();
@@ -30,6 +31,7 @@ router.post('/logout', authController.logout);
 router.get('/google', authController.googleAuth);
 router.get('/google/callback', authController.googleCallback);
 router.post('/google/mobile', clientGoogleRateLimit, validate(mobileGoogleSchema), authController.googleMobile);
+router.post('/refresh', validate(refreshTokenSchema), authController.refresh);
 router.post('/sync', authController.syncNextAuth);
 
 export default router;

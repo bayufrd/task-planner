@@ -9,6 +9,7 @@ import {
   ClientRegisterInput,
   ClientLoginInput,
   MobileGoogleInput,
+  RefreshTokenInput,
 } from './auth.validation';
 import { env } from '../../config/env';
 import { verifyTurnstileToken, getErrorMessage } from '../../lib/captcha/turnstile.service';
@@ -133,11 +134,19 @@ export class AuthController {
       const data: ClientRegisterInput = req.body;
       this.logClientAuthEvent('register-client', req);
       const result = await authService.register(data);
+      const tokens = await authService.issueMobileTokenPair(result.user.id, {
+        deviceId: data.deviceId,
+      });
       sendSuccess(res, {
-        ...result,
+        user: result.user,
+        token: tokens.token,
+        refreshToken: tokens.refreshToken,
+        tokenType: tokens.tokenType,
+        expiresIn: tokens.expiresIn,
+        sessionId: tokens.sessionId,
         authContext: {
+          ...tokens.authContext,
           clientType: data.clientType ?? 'mobile',
-          captchaRequired: false,
         },
       }, 'Registration successful', 201);
     } catch (error) {
@@ -150,11 +159,19 @@ export class AuthController {
       const data: ClientLoginInput = req.body;
       this.logClientAuthEvent('login-client', req);
       const result = await authService.login(data);
+      const tokens = await authService.issueMobileTokenPair(result.user.id, {
+        deviceId: data.deviceId,
+      });
       sendSuccess(res, {
-        ...result,
+        user: result.user,
+        token: tokens.token,
+        refreshToken: tokens.refreshToken,
+        tokenType: tokens.tokenType,
+        expiresIn: tokens.expiresIn,
+        sessionId: tokens.sessionId,
         authContext: {
+          ...tokens.authContext,
           clientType: data.clientType ?? 'mobile',
-          captchaRequired: false,
         },
       }, 'Login successful');
     } catch (error) {
@@ -189,10 +206,16 @@ export class AuthController {
       }
 
       const user = await authService.findOrCreateFromGoogle(email, name);
-      const token = authService.generateToken(user.id);
+      const tokens = await authService.issueMobileTokenPair(user.id, {
+        deviceId: data.deviceId,
+      });
 
       sendSuccess(res, {
-        token,
+        token: tokens.token,
+        refreshToken: tokens.refreshToken,
+        tokenType: tokens.tokenType,
+        expiresIn: tokens.expiresIn,
+        sessionId: tokens.sessionId,
         user: {
           id: user.id,
           name: user.name,
@@ -200,12 +223,35 @@ export class AuthController {
         },
         provider: 'google',
         authContext: {
+          ...tokens.authContext,
           clientType: data.clientType ?? 'mobile',
-          captchaRequired: false,
         },
       }, 'Mobile Google login successful');
     } catch (error) {
       console.error('[auth:google-mobile] failed', {
+        error: error instanceof Error ? error.message : error,
+        ...this.getClientAuthMetadata(req),
+      });
+      next(error);
+    }
+  }
+
+  async refresh(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const data: RefreshTokenInput = req.body;
+      this.logClientAuthEvent('refresh', req);
+      const result = await authService.refreshMobileToken(data.refreshToken, {
+        deviceId: data.deviceId,
+      });
+      sendSuccess(res, {
+        ...result,
+        authContext: {
+          ...result.authContext,
+          clientType: data.clientType ?? 'mobile',
+        },
+      }, 'Token refresh successful');
+    } catch (error) {
+      console.error('[auth:refresh] failed', {
         error: error instanceof Error ? error.message : error,
         ...this.getClientAuthMetadata(req),
       });

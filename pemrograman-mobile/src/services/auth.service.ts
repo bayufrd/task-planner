@@ -9,6 +9,10 @@ const normalizeAuthResponse = (payload: AuthResponse): AuthResponseData => {
   return {
     user: normalized.user as User,
     token: normalized.token as string,
+    refreshToken: normalized.refreshToken,
+    tokenType: normalized.tokenType,
+    expiresIn: normalized.expiresIn,
+    sessionId: normalized.sessionId,
     authContext: normalized.authContext,
     provider: normalized.provider,
   };
