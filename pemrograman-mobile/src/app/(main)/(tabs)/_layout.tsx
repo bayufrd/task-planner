@@ -1,6 +1,6 @@
 import { Tabs } from "expo-router";
 import { LayoutDashboard, BarChart3, User } from "lucide-react-native";
-import { View, StyleSheet } from "react-native";
+import { View, StyleSheet, Text } from "react-native";
 import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg";
 
 export default function TabsLayout() {
@@ -8,10 +8,10 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: "#3b82f6",
-        tabBarInactiveTintColor: "#94a3b8",
+        tabBarActiveTintColor: "#ffffff",
+        tabBarInactiveTintColor: "#64748b",
         tabBarStyle: styles.tabBar,
-        tabBarLabelStyle: styles.tabLabel,
+        tabBarShowLabel: false,
       }}
     >
       <Tabs.Screen
@@ -19,9 +19,10 @@ export default function TabsLayout() {
         options={{
           title: "Home",
           tabBarIcon: ({ color, focused }) => (
-            <View style={[styles.iconContainer, focused && styles.iconFocused]}>
+            <View style={[styles.tabButtonContent, focused && styles.tabButtonContentActive]}>
               {focused ? <TabGradient /> : null}
-              <LayoutDashboard color={color} size={22} />
+              <LayoutDashboard color={color} size={18} />
+              <Text numberOfLines={1} style={[styles.tabButtonText, focused && styles.tabButtonTextActive]}>Home</Text>
             </View>
           ),
         }}
@@ -31,9 +32,10 @@ export default function TabsLayout() {
         options={{
           title: "Overview",
           tabBarIcon: ({ color, focused }) => (
-            <View style={[styles.iconContainer, focused && styles.iconFocused]}>
+            <View style={[styles.tabButtonContent, focused && styles.tabButtonContentActive]}>
               {focused ? <TabGradient /> : null}
-              <BarChart3 color={color} size={22} />
+              <BarChart3 color={color} size={18} />
+              <Text numberOfLines={1} style={[styles.tabButtonText, focused && styles.tabButtonTextActive]}>Overview</Text>
             </View>
           ),
         }}
@@ -43,9 +45,10 @@ export default function TabsLayout() {
         options={{
           title: "Profile",
           tabBarIcon: ({ color, focused }) => (
-            <View style={[styles.iconContainer, focused && styles.iconFocused]}>
+            <View style={[styles.tabButtonContent, focused && styles.tabButtonContentActive]}>
               {focused ? <TabGradient /> : null}
-              <User color={color} size={22} />
+              <User color={color} size={18} />
+              <Text numberOfLines={1} style={[styles.tabButtonText, focused && styles.tabButtonTextActive]}>Profile</Text>
             </View>
           ),
         }}
@@ -72,31 +75,48 @@ function TabGradient() {
 
 const styles = StyleSheet.create({
   tabBar: {
-    height: 85,
-    paddingTop: 8,
-    paddingBottom: 25,
+    height: 90,
+    paddingTop: 10,
+    paddingBottom: 26,
+    paddingHorizontal: 14,
     backgroundColor: "#ffffff",
-    borderTopWidth: 1,
-    borderTopColor: "#e5e7eb",
+    borderTopWidth: 0,
+    elevation: 0,
+    shadowOpacity: 0,
   },
-  tabLabel: {
-    fontSize: 12,
-    fontWeight: "500",
-    marginTop: 4,
-  },
-  iconContainer: {
+  tabButtonContent: {
+    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-  },
-  iconFocused: {
-    position: "relative",
-    borderRadius: 16,
+    gap: 8,
+    minWidth: 90,
+    minHeight: 44,
     paddingHorizontal: 12,
-    paddingVertical: 6,
+    borderRadius: 14,
+    backgroundColor: "#f8fafc",
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
     overflow: "hidden",
+  },
+  tabButtonContentActive: {
+    borderColor: "#2563eb",
+    shadowColor: "#2563eb",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.18,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  tabButtonText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#64748b",
+    flexShrink: 0,
+  },
+  tabButtonTextActive: {
+    color: "#ffffff",
   },
   iconGradient: {
     ...StyleSheet.absoluteFillObject,
-    borderRadius: 16,
+    borderRadius: 14,
   },
 });
