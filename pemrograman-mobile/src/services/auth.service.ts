@@ -89,6 +89,27 @@ export const authService = {
 
     return normalized;
   },
+  googleMobile: async (data: { idToken: string; deviceId?: string; appVersion?: string; platform?: string }) => {
+    const response = await api.post<AuthResponse>("/auth/google/mobile", {
+      clientType: "mobile",
+      ...data,
+    });
+    const normalized = normalizeAuthResponse(response.data);
+
+    if (normalized.token) {
+      await AsyncStorage.setItem("auth-token", normalized.token);
+    }
+
+    if (normalized.refreshToken) {
+      await AsyncStorage.setItem("auth-refresh-token", normalized.refreshToken);
+    }
+
+    if (normalized.sessionId) {
+      await AsyncStorage.setItem("auth-session-id", normalized.sessionId);
+    }
+
+    return normalized;
+  },
   logout: async () => {
     await AsyncStorage.multiRemove(["auth-token", "auth-refresh-token", "auth-session-id"]);
   },

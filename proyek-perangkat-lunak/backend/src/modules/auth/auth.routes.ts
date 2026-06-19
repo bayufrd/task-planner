@@ -20,18 +20,18 @@ const router = Router();
 const authController = new AuthController();
 
 // Regular auth
-router.post('/register', validate(registerSchema), authController.register);
-router.post('/login', validate(loginSchema), authController.login);
-router.post('/register-client', clientRegisterRateLimit, validate(clientRegisterSchema), authController.registerClient);
-router.post('/login-client', clientLoginRateLimit, validate(clientLoginSchema), authController.loginClient);
-router.get('/me', authenticate, authController.getMe);
-router.post('/logout', authController.logout);
+router.post('/register', validate(registerSchema), authController.register.bind(authController));
+router.post('/login', validate(loginSchema), authController.login.bind(authController));
+router.post('/register-client', clientRegisterRateLimit, validate(clientRegisterSchema), authController.registerClient.bind(authController));
+router.post('/login-client', clientLoginRateLimit, validate(clientLoginSchema), authController.loginClient.bind(authController));
+router.get('/me', authenticate, authController.getMe.bind(authController));
+router.post('/logout', authController.logout.bind(authController));
 
 // Google OAuth
-router.get('/google', authController.googleAuth);
-router.get('/google/callback', authController.googleCallback);
-router.post('/google/mobile', clientGoogleRateLimit, validate(mobileGoogleSchema), authController.googleMobile);
-router.post('/refresh', validate(refreshTokenSchema), authController.refresh);
-router.post('/sync', authController.syncNextAuth);
+router.get('/google', authController.googleAuth.bind(authController));
+router.get('/google/callback', authController.googleCallback.bind(authController));
+router.post('/google/mobile', clientGoogleRateLimit, validate(mobileGoogleSchema), authController.googleMobile.bind(authController));
+router.post('/refresh', validate(refreshTokenSchema), authController.refresh.bind(authController));
+router.post('/sync', authController.syncNextAuth.bind(authController));
 
 export default router;
