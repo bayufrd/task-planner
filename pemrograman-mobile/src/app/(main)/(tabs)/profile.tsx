@@ -1,9 +1,12 @@
 import React, { useEffect } from "react";
-import { Alert, View, Text, TouchableOpacity, ScrollView, StyleSheet, ActivityIndicator, Image } from "react-native";
+import { Alert, View, Text, TouchableOpacity, ScrollView, StyleSheet, ActivityIndicator, Image, Linking } from "react-native";
+import { useQuery } from "@tanstack/react-query";
+import Constants from "expo-constants";
 import { useAuthStore } from "../../../store/auth.store";
 import { useRouter } from "expo-router";
-import { LogOut, User, Settings, Bell, ChevronRight, Award, Calendar } from "lucide-react-native";
+import { LogOut, User, Settings, Bell, ChevronRight, Award, Clock, CheckCircle2, XCircle } from "lucide-react-native";
 import { notificationService } from "../../../notifications/notification.service";
+import { taskService } from "../../../services/task.service";
 
 export default function ProfileScreen() {
   const user = useAuthStore((state) => state.user);
@@ -27,6 +30,11 @@ export default function ProfileScreen() {
     console.log("[Profile] logout completed");
   };
 
+  const { data: stats } = useQuery({
+    queryKey: ["taskStats"],
+    queryFn: taskService.getStats,
+  });
+
   const handleTestNotification = async () => {
     try {
       await notificationService.sendTestNotification();
@@ -36,18 +44,32 @@ export default function ProfileScreen() {
     }
   };
 
-  const stats = [
-    { label: "Total Tasks", value: "24", color: "#3b82f6" },
-    { label: "Completed", value: "18", color: "#22c55e" },
-    { label: "Streak", value: "7 days", color: "#f59e0b" },
+  const handleOpenSupport = async () => {
+    const url = "https://taskplanner.dastrevas.com";
+    const supported = await Linking.canOpenURL(url);
+
+    if (!supported) {
+      Alert.alert("Link tidak tersedia", url);
+      return;
+    }
+
+    await Linking.openURL(url);
+  };
+
+  const profileStats = [
+    { icon: <Clock size={18} color="#3b82f6" />, label: "Pending", value: String(stats?.pending || 0), color: "#3b82f6", bg: "#eff6ff" },
+    { icon: <CheckCircle2 size={18} color="#22c55e" />, label: "Done", value: String(stats?.done || 0), color: "#22c55e", bg: "#f0fdf4" },
+    { icon: <XCircle size={18} color="#f97316" />, label: "Skipped", value: String(stats?.skipped || 0), color: "#f97316", bg: "#fff7ed" },
   ];
 
   const menuItems = [
     { icon: <Bell size={20} color="#666" />, title: "Notifications", subtitle: "Manage reminders" },
     { icon: <Settings size={20} color="#666" />, title: "Settings", subtitle: "App preferences" },
-    { icon: <Award size={20} color="#666" />, title: "Achievements", subtitle: "View your badges" },
-    { icon: <Calendar size={20} color="#666" />, title: "Calendar", subtitle: "Sync with calendar" },
   ];
+
+  const appVersion = Constants.expoConfig?.version || "1.0.0";
+  const appLastUpdate = process.env.EXPO_PUBLIC_APP_LAST_UPDATE || "2026-06-20";
+  const appMetaSubtitle = `v${appVersion} • Updated ${appLastUpdate}`;
 
   return (
     <ScrollView style={styles.container}>
@@ -77,8 +99,9 @@ export default function ProfileScreen() {
       </View>
 
       <View style={styles.statsContainer}>
-        {stats.map((stat, index) => (
+        {profileStats.map((stat, index) => (
           <View key={index} style={[styles.statCard, { borderLeftColor: stat.color }]}>
+            <View style={[styles.statIcon, { backgroundColor: stat.bg }]}>{stat.icon}</View>
             <Text style={[styles.statValue, { color: stat.color }]}>{stat.value}</Text>
             <Text style={styles.statLabel}>{stat.label}</Text>
           </View>
@@ -114,7 +137,7 @@ export default function ProfileScreen() {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>About</Text>
         <View style={styles.menuCard}>
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity style={styles.menuItem} onPress={handleOpenSupport}>
             <View style={styles.menuItemLeft}>
               <View style={styles.infoIcon}>
                 <Text style={styles.infoIconText}>?</Text>
@@ -133,7 +156,7 @@ export default function ProfileScreen() {
               </View>
               <View style={styles.menuItemText}>
                 <Text style={styles.menuTitle}>App Version</Text>
-                <Text style={styles.menuSubtitle}>1.0.0</Text>
+                <Text style={styles.menuSubtitle}>{appMetaSubtitle}</Text>
               </View>
             </View>
           </TouchableOpacity>
@@ -272,6 +295,14 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 2,
+  },
+  statIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 10,
   },
   statValue: {
     fontSize: 24,
