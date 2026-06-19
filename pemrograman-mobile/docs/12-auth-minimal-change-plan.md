@@ -521,11 +521,20 @@ Indikator selesai:
 
 Checklist progres:
 
-- [ ] Tambah error code auth yang eksplisit untuk challenge/risk
+- [x] Tambah error code auth yang eksplisit untuk challenge/risk
 - [x] Tambah audit log auth minimal
 - [x] Pisahkan telemetry web vs mobile pada log/monitoring
 - [x] Review [`cors.ts`](../proyek-perangkat-lunak/backend/src/config/cors.ts:5) hanya jika ada kebutuhan origin browser baru
-- [ ] Dokumentasikan kondisi kapan challenge tambahan mulai diaktifkan
+- [x] Dokumentasikan kondisi kapan challenge tambahan mulai diaktifkan
+
+Kondisi aktivasi challenge tambahan saat ini:
+
+- [`POST /api/auth/login-client`](../proyek-perangkat-lunak/backend/src/modules/auth/auth.routes.ts:25) mengembalikan `RISK_CHALLENGE_REQUIRED` bila kombinasi IP + email melewati 5 percobaan dalam 1 menit.
+- [`POST /api/auth/register-client`](../proyek-perangkat-lunak/backend/src/modules/auth/auth.routes.ts:24) mengembalikan `CAPTCHA_REQUIRED` bila kombinasi IP + email melewati 3 percobaan dalam 5 menit.
+- [`POST /api/auth/google/mobile`](../proyek-perangkat-lunak/backend/src/modules/auth/auth.routes.ts:32) mengembalikan `RISK_CHALLENGE_REQUIRED` bila kombinasi IP + email identitas request melewati 5 percobaan dalam 1 menit.
+- respons rate limit tetap memakai HTTP `429` dengan header `Retry-After`.
+- detail respons bisa menyertakan `challengeType: "captcha"` untuk client yang perlu menyiapkan fallback challenge.
+- pendekatan ini masih bersifat hardening awal berbasis in-memory limiter di [`rate-limit.ts`](../proyek-perangkat-lunak/backend/src/middleware/rate-limit.ts:1), belum distributed dan belum device-session aware.
 
 ### 11.4 Phase 3 - Google mobile terpisah dari web sync
 
@@ -659,9 +668,6 @@ Verifikasi batch ini:
 
 Follow-up yang masih terbuka untuk batch berikutnya tetap sama:
 
-- rate limiting untuk endpoint client baru,
-- error code challenge/risk yang eksplisit,
-- dokumentasi threshold kapan challenge tambahan diaktifkan,
 - refresh/session lifecycle yang masih ditunda ke fase berikutnya.
 
 ## 14. Rekomendasi Final yang Paling Disarankan

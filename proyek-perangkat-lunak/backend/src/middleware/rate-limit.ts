@@ -5,6 +5,8 @@ type RateLimitOptions = {
   windowMs: number;
   max: number;
   keyPrefix: string;
+  errorCode?: string;
+  message?: string;
 };
 
 type RateLimitEntry = {
@@ -36,7 +38,13 @@ const cleanupExpiredEntries = (now: number): void => {
   }
 };
 
-export const createRateLimit = ({ windowMs, max, keyPrefix }: RateLimitOptions) => {
+export const createRateLimit = ({
+  windowMs,
+  max,
+  keyPrefix,
+  errorCode = 'TOO_MANY_REQUESTS',
+  message = 'Too many auth attempts. Please try again later.',
+}: RateLimitOptions) => {
   return (req: Request, res: Response, next: NextFunction): void => {
     const now = Date.now();
     cleanupExpiredEntries(now);
@@ -66,7 +74,10 @@ export const createRateLimit = ({ windowMs, max, keyPrefix }: RateLimitOptions) 
         path: req.path,
         retryAfterSeconds,
       });
-      sendError(res, 'TOO_MANY_REQUESTS', 'Too many auth attempts. Please try again later.', 429);
+      sendError(res, errorCode, message, 429, {
+        retryAfterSeconds,
+        challengeType: errorCode === 'RISK_CHALLENGE_REQUIRED' ? 'captcha' : undefined,
+      });
       return;
     }
 
@@ -79,16 +90,22 @@ export const clientLoginRateLimit = createRateLimit({
   windowMs: 60 * 1000,
   max: 5,
   keyPrefix: 'auth-login-client',
+  errorCode: 'RISK_CHALLENGE_REQUIRED',
+  message: 'Too many login attempts. CAPTCHA challenge is now required.',
 });
 
 export const clientRegisterRateLimit = createRateLimit({
   windowMs: 5 * 60 * 1000,
   max: 3,
   keyPrefix: 'auth-register-client',
+  errorCode: 'CAPTCHA_REQUIRED',
+  message: 'Too many registration attempts. CAPTCHA challenge is now required.',
 });
 
 export const clientGoogleRateLimit = createRateLimit({
   windowMs: 60 * 1000,
   max: 5,
   keyPrefix: 'auth-google-mobile',
+  errorCode: 'RISK_CHALLENGE_REQUIRED',
+  message: 'Too many Google login attempts. Please retry after cooldown.',
 });
