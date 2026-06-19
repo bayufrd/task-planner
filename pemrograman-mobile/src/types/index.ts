@@ -86,3 +86,13 @@ export interface OverviewAnalysis {
   insights: string[];
   advice: OverviewAdvice[];
 }
+
+export interface ParsedTaskCommand {
+  title: string;
+  description?: string;
+  deadline: string;
+  priority: 'HIGH' | 'MEDIUM' | 'LOW';
+  estimatedDuration: number;
+  tags: string[];
+  reminderTime: number;
+}

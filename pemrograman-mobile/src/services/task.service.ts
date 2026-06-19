@@ -1,5 +1,5 @@
 import api from "./api";
-import { OverviewAnalysis, Task, TaskStats } from "../types";
+import { OverviewAnalysis, ParsedTaskCommand, Task, TaskStats } from "../types";
 
 interface ApiResponse<T> {
   success: boolean;
@@ -86,6 +86,13 @@ export const taskService = {
         skipped: stats.skipped,
       },
       dailyData,
+    });
+
+    return response.data?.data;
+  },
+  parseTaskCommand: async (command: string): Promise<ParsedTaskCommand> => {
+    const response = await api.post<ApiResponse<ParsedTaskCommand>>("/ai/parse-task", {
+      command,
     });
 
     return response.data?.data;

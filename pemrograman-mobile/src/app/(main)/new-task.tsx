@@ -42,6 +42,11 @@ export default function NewTaskScreen() {
   const taskId = params.taskId as string | undefined;
   const isEditMode = !!taskId;
   const defaultDateTime = getCurrentDateTime();
+  const paletteTitle = typeof params.title === "string" ? params.title : "";
+  const paletteDescription = typeof params.description === "string" ? params.description : "";
+  const palettePriority = params.priority;
+  const paletteDeadline = typeof params.deadline === "string" ? params.deadline : "";
+  const paletteEstimatedDuration = typeof params.estimatedDuration === "string" ? params.estimatedDuration : "";
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -74,8 +79,35 @@ export default function NewTaskScreen() {
       }).catch(() => {
         setIsLoadingTask(false);
       });
+      return;
     }
-  }, [isEditMode, taskId]);
+
+    if (paletteTitle) {
+      setTitle(paletteTitle);
+    }
+
+    if (paletteDescription) {
+      setDescription(paletteDescription);
+    }
+
+    if (palettePriority === "HIGH" || palettePriority === "MEDIUM" || palettePriority === "LOW") {
+      setPriority(palettePriority);
+    }
+
+    if (paletteDeadline) {
+      const parsedDeadline = new Date(paletteDeadline);
+      if (!Number.isNaN(parsedDeadline.getTime())) {
+        setDeadline(parsedDeadline.toISOString().slice(0, 10));
+        setDeadlineTime(parsedDeadline.toISOString().slice(11, 16));
+      }
+    }
+
+    if (paletteEstimatedDuration) {
+      setEstimatedDuration(paletteEstimatedDuration);
+    }
+
+    setIsLoadingTask(false);
+  }, [isEditMode, paletteDeadline, paletteDescription, paletteEstimatedDuration, palettePriority, paletteTitle, taskId]);
 
   const currentConfig = TASK_STEPS[currentStep];
   const isLastStep = currentStep === TASK_STEPS.length - 1;

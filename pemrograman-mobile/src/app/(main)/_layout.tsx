@@ -1,8 +1,9 @@
-import { Stack } from "expo-router";
+import { Redirect, Stack } from "expo-router";
 import { useAuthStore } from "../../store/auth.store";
 import { useEffect } from "react";
-import { Redirect } from "expo-router";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import CommandPaletteLauncher from "../../components/command-palette/CommandPaletteLauncher";
+import GlobalCommandPalette from "../../components/command-palette/GlobalCommandPalette";
+import { CommandPaletteProvider } from "../../components/command-palette/CommandPaletteProvider";
 
 export default function MainLayout() {
   const user = useAuthStore((state) => state.user);
@@ -29,15 +30,19 @@ export default function MainLayout() {
   }
 
   return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="(tabs)" />
-      <Stack.Screen
-        name="new-task"
-        options={{
-          headerShown: false,
-          presentation: 'modal'
-        }}
-      />
-    </Stack>
+    <CommandPaletteProvider>
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen
+          name="new-task"
+          options={{
+            headerShown: false,
+            presentation: 'modal'
+          }}
+        />
+      </Stack>
+      <CommandPaletteLauncher />
+      <GlobalCommandPalette />
+    </CommandPaletteProvider>
   );
 }
