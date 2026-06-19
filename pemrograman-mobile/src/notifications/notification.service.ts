@@ -21,11 +21,11 @@ export const notificationService = {
       finalStatus = status;
     }
     if (finalStatus !== "granted") {
-      return;
+      return false;
     }
 
     if (Platform.OS === "android") {
-      Notifications.setNotificationChannelAsync("default", {
+      await Notifications.setNotificationChannelAsync("default", {
         name: "default",
         importance: Notifications.AndroidImportance.MAX,
         vibrationPattern: [0, 250, 250, 250],
@@ -33,7 +33,7 @@ export const notificationService = {
       });
     }
 
-    return token;
+    return true;
   },
 
   scheduleTaskReminder: async (title: string, body: string, date: Date) => {
@@ -45,6 +45,25 @@ export const notificationService = {
       trigger: {
         type: Notifications.SchedulableTriggerInputTypes.DATE,
         date,
+      },
+    });
+  },
+
+  sendTestNotification: async () => {
+    const granted = await notificationService.registerForPushNotificationsAsync();
+
+    if (!granted) {
+      throw new Error("Izin notifikasi belum diberikan.");
+    }
+
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: "Test Notification",
+        body: "Local notification dari Smart Task Planner berhasil jalan.",
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+        seconds: 2,
       },
     });
   },

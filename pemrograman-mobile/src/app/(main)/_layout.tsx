@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import CommandPaletteLauncher from "../../components/command-palette/CommandPaletteLauncher";
 import GlobalCommandPalette from "../../components/command-palette/GlobalCommandPalette";
 import { CommandPaletteProvider } from "../../components/command-palette/CommandPaletteProvider";
+import { notificationService } from "../../notifications/notification.service";
 
 export default function MainLayout() {
   const user = useAuthStore((state) => state.user);
@@ -14,6 +15,10 @@ export default function MainLayout() {
     // Hydrate auth state
     const hydrate = useAuthStore.getState().hydrate;
     hydrate();
+  }, []);
+
+  useEffect(() => {
+    void notificationService.registerForPushNotificationsAsync();
   }, []);
 
   console.log("[MainLayout] user:", user ? user.email : "null", "token:", token ? "exists" : "null", "isHydrated:", isHydrated);

@@ -1,8 +1,9 @@
 import React, { useEffect } from "react";
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, ActivityIndicator } from "react-native";
+import { Alert, View, Text, TouchableOpacity, ScrollView, StyleSheet, ActivityIndicator } from "react-native";
 import { useAuthStore } from "../../../store/auth.store";
 import { useRouter } from "expo-router";
 import { LogOut, User, Settings, Bell, ChevronRight, Award, Calendar } from "lucide-react-native";
+import { notificationService } from "../../../notifications/notification.service";
 
 export default function ProfileScreen() {
   const user = useAuthStore((state) => state.user);
@@ -24,6 +25,15 @@ export default function ProfileScreen() {
     console.log("[Profile] handleLogout called");
     await logout();
     console.log("[Profile] logout completed");
+  };
+
+  const handleTestNotification = async () => {
+    try {
+      await notificationService.sendTestNotification();
+      Alert.alert("Test notification dijadwalkan", "Notifikasi lokal akan muncul dalam 2 detik.");
+    } catch (error: any) {
+      Alert.alert("Test notification gagal", error?.message || "Tidak bisa menjadwalkan notifikasi lokal.");
+    }
   };
 
   const stats = [
@@ -121,6 +131,11 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         </View>
       </View>
+
+      <TouchableOpacity style={styles.testNotificationButton} onPress={handleTestNotification}>
+        <Bell size={20} color="#2563eb" />
+        <Text style={styles.testNotificationText}>Test Local Notification</Text>
+      </TouchableOpacity>
 
       <TouchableOpacity
         style={[styles.logoutButton, isLoggingOut && styles.logoutButtonDisabled]}
@@ -319,6 +334,22 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
     color: "#64748b",
+  },
+  testNotificationButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginHorizontal: 20,
+    marginTop: 32,
+    padding: 16,
+    backgroundColor: "#eff6ff",
+    borderRadius: 12,
+    gap: 8,
+  },
+  testNotificationText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#2563eb",
   },
   logoutButton: {
     flexDirection: "row",

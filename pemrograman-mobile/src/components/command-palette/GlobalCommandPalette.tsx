@@ -43,7 +43,7 @@ const AI_EXAMPLES = [
 
 export default function GlobalCommandPalette() {
   const router = useRouter();
-  const { isOpen, close } = useCommandPalette();
+  const { isOpen, close, showFeedback } = useCommandPalette();
   const [query, setQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -53,6 +53,46 @@ export default function GlobalCommandPalette() {
     setIsLoading(false);
     setError(null);
     setResult(null);
+  };
+
+  const createTaskFromParsed = async (parsed: ParsedTaskCommand, originalCommand?: string) => {
+    await taskService.createTask({
+      title: parsed.title,
+      description: parsed.description || originalCommand || undefined,
+      deadline: parsed.deadline,
+      priority: parsed.priority,
+      estimatedDuration: parsed.estimatedDuration,
+      reminderTime: parsed.reminderTime,
+    });
+  };
+
+  const getErrorMessage = (err: any) => {
+    return err?.response?.data?.error?.message || err?.message || "Gagal memproses command AI.";
+  };
+
+  const runNaturalLanguageCreate = async (command: string, parsedOverride?: ParsedTaskCommand) => {
+    handleClose();
+    showFeedback({
+      tone: "loading",
+      title: "AI sedang menganalisa...",
+      message: "Perintah diproses lalu task akan dibuat otomatis.",
+    });
+
+    try {
+      const parsed = parsedOverride ?? await taskService.parseTaskCommand(command);
+      await createTaskFromParsed(parsed, command);
+      showFeedback({
+        tone: "success",
+        title: "Task berhasil dibuat",
+        message: parsed.title,
+      });
+    } catch (err: any) {
+      showFeedback({
+        tone: "error",
+        title: "Gagal membuat task dari AI",
+        message: getErrorMessage(err),
+      });
+    }
   };
 
   const handleClose = () => {
@@ -83,11 +123,20 @@ export default function GlobalCommandPalette() {
       const parsed = await taskService.parseTaskCommand(command);
       setResult(parsed);
     } catch (err: any) {
-      const message = err?.response?.data?.error?.message || err?.message || "Gagal memproses command AI.";
-      setError(message);
+      setError(getErrorMessage(err));
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleNaturalLanguageSubmit = async (input?: string) => {
+    const command = (input ?? query).trim();
+
+    if (!command) {
+      return;
+    }
+
+    await runNaturalLanguageCreate(command);
   };
 
   const handleUseParsedResult = () => {
@@ -144,8 +193,8 @@ export default function GlobalCommandPalette() {
       },
       {
         id: "ai-parse",
-        title: "AI Parse Task Command",
-        description: "Kirim command natural language ke endpoint AI backend.",
+        title: "AI Preview Task Command",
+        description: "Preview hasil parsing AI tanpa membuat task dulu.",
         icon: Brain,
         type: "ai",
         action: () => handleParseCommand(),
@@ -178,7 +227,7 @@ export default function GlobalCommandPalette() {
               </View>
               <View>
                 <Text style={styles.headerTitle}>AI Command Palette</Text>
-                <Text style={styles.headerSubtitle}>Global launcher untuk navigasi dan AI parsing.</Text>
+                <Text style={styles.headerSubtitle}>Ketik natural language. Enter langsung parse + buat task seperti web.</Text>
               </View>
             </View>
             <TouchableOpacity style={styles.closeButton} onPress={handleClose}>
@@ -190,12 +239,16 @@ export default function GlobalCommandPalette() {
             <Search size={18} color="#64748b" />
             <TextInput
               style={styles.input}
-              placeholder="Cari command atau ketik instruksi AI..."
+              placeholder="Contoh: Besok meeting jam 7 malam"
               placeholderTextColor="#94a3b8"
               value={query}
               onChangeText={setQuery}
               autoCapitalize="sentences"
               autoCorrect={false}
+              returnKeyType="go"
+              onSubmitEditing={() => {
+                void handleNaturalLanguageSubmit();
+              }}
             />
           </View>
 
@@ -221,12 +274,12 @@ export default function GlobalCommandPalette() {
             {!filteredCommands.length ? (
               <View style={styles.emptyState}>
                 <Text style={styles.emptyTitle}>Command tidak ditemukan</Text>
-                <Text style={styles.emptyText}>Gunakan teks natural language lalu pilih AI parse.</Text>
+                <Text style={styles.emptyText}>Tekan Enter untuk kirim natural language langsung ke AI.</Text>
               </View>
             ) : null}
 
             <View style={styles.examplesCard}>
-              <Text style={styles.sectionTitle}>Contoh command AI</Text>
+              <Text style={styles.sectionTitle}>Contoh natural language</Text>
               {AI_EXAMPLES.map((example) => (
                 <TouchableOpacity
                   key={example}
@@ -234,6 +287,7 @@ export default function GlobalCommandPalette() {
                   onPress={() => {
                     setQuery(example);
                     setError(null);
+                    setResult(null);
                   }}
                 >
                   <Text style={styles.exampleText}>{example}</Text>
@@ -248,7 +302,7 @@ export default function GlobalCommandPalette() {
                 {isLoading ? (
                   <View style={styles.loadingRow}>
                     <ActivityIndicator size="small" color="#2563eb" />
-                    <Text style={styles.loadingText}>Memproses command ke backend AI...</Text>
+                    <Text style={styles.loadingText}>AI sedang menganalisa perintah dan menyiapkan task...</Text>
                   </View>
                 ) : null}
 
@@ -287,6 +341,15 @@ export default function GlobalCommandPalette() {
 
                     <TouchableOpacity style={styles.useButton} onPress={handleUseParsedResult}>
                       <Text style={styles.useButtonText}>Gunakan hasil ini di form task</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={[styles.useButton, styles.secondaryButton]}
+                      onPress={() => {
+                        void runNaturalLanguageCreate(query.trim() || result.title, result);
+                      }}
+                    >
+                      <Text style={[styles.useButtonText, styles.secondaryButtonText]}>Buat task sekarang</Text>
                     </TouchableOpacity>
                   </View>
                 ) : null}
@@ -492,6 +555,14 @@ const styles = StyleSheet.create({
     color: "#ffffff",
     fontSize: 14,
     fontWeight: "700",
+  },
+  secondaryButton: {
+    backgroundColor: "#ffffff",
+    borderWidth: 1,
+    borderColor: "#2563eb",
+  },
+  secondaryButtonText: {
+    color: "#2563eb",
   },
   emptyState: {
     padding: 16,
