@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { env } from '../../config/env';
-import { TaskService } from './task.service';
+import { TaskService, DailyScheduleReminder } from './task.service';
 
 interface WhatsappPersonalPayload {
   nomor: string;
@@ -61,7 +61,8 @@ export class TaskAutoSkipScheduler {
     });
 
     if (!response.ok) {
-      throw new Error(`${errorPrefix}: ${response.status} ${response.statusText}`);
+      const body = await response.text().catch(() => '');
+      throw new Error(`${errorPrefix}: ${response.status} ${response.statusText}${body ? ` | ${body}` : ''}`);
     }
   }
 
@@ -99,6 +100,26 @@ export class TaskAutoSkipScheduler {
       { nomor, pesan, lampiran },
       'Failed to send WhatsApp media reminder',
     );
+  }
+
+  private async sendDailyScheduleReminder(reminder: DailyScheduleReminder): Promise<void> {
+    for (const [index, batch] of reminder.batches.entries()) {
+      try {
+        if (batch.hasLampiran) {
+          await this.sendWhatsappMediaMessage(reminder.nomor, batch.pesan, reminder.lampiranPath);
+        } else {
+          await this.sendWhatsappMessage(reminder.nomor, batch.pesan);
+        }
+      } catch (error: any) {
+        const message = error?.message || '';
+        if (batch.hasLampiran && message.includes('413')) {
+          await this.sendWhatsappMessage(reminder.nomor, batch.pesan);
+          continue;
+        }
+
+        throw new Error(`batch-${index + 1}: ${message || error}`);
+      }
+    }
   }
 
   private getJakartaScheduleWindow(referenceDate: Date = new Date()) {
@@ -139,20 +160,22 @@ export class TaskAutoSkipScheduler {
 
         for (const reminder of dailyReminders) {
           try {
-            await this.sendWhatsappMediaMessage(reminder.nomor, reminder.pesan, reminder.lampiranPath);
+            await this.sendDailyScheduleReminder(reminder);
             await this.taskService.markDailyScheduleReminderSent(reminder.reminderKey, reminder.userId);
             console.log('[Daily Schedule Reminder] WhatsApp reminder sent', {
               reminderKey: reminder.reminderKey,
               userId: reminder.userId,
               nomor: reminder.nomor,
-              hasLampiran: true,
+              batchCount: reminder.batches.length,
+              hasLampiran: reminder.batches.some((batch) => batch.hasLampiran),
             });
           } catch (error) {
             console.error('[Daily Schedule Reminder] Failed to send WhatsApp reminder', {
               reminderKey: reminder.reminderKey,
               userId: reminder.userId,
               nomor: reminder.nomor,
-              hasLampiran: true,
+              batchCount: reminder.batches.length,
+              hasLampiran: reminder.batches.some((batch) => batch.hasLampiran),
               error,
             });
           }

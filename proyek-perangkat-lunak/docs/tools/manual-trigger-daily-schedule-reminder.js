@@ -24,6 +24,8 @@ const DAILY_DISCIPLINE_QUOTES = [
 const DAILY_REMINDER_KIND = 'daily-schedule';
 const DEFAULT_IMAGE_PATH = 'public/harian-candidate-600.jpg';
 const DEFAULT_TIMEZONE = 'Asia/Jakarta';
+const DAILY_SCHEDULE_CAPTION_BATCH_THRESHOLD = 750;
+const DAILY_SCHEDULE_TEXT_BATCH_THRESHOLD = 1500;
 
 function printHelp() {
   console.log(`Manual trigger Daily Schedule Reminder
@@ -207,6 +209,52 @@ function buildCaption(user, tasks, dayKey) {
   ].join('\n');
 }
 
+function splitLongText(text, maxLength) {
+  const normalized = String(text || '').trim();
+  if (!normalized) return [];
+
+  const chunks = [];
+  let remaining = normalized;
+
+  while (remaining.length > maxLength) {
+    let splitIndex = remaining.lastIndexOf('\n', maxLength);
+    if (splitIndex <= 0 || splitIndex < Math.floor(maxLength * 0.6)) {
+      splitIndex = remaining.lastIndexOf(' ', maxLength);
+    }
+    if (splitIndex <= 0 || splitIndex < Math.floor(maxLength * 0.6)) {
+      splitIndex = maxLength;
+    }
+
+    const part = remaining.slice(0, splitIndex).trim();
+    if (part) chunks.push(part);
+    remaining = remaining.slice(splitIndex).trim();
+  }
+
+  if (remaining) chunks.push(remaining);
+  return chunks;
+}
+
+function buildReminderBatches(caption) {
+  const normalized = String(caption || '').trim();
+  if (!normalized) return [];
+
+  if (normalized.length <= DAILY_SCHEDULE_CAPTION_BATCH_THRESHOLD) {
+    return [{ pesan: normalized, hasLampiran: true }];
+  }
+
+  const firstChunk = splitLongText(normalized, DAILY_SCHEDULE_CAPTION_BATCH_THRESHOLD)[0] || normalized.slice(0, DAILY_SCHEDULE_CAPTION_BATCH_THRESHOLD).trim();
+  const remaining = normalized.slice(firstChunk.length).trim();
+  const overflowChunks = splitLongText(remaining, DAILY_SCHEDULE_TEXT_BATCH_THRESHOLD).map((pesan) => ({
+    pesan,
+    hasLampiran: false,
+  }));
+
+  return [
+    { pesan: firstChunk, hasLampiran: true },
+    ...overflowChunks,
+  ];
+}
+
 function buildAttachmentBase64(relativePath) {
   const absolutePath = path.resolve(projectRoot, relativePath);
   const fileBuffer = fs.readFileSync(absolutePath);
@@ -380,6 +428,9 @@ async function main() {
 
       const tasks = await getTasksForUser(connection, user.id, startOfDayUtc, endOfDayUtc);
       const pesan = buildCaption(user, tasks, dayKey);
+      const batches = options.noImage
+        ? splitLongText(pesan, DAILY_SCHEDULE_TEXT_BATCH_THRESHOLD).map((item) => ({ pesan: item, hasLampiran: false }))
+        : buildReminderBatches(pesan);
       processed += 1;
 
       console.log('[Daily Schedule Manual Trigger] Candidate', {
@@ -387,22 +438,37 @@ async function main() {
         userId: user.id,
         nomor,
         taskCount: tasks.length,
-        hasLampiran: !options.noImage,
+        batchCount: batches.length,
+        hasLampiran: batches.some((batch) => batch.hasLampiran),
       });
 
       if (!options.send) {
-        console.log('--- CAPTION PREVIEW START ---');
-        console.log(pesan);
-        console.log('--- CAPTION PREVIEW END ---');
+        console.log('--- BATCH PREVIEW START ---');
+        batches.forEach((batch, index) => {
+          console.log(`[Batch ${index + 1}] hasLampiran=${batch.hasLampiran}`);
+          console.log(batch.pesan);
+        });
+        console.log('--- BATCH PREVIEW END ---');
         continue;
       }
 
       try {
-        const payload = options.noImage
-          ? { nomor, pesan }
-          : { nomor, pesan, lampiran: attachmentBase64 };
+        for (const [index, batch] of batches.entries()) {
+          try {
+            const payload = batch.hasLampiran
+              ? { nomor, pesan: batch.pesan, lampiran: attachmentBase64 }
+              : { nomor, pesan: batch.pesan };
 
-        await sendWhatsappPayload(payload);
+            await sendWhatsappPayload(payload);
+          } catch (error) {
+            const message = error && error.message ? error.message : String(error);
+            if (batch.hasLampiran && message.includes('413')) {
+              await sendWhatsappPayload({ nomor, pesan: batch.pesan });
+              continue;
+            }
+            throw new Error(`batch-${index + 1}: ${message}`);
+          }
+        }
 
         if (options.markSent) {
           await markReminderSent(connection, reminderId, user.id, new Date());
@@ -414,7 +480,8 @@ async function main() {
           userId: user.id,
           nomor,
           markSent: options.markSent,
-          hasLampiran: !options.noImage,
+          batchCount: batches.length,
+          hasLampiran: batches.some((batch) => batch.hasLampiran),
         });
       } catch (error) {
         failed += 1;
@@ -422,6 +489,7 @@ async function main() {
           reminderId,
           userId: user.id,
           nomor,
+          batchCount: batches.length,
           error: error && error.message ? error.message : error,
         });
       }

@@ -83,7 +83,9 @@ Ukuran hasil uji:
 
 1. backend membaca file lokal reminder harian,
 2. file diubah menjadi string base64,
-3. base64 dikirim ke gateway pada field `lampiran`.
+3. base64 dikirim ke gateway pada field `lampiran`,
+4. bila caption terlalu panjang, kirim batch pertama dengan gambar + caption trim,
+5. sisa isi caption dikirim lagi sebagai text-only batch lanjutan.
 
 Contoh logika implementasi aktif:
 
@@ -91,6 +93,20 @@ Contoh logika implementasi aktif:
 const dailyImagePath = 'public/harian-candidate-600.jpg';
 const lampiran = await buildBase64Attachment(dailyImagePath);
 ```
+
+### Rule threshold batching
+
+Rule aman yang dipakai:
+
+- caption gambar batch pertama maksimal `750` karakter,
+- overflow text-only per batch maksimal `1500` karakter,
+- jika total caption `<= 750`, cukup kirim `1x` image+caption,
+- jika total caption `> 750`, kirim `2x` atau lebih:
+  1. batch pertama `pesan + lampiran`,
+  2. batch berikutnya `pesan` saja tanpa `lampiran`,
+- jika gateway tetap membalas `413` pada batch bergambar, fallback batch itu menjadi text-only agar isi tidak hilang.
+
+Tujuan rule ini: menjaga payload gabungan base64 gambar + caption tetap aman saat task hari itu sangat banyak.
 
 ### Catatan deploy
 
@@ -350,14 +366,17 @@ Dengan demikian:
 3. untuk setiap user, query task hari ini,
 4. pilih quote harian,
 5. bangun caption sesuai skenario,
-6. ubah gambar reminder menjadi base64 lalu kirim `lampiran` ke endpoint personal,
-7. tulis log sukses/gagal per user.
+6. pecah caption berdasarkan threshold batching,
+7. kirim batch pertama dengan `lampiran`,
+8. kirim sisa batch sebagai text-only,
+9. jika batch bergambar kena `413`, retry batch itu sebagai text-only,
+10. tulis log sukses/gagal per user.
 
 Contoh log yang disarankan:
 
 ```text
-[Daily Schedule Reminder] sent { userId, nomor, hasLampiran }
-[Daily Schedule Reminder] failed { userId, nomor, hasLampiran, error }
+[Daily Schedule Reminder] sent { userId, nomor, batchCount, hasLampiran }
+[Daily Schedule Reminder] failed { userId, nomor, batchCount, hasLampiran, error }
 ```
 
 ## Catatan keamanan
@@ -383,6 +402,7 @@ Agar selaras dengan struktur proyek saat ini, implementasi backend disarankan di
    - pilih quote.
 3. **sender outbound media**
    - kirim payload `nomor` + `pesan` + `lampiran` ke endpoint `/api/whatsapp/send-personal`,
+   - lanjutkan overflow dengan payload text-only batch berikutnya,
    - pakai token dengan fallback yang terdokumentasi.
 
 Dengan struktur ini, fitur Daily Schedule Reminder tetap rapi, terpisah dari flow inbound command WhatsApp, dan tidak mengganggu reminder deadline yang sudah berjalan.
@@ -397,6 +417,7 @@ Karakteristik:
 - membaca environment otomatis dari [`proyek-perangkat-lunak/.env`](../../../.env.example), [`proyek-perangkat-lunak/.env.local`](../../../.env.example), lalu [`proyek-perangkat-lunak/backend/.env`](../../../backend/.env.example),
 - memakai query boundary hari `Asia/Jakarta` yang sama,
 - memakai dedup key `daily-schedule:YYYY-MM-DD:userId`,
+- preview menampilkan hasil batching per batch,
 - bisa kirim sungguhan dengan flag `--send`,
 - bisa menulis log sent ke tabel `Reminder` dengan flag `--mark-sent`.
 

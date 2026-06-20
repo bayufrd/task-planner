@@ -13,6 +13,74 @@ const DAILY_DISCIPLINE_QUOTES = [
   'Jadwal yang dijaga hari ini akan membentuk pencapaian esok hari.',
   'Konsistensi kecil setiap hari lebih kuat daripada niat besar yang tertunda.',
 ];
+const DAILY_SCHEDULE_CAPTION_BATCH_THRESHOLD = 750;
+const DAILY_SCHEDULE_TEXT_BATCH_THRESHOLD = 1500;
+
+export interface DailyScheduleReminderBatch {
+  pesan: string;
+  hasLampiran: boolean;
+}
+
+export interface DailyScheduleReminder {
+  reminderKey: string;
+  userId: string;
+  nomor: string;
+  lampiranPath: string;
+  batches: DailyScheduleReminderBatch[];
+}
+
+const splitLongText = (text: string, maxLength: number): string[] => {
+  const normalized = text.trim();
+  if (!normalized) return [];
+
+  const chunks: string[] = [];
+  let remaining = normalized;
+
+  while (remaining.length > maxLength) {
+    let splitIndex = remaining.lastIndexOf('\n', maxLength);
+    if (splitIndex <= 0 || splitIndex < Math.floor(maxLength * 0.6)) {
+      splitIndex = remaining.lastIndexOf(' ', maxLength);
+    }
+    if (splitIndex <= 0 || splitIndex < Math.floor(maxLength * 0.6)) {
+      splitIndex = maxLength;
+    }
+
+    const part = remaining.slice(0, splitIndex).trim();
+    if (part) {
+      chunks.push(part);
+    }
+    remaining = remaining.slice(splitIndex).trim();
+  }
+
+  if (remaining) {
+    chunks.push(remaining);
+  }
+
+  return chunks;
+};
+
+const buildDailyScheduleBatches = (caption: string): DailyScheduleReminderBatch[] => {
+  const normalized = caption.trim();
+  if (!normalized) {
+    return [];
+  }
+
+  if (normalized.length <= DAILY_SCHEDULE_CAPTION_BATCH_THRESHOLD) {
+    return [{ pesan: normalized, hasLampiran: true }];
+  }
+
+  const firstChunk = splitLongText(normalized, DAILY_SCHEDULE_CAPTION_BATCH_THRESHOLD)[0] ?? normalized.slice(0, DAILY_SCHEDULE_CAPTION_BATCH_THRESHOLD).trim();
+  const remaining = normalized.slice(firstChunk.length).trim();
+  const overflowChunks = splitLongText(remaining, DAILY_SCHEDULE_TEXT_BATCH_THRESHOLD).map((pesan) => ({
+    pesan,
+    hasLampiran: false,
+  }));
+
+  return [
+    { pesan: firstChunk, hasLampiran: true },
+    ...overflowChunks,
+  ];
+};
 
 export class TaskService {
   async createTask(userId: string, data: CreateTaskInput) {
@@ -609,13 +677,7 @@ export class TaskService {
       },
     });
 
-    const reminders: Array<{
-      reminderKey: string;
-      userId: string;
-      nomor: string;
-      pesan: string;
-      lampiranPath: string;
-    }> = [];
+    const reminders: DailyScheduleReminder[] = [];
 
     for (const user of users) {
       const number = user.whatsappNumber?.trim();
@@ -686,8 +748,8 @@ export class TaskService {
         reminderKey,
         userId: user.id,
         nomor: number,
-        pesan: caption,
         lampiranPath: dailyImagePath,
+        batches: buildDailyScheduleBatches(caption),
       });
     }
 
