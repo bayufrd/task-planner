@@ -18,6 +18,8 @@ const DEFAULT_TIMEZONE = 'Asia/Jakarta';
 const DEFAULT_NUMBER = '6282177177767';
 const DEFAULT_IMAGE_BASE = 'public/leveling-wa';
 const MAX_WHATSAPP_ATTACHMENT_BYTES = 512 * 1024;
+const OVERVIEW_CAPTION_BATCH_THRESHOLD = 750;
+const OVERVIEW_TEXT_BATCH_THRESHOLD = 1500;
 
 function printHelp() {
   console.log(`Manual trigger WhatsApp Overview
@@ -455,6 +457,59 @@ function buildOverviewMessage(user, stats, dailyData, analysis) {
   };
 }
 
+function splitWhatsappText(text, maxLength) {
+  const normalized = String(text || '').trim();
+  if (!normalized) return [];
+
+  const chunks = [];
+  let remaining = normalized;
+
+  while (remaining.length > maxLength) {
+    let splitIndex = remaining.lastIndexOf('\n', maxLength);
+    if (splitIndex <= 0 || splitIndex < Math.floor(maxLength * 0.6)) {
+      splitIndex = remaining.lastIndexOf(' ', maxLength);
+    }
+    if (splitIndex <= 0 || splitIndex < Math.floor(maxLength * 0.6)) {
+      splitIndex = maxLength;
+    }
+
+    const part = remaining.slice(0, splitIndex).trim();
+    if (part) chunks.push(part);
+    remaining = remaining.slice(splitIndex).trim();
+  }
+
+  if (remaining) chunks.push(remaining);
+  return chunks;
+}
+
+function buildOverviewBatches(message, hasLampiran) {
+  const normalized = String(message || '').trim();
+  if (!normalized) return [];
+
+  if (!hasLampiran) {
+    return splitWhatsappText(normalized, OVERVIEW_TEXT_BATCH_THRESHOLD).map((pesan) => ({
+      pesan,
+      hasLampiran: false,
+    }));
+  }
+
+  if (normalized.length <= OVERVIEW_CAPTION_BATCH_THRESHOLD) {
+    return [{ pesan: normalized, hasLampiran: true }];
+  }
+
+  const firstChunk = splitWhatsappText(normalized, OVERVIEW_CAPTION_BATCH_THRESHOLD)[0] || normalized.slice(0, OVERVIEW_CAPTION_BATCH_THRESHOLD).trim();
+  const remaining = normalized.slice(firstChunk.length).trim();
+  const overflowChunks = splitWhatsappText(remaining, OVERVIEW_TEXT_BATCH_THRESHOLD).map((pesan) => ({
+    pesan,
+    hasLampiran: false,
+  }));
+
+  return [
+    { pesan: firstChunk, hasLampiran: true },
+    ...overflowChunks,
+  ];
+}
+
 async function sendWhatsappPayload(payload) {
   const token = getAuthToken();
   const baseUrl = process.env.WHATSAPP_BOT_URL || '';
@@ -541,27 +596,39 @@ async function main() {
       attachmentSkipped: !options.noImage && !lampiran,
     });
 
-    console.log('--- OVERVIEW PREVIEW START ---');
-    console.log(overview.message);
-    console.log('--- OVERVIEW PREVIEW END ---');
+    const batches = buildOverviewBatches(overview.message, Boolean(lampiran) && !options.noImage);
+
+    console.log('--- OVERVIEW BATCH PREVIEW START ---');
+    batches.forEach((batch, index) => {
+      console.log(`[Batch ${index + 1}] hasLampiran=${batch.hasLampiran}`);
+      console.log(batch.pesan);
+    });
+    console.log('--- OVERVIEW BATCH PREVIEW END ---');
 
     if (!options.send) {
       return;
     }
 
-    const payload = options.noImage || !lampiran
-      ? { nomor: targetNumber, pesan: overview.message }
-      : { nomor: targetNumber, pesan: overview.message, lampiran };
+    let fallbackToTextOnly = false;
+    for (const batch of batches) {
+      const payload = batch.hasLampiran
+        ? { nomor: targetNumber, pesan: batch.pesan, lampiran }
+        : { nomor: targetNumber, pesan: batch.pesan };
 
-    const sendResult = await sendWhatsappPayload(payload);
+      const sendResult = await sendWhatsappPayload(payload);
+      if (batch.hasLampiran && sendResult && sendResult.fallbackToTextOnly) {
+        fallbackToTextOnly = true;
+      }
+    }
 
     console.log('[WhatsApp Overview Manual Trigger] Sent', {
       userId: user.id,
       number: targetNumber,
-      fallbackToTextOnly: Boolean(sendResult && sendResult.fallbackToTextOnly),
+      batchCount: batches.length,
+      fallbackToTextOnly,
       score: overview.score,
       level: overview.level,
-      hasLampiran: Boolean(lampiran) && !(sendResult && sendResult.fallbackToTextOnly),
+      hasLampiran: Boolean(lampiran) && !fallbackToTextOnly,
     });
   } finally {
     await connection.end();

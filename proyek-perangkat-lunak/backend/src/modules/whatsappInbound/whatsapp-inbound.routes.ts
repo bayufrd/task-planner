@@ -31,6 +31,11 @@ type WhatsappOutboundInfo = {
   error?: string | null;
 };
 
+type WhatsappMessageBatch = {
+  pesan: string;
+  hasLampiran: boolean;
+};
+
 type WhatsappReplyPayload = {
   sent: boolean;
   number: string;
@@ -398,7 +403,70 @@ const buildSafeWhatsappAttachment = async (relativePath: string): Promise<string
   return buildBase64Attachment(relativePath);
 };
 
-const sendWhatsappPersonalMessage = async (payload: WhatsappPersonalPayload): Promise<void> => {
+const OVERVIEW_CAPTION_BATCH_THRESHOLD = 750;
+const OVERVIEW_TEXT_BATCH_THRESHOLD = 1500;
+
+const splitWhatsappText = (text: string, maxLength: number): string[] => {
+  const normalized = text.trim();
+  if (!normalized) return [];
+
+  const chunks: string[] = [];
+  let remaining = normalized;
+
+  while (remaining.length > maxLength) {
+    let splitIndex = remaining.lastIndexOf('\n', maxLength);
+    if (splitIndex <= 0 || splitIndex < Math.floor(maxLength * 0.6)) {
+      splitIndex = remaining.lastIndexOf(' ', maxLength);
+    }
+    if (splitIndex <= 0 || splitIndex < Math.floor(maxLength * 0.6)) {
+      splitIndex = maxLength;
+    }
+
+    const part = remaining.slice(0, splitIndex).trim();
+    if (part) {
+      chunks.push(part);
+    }
+    remaining = remaining.slice(splitIndex).trim();
+  }
+
+  if (remaining) {
+    chunks.push(remaining);
+  }
+
+  return chunks;
+};
+
+const buildOverviewBatches = (message: string, hasLampiran: boolean): WhatsappMessageBatch[] => {
+  const normalized = message.trim();
+  if (!normalized) {
+    return [];
+  }
+
+  if (!hasLampiran) {
+    return splitWhatsappText(normalized, OVERVIEW_TEXT_BATCH_THRESHOLD).map((pesan) => ({
+      pesan,
+      hasLampiran: false,
+    }));
+  }
+
+  if (normalized.length <= OVERVIEW_CAPTION_BATCH_THRESHOLD) {
+    return [{ pesan: normalized, hasLampiran: true }];
+  }
+
+  const firstChunk = splitWhatsappText(normalized, OVERVIEW_CAPTION_BATCH_THRESHOLD)[0] ?? normalized.slice(0, OVERVIEW_CAPTION_BATCH_THRESHOLD).trim();
+  const remaining = normalized.slice(firstChunk.length).trim();
+  const overflowChunks = splitWhatsappText(remaining, OVERVIEW_TEXT_BATCH_THRESHOLD).map((pesan) => ({
+    pesan,
+    hasLampiran: false,
+  }));
+
+  return [
+    { pesan: firstChunk, hasLampiran: true },
+    ...overflowChunks,
+  ];
+};
+
+const sendWhatsappPersonalMessage = async (payload: WhatsappPersonalPayload): Promise<{ fallbackToTextOnly: boolean }> => {
   const token = getWhatsappAuthToken();
 
   if (!env.WHATSAPP_BOT_URL) {
@@ -429,10 +497,11 @@ const sendWhatsappPersonalMessage = async (payload: WhatsappPersonalPayload): Pr
 
   try {
     await postPayload(payload);
+    return { fallbackToTextOnly: false };
   } catch (error: any) {
     if (error?.status === 413 && payload.lampiran) {
       await postPayload({ nomor: payload.nomor, pesan: payload.pesan });
-      return;
+      return { fallbackToTextOnly: true };
     }
 
     throw error;
@@ -507,6 +576,7 @@ const buildOverviewMessage = async (userId: string, name?: string | null) => {
   return {
     message,
     attachmentPath: analysis ? animal.imagePath : null,
+    batches: buildOverviewBatches(message, Boolean(analysis)),
     score,
     level: animal.name,
   };
@@ -1069,6 +1139,7 @@ const handleWhatsappInbound = async (req: Request, res: Response): Promise<void>
             userId: linkedUser.id,
             resolvedAction,
             attachmentPath: overviewResult.attachmentPath,
+            batchCount: overviewResult.batches.length,
             score: overviewResult.score,
             level: overviewResult.level,
           };
@@ -1290,21 +1361,35 @@ const handleWhatsappInbound = async (req: Request, res: Response): Promise<void>
 
     try {
       const lampiran = await buildSafeWhatsappAttachment(whatsappReply.attachmentPath);
-      await sendWhatsappPersonalMessage(
-        lampiran
-          ? {
-              nomor: outboundNumber,
-              pesan: `🏆 Visual level produktivitas Anda hari ini. Cocokkan dengan overview di atas untuk tindakan berikutnya.`,
-              lampiran,
-            }
-          : {
-              nomor: outboundNumber,
-              pesan: `📊 Overview berhasil dibuat. Visual level dilewati karena ukuran lampiran terlalu besar untuk gateway saat ini.`,
-            },
-      );
+      const followUpMessage = lampiran
+        ? `🏆 Visual level produktivitas Anda hari ini. Cocokkan dengan overview di atas untuk tindakan berikutnya.`
+        : `📊 Overview berhasil dibuat. Visual level dilewati karena ukuran lampiran terlalu besar untuk gateway saat ini.`;
+      const batches = buildOverviewBatches(followUpMessage, Boolean(lampiran));
+      let fallbackToTextOnly = false;
+
+      for (const batch of batches) {
+        const sendResult = await sendWhatsappPersonalMessage(
+          batch.hasLampiran
+            ? {
+                nomor: outboundNumber,
+                pesan: batch.pesan,
+                lampiran: lampiran ?? undefined,
+              }
+            : {
+                nomor: outboundNumber,
+                pesan: batch.pesan,
+              },
+        );
+
+        if (batch.hasLampiran && sendResult.fallbackToTextOnly) {
+          fallbackToTextOnly = true;
+        }
+      }
+
       whatsappReply.sent = true;
       outbound.sent = true;
-      outbound.hasAttachment = Boolean(lampiran);
+      outbound.hasAttachment = Boolean(lampiran) && !fallbackToTextOnly;
+      outbound.provider = fallbackToTextOnly ? 'whatsapp-personal-api-text-fallback' : 'whatsapp-personal-api';
     } catch (error) {
       outbound.error = error instanceof Error ? error.message : 'Failed to send overview attachment';
       console.error('[WA Overview] Failed to send attachment follow-up', {
