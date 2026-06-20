@@ -434,6 +434,7 @@ function buildOverviewMessage(user, stats, dailyData, analysis) {
     '',
     `🏆 Level: ${levelInfo.name} (Level ${level})`,
     `🧠 Score: ${score}/100`,
+    `🖼️ Arti gambar: ${levelInfo.name} = ${levelInfo.description}`,
     `📈 Selesai: ${completionRate}% | Skip: ${skipRate}%`,
     `📌 Total ${total} | Done ${stats.done} | Pending ${stats.pending} | Skipped ${stats.skipped}`,
     progressToNextLevel < 10 ? `⏫ Progress level berikutnya: ${progressToNextLevel}/10` : '👑 Level puncak tercapai.',
@@ -441,13 +442,19 @@ function buildOverviewMessage(user, stats, dailyData, analysis) {
     `Highlight: ${healthHighlight}`,
     `Aktif 7 hari: ${activeDays}/7${bestDay && bestDay.count > 0 ? ` | Puncak: ${bestDay.count} task` : ''}`,
     '',
-    `Insight: ${insight}`,
-    secondInsight ? `Catatan: ${secondInsight}` : `Catatan: ${levelInfo.description}`,
+    'Makna level ini:',
+    `- Nama hewan/gambar: ${levelInfo.name}`,
+    `- Gambaran kondisi: ${levelInfo.description}`,
+    `- Fokus perbaikan: ${levelInfo.tip}`,
     '',
-    'Tindak lanjut:',
+    `Insight utama: ${insight}`,
+    secondInsight ? `Insight tambahan: ${secondInsight}` : null,
+    '',
+    'Tindak lanjut detail:',
     primaryAdvice ? `1. ${primaryAdvice.title}` : '1. Selesaikan 1 task prioritas tertinggi hari ini.',
     secondaryAdvice ? `2. ${secondaryAdvice.title}` : `2. ${levelInfo.tip}`,
-  ].join('\n');
+    `3. Jaga progres level supaya naik dari ${levelInfo.name} ke level berikutnya.`,
+  ].filter(Boolean).join('\n');
 
   return {
     message,
