@@ -1,3 +1,5 @@
+import { readFile, stat } from 'node:fs/promises';
+import path from 'node:path';
 import { Router, Request, Response } from 'express';
 import { env } from '../../config/env';
 import { prisma } from '../../lib/prisma';
@@ -10,6 +12,32 @@ const aiService = new AiService();
 const taskService = new TaskService();
 
 type WhatsappIntent = 'REGISTER' | 'CREATE_TASK' | 'UPDATE_TASK' | 'DELETE_TASK' | 'LIST_TASKS' | 'LIST_BY_DATE' | 'COMPLETE_TASK' | 'OVERVIEW' | 'HELP' | 'UNKNOWN';
+
+type WhatsappPersonalPayload = {
+  nomor: string;
+  pesan: string;
+  lampiran?: string;
+};
+
+const MAX_WHATSAPP_ATTACHMENT_BYTES = 512 * 1024;
+
+type WhatsappOutboundInfo = {
+  attempted: boolean;
+  sent: boolean;
+  provider: string | null;
+  number: string | null;
+  channel: string;
+  hasAttachment?: boolean;
+  error?: string | null;
+};
+
+type WhatsappReplyPayload = {
+  sent: boolean;
+  number: string;
+  message: string;
+  type: string;
+  attachmentPath?: string | null;
+};
 
 type WhatsappNumberSource = {
   field: string;
@@ -328,6 +356,102 @@ const taskMatchesDateTokens = (task: { deadline: Date }, tokens: string[]): bool
 };
 
 
+const getWhatsappAuthToken = (): string => env.TOKEN_WHATSAPP || process.env.WHATSAPP_API_TOKEN || process.env.ADMIN_TOKEN || '';
+
+const resolveAttachmentAbsolutePath = async (relativePath: string): Promise<{ absolutePath: string; size: number }> => {
+  const candidatePaths = [
+    path.resolve(process.cwd(), relativePath),
+    path.resolve(process.cwd(), '..', relativePath),
+    path.resolve(__dirname, '../../../../', relativePath),
+    path.resolve(__dirname, '../../../../../', relativePath),
+  ];
+
+  for (const absolutePath of candidatePaths) {
+    try {
+      const fileStat = await stat(absolutePath);
+      if (fileStat.isFile()) {
+        return { absolutePath, size: fileStat.size };
+      }
+    } catch (error: any) {
+      if (error?.code !== 'ENOENT') {
+        throw error;
+      }
+    }
+  }
+
+  throw new Error(`WhatsApp attachment not found. Tried: ${candidatePaths.join(', ')}`);
+};
+
+const buildBase64Attachment = async (relativePath: string): Promise<string> => {
+  const { absolutePath } = await resolveAttachmentAbsolutePath(relativePath);
+  const fileBuffer = await readFile(absolutePath);
+  return fileBuffer.toString('base64');
+};
+
+const buildSafeWhatsappAttachment = async (relativePath: string): Promise<string | null> => {
+  const { size } = await resolveAttachmentAbsolutePath(relativePath);
+
+  if (size > MAX_WHATSAPP_ATTACHMENT_BYTES) {
+    return null;
+  }
+
+  return buildBase64Attachment(relativePath);
+};
+
+const sendWhatsappPersonalMessage = async (payload: WhatsappPersonalPayload): Promise<void> => {
+  const token = getWhatsappAuthToken();
+
+  if (!env.WHATSAPP_BOT_URL) {
+    throw new Error('WHATSAPP_BOT_URL is not configured');
+  }
+
+  if (!token) {
+    throw new Error('TOKEN_WHATSAPP is not configured');
+  }
+
+  const postPayload = async (bodyPayload: WhatsappPersonalPayload) => {
+    const response = await fetch(`${env.WHATSAPP_BOT_URL}/api/whatsapp/send-personal`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(bodyPayload),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => '');
+      const error = new Error(`Failed to send WhatsApp personal message: ${response.status} ${response.statusText} ${errorText}`.trim()) as Error & { status?: number };
+      error.status = response.status;
+      throw error;
+    }
+  };
+
+  try {
+    await postPayload(payload);
+  } catch (error: any) {
+    if (error?.status === 413 && payload.lampiran) {
+      await postPayload({ nomor: payload.nomor, pesan: payload.pesan });
+      return;
+    }
+
+    throw error;
+  }
+};
+
+const getAnimalLevelInfo = (score: number) => {
+  if (score <= 10) return { name: 'Batu Rebahan', imagePath: 'public/leveling-wa/1.jpg', description: 'Hampir tidak bergerak, task cuma dilihat doang', tip: 'Mulai dari 1 task kecil dulu hari ini.' };
+  if (score <= 20) return { name: 'Siput Loading', imagePath: 'public/leveling-wa/2.jpg', description: 'Ada niat, tapi progress lambat banget', tip: 'Kurangi penundaan dengan target pendek 15-30 menit.' };
+  if (score <= 30) return { name: 'Kucing Mager', imagePath: 'public/leveling-wa/3.jpg', description: 'Mau produktif, tapi kasur lebih kuat', tip: 'Pilih 1 prioritas utama lalu selesaikan sebelum task lain.' };
+  if (score <= 40) return { name: 'Panda Santuy', imagePath: 'public/leveling-wa/4.jpg', description: 'Ada kerjaan selesai, tapi banyak jeda ngemil', tip: 'Naikkan ritme dengan slot fokus tanpa distraksi.' };
+  if (score <= 50) return { name: 'Badak Si Pemalas', imagePath: 'public/leveling-wa/5.jpg', description: 'Kuat sebenarnya, tapi susah mulai', tip: 'Jadwalkan task paling berat lebih awal.' };
+  if (score <= 60) return { name: 'Bebek Mulai Jalan', imagePath: 'public/leveling-wa/6.jpg', description: 'Sudah mulai konsisten, walau masih goyang', tip: 'Jaga konsistensi dan tekan task skipped.' };
+  if (score <= 70) return { name: 'Kelinci Si Rajin', imagePath: 'public/leveling-wa/7.jpg', description: 'Task mulai banyak selesai, ritme bagus', tip: 'Pertahankan ritme dan rapikan backlog pending.' };
+  if (score <= 80) return { name: 'Semut Produktif', imagePath: 'public/leveling-wa/8.jpg', description: 'Rapi, konsisten, dan jarang skip', tip: 'Fokus pada task prioritas tinggi agar impact makin besar.' };
+  if (score <= 90) return { name: 'Elang Fokus', imagePath: 'public/leveling-wa/9.jpg', description: 'Fokus tinggi, prioritas jelas', tip: 'Jaga kualitas eksekusi dan hindari overload.' };
+  return { name: 'Naga Deadline', imagePath: 'public/leveling-wa/10.jpg', description: 'Mode legenda, task tunduk semua', tip: 'Pertahankan standar tinggi dan bantu backlog nol.' };
+};
+
 const buildOverviewMessage = async (userId: string, name?: string | null) => {
   const stats = await taskService.getTaskStats(userId);
   const dailyData = await taskService.getDailyTaskStats(userId, 7);
@@ -335,18 +459,57 @@ const buildOverviewMessage = async (userId: string, name?: string | null) => {
   const total = stats.pending + stats.done + stats.skipped;
   const completionRate = total > 0 ? Math.round((stats.done / total) * 100) : 0;
   const skipRate = total > 0 ? Math.round((stats.skipped / total) * 100) : 0;
+  const recentDays = dailyData.slice(-7);
+  const activeDays = recentDays.filter((day) => day.count > 0).length;
+  const bestDay = recentDays.reduce<{ date: string; count: number } | null>((best, day) => {
+    if (!best || day.count > best.count) return day;
+    return best;
+  }, null);
   const insight = analysis?.insights?.[0] || 'Tetap konsisten menyelesaikan task prioritas tertinggi terlebih dahulu.';
+  const secondInsight = analysis?.insights?.[1] || null;
+  const primaryAdvice = analysis?.advice?.[0];
+  const secondaryAdvice = analysis?.advice?.[1];
+  const score = analysis?.score ?? completionRate;
+  const animal = getAnimalLevelInfo(score);
+  const level = Math.min(10, Math.max(1, Math.floor(score / 10) + 1));
+  const progressToNextLevel = score >= 100 ? 10 : score % 10;
 
-  return [
-    `📊 Ringkasan tugas${name ? ` untuk ${name}` : ''}`,
-    `• Total: ${total}`,
-    `• Pending: ${stats.pending}`,
-    `• Done: ${stats.done}`,
-    `• Skipped: ${stats.skipped}`,
-    `• Completion rate: ${completionRate}%`,
-    `• Skip rate: ${skipRate}%`,
-    `🤖 Insight AI: ${insight}`,
-  ].join('\n');
+  const healthHighlight = total === 0
+    ? 'Belum ada task tercatat. Mulai tambah task agar overview lebih akurat.'
+    : stats.pending === 0
+      ? 'Semua task aktif sudah beres. Momentum bagus.'
+      : stats.pending >= Math.max(3, stats.done)
+        ? 'Backlog pending lebih besar dari task selesai. Perlu bereskan prioritas utama.'
+        : skipRate >= 30
+          ? 'Task skipped cukup tinggi. Cek estimasi waktu dan deadline.'
+          : 'Kondisi task relatif stabil. Tinggal jaga konsistensi.';
+
+  const message = [
+    `📊 Overview Task${name ? ` — ${name}` : ''}`,
+    '',
+    `🏆 Level: ${animal.name} (Level ${level})`,
+    `🧠 Score: ${score}/100`,
+    `📈 Selesai: ${completionRate}% | Skip: ${skipRate}%`,
+    `📌 Total ${total} | Done ${stats.done} | Pending ${stats.pending} | Skipped ${stats.skipped}`,
+    progressToNextLevel < 10 ? `⏫ Progress level berikutnya: ${progressToNextLevel}/10` : '👑 Level puncak tercapai.',
+    '',
+    `Highlight: ${healthHighlight}`,
+    `Aktif 7 hari: ${activeDays}/7${bestDay && bestDay.count > 0 ? ` | Puncak: ${bestDay.count} task` : ''}`,
+    '',
+    `Insight: ${insight}`,
+    secondInsight ? `Catatan: ${secondInsight}` : `Catatan: ${animal.description}`,
+    '',
+    'Tindak lanjut:',
+    primaryAdvice ? `1. ${primaryAdvice.title}` : '1. Selesaikan 1 task prioritas tertinggi hari ini.',
+    secondaryAdvice ? `2. ${secondaryAdvice.title}` : `2. ${animal.tip}`,
+  ].filter(Boolean).join('\n');
+
+  return {
+    message,
+    attachmentPath: analysis ? animal.imagePath : null,
+    score,
+    level: animal.name,
+  };
 };
 
 const detectWhatsappIntent = (command: string): WhatsappIntent => {
@@ -665,7 +828,7 @@ const handleWhatsappInbound = async (req: Request, res: Response): Promise<void>
 
   let registration = null;
   let registrationNotification: null | { sent: boolean; number: string; type: string; message?: string } = null;
-  let whatsappReply: null | { sent: boolean; number: string; message: string; type: string } = null;
+  let whatsappReply: WhatsappReplyPayload | null = null;
   let operation: Record<string, unknown> | null = null;
 
   if (taskPlannerUserId) {
@@ -898,12 +1061,16 @@ const handleWhatsappInbound = async (req: Request, res: Response): Promise<void>
             resolvedAction,
           };
         } else if (action === 'OVERVIEW') {
-          actionReply = await buildOverviewMessage(linkedUser.id, linkedUser.name);
+          const overviewResult = await buildOverviewMessage(linkedUser.id, linkedUser.name);
+          actionReply = overviewResult.message;
           actionOperation = {
             type: 'OVERVIEW',
             success: true,
             userId: linkedUser.id,
             resolvedAction,
+            attachmentPath: overviewResult.attachmentPath,
+            score: overviewResult.score,
+            level: overviewResult.level,
           };
         } else if (action === 'COMPLETE_TASK') {
           if (resolvedAction.targetText || resolvedAction.dateHint) {
@@ -1086,11 +1253,15 @@ const handleWhatsappInbound = async (req: Request, res: Response): Promise<void>
         preview: replyMessage.slice(0, 200),
       });
 
+      const overviewOperation = operationResults.find((item) => item.type === 'OVERVIEW');
+      const attachmentPath = typeof overviewOperation?.attachmentPath === 'string' ? overviewOperation.attachmentPath : null;
+
       whatsappReply = {
         sent: false,
         number: safeWhatsappNumber,
         message: replyMessage,
         type: String((operation && 'type' in operation ? operation.type : fallbackAction.action) || intent).toLowerCase(),
+        attachmentPath,
       };
     }
   }
@@ -1098,6 +1269,51 @@ const handleWhatsappInbound = async (req: Request, res: Response): Promise<void>
   const finalMessage = whatsappReply?.message || registrationNotification?.message || null;
   const finalReplyType = whatsappReply?.type || registrationNotification?.type || null;
   const outboundNumber = whatsappReply?.number || registrationNotification?.number || null;
+  let outbound: WhatsappOutboundInfo = {
+    attempted: false,
+    sent: false,
+    provider: null,
+    number: outboundNumber,
+    channel: 'sync-response-only',
+  };
+
+  if (whatsappReply?.attachmentPath && outboundNumber) {
+    outbound = {
+      attempted: true,
+      sent: false,
+      provider: 'whatsapp-personal-api',
+      number: outboundNumber,
+      channel: 'async-media-follow-up',
+      hasAttachment: true,
+      error: null,
+    };
+
+    try {
+      const lampiran = await buildSafeWhatsappAttachment(whatsappReply.attachmentPath);
+      await sendWhatsappPersonalMessage(
+        lampiran
+          ? {
+              nomor: outboundNumber,
+              pesan: `🏆 Visual level produktivitas Anda hari ini. Cocokkan dengan overview di atas untuk tindakan berikutnya.`,
+              lampiran,
+            }
+          : {
+              nomor: outboundNumber,
+              pesan: `📊 Overview berhasil dibuat. Visual level dilewati karena ukuran lampiran terlalu besar untuk gateway saat ini.`,
+            },
+      );
+      whatsappReply.sent = true;
+      outbound.sent = true;
+      outbound.hasAttachment = Boolean(lampiran);
+    } catch (error) {
+      outbound.error = error instanceof Error ? error.message : 'Failed to send overview attachment';
+      console.error('[WA Overview] Failed to send attachment follow-up', {
+        number: outboundNumber,
+        attachmentPath: whatsappReply.attachmentPath,
+        error,
+      });
+    }
+  }
 
   const normalizedPayload = {
     source,
@@ -1151,13 +1367,7 @@ const handleWhatsappInbound = async (req: Request, res: Response): Promise<void>
           source: 'app-sync-response',
         }
       : null,
-    outbound: {
-      attempted: false,
-      sent: false,
-      provider: null,
-      number: outboundNumber,
-      channel: 'sync-response-only',
-    },
+    outbound,
     registration,
     registrationNotification,
     intent,

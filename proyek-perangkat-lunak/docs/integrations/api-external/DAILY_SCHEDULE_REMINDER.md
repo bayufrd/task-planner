@@ -386,3 +386,36 @@ Agar selaras dengan struktur proyek saat ini, implementasi backend disarankan di
    - pakai token dengan fallback yang terdokumentasi.
 
 Dengan struktur ini, fitur Daily Schedule Reminder tetap rapi, terpisah dari flow inbound command WhatsApp, dan tidak mengganggu reminder deadline yang sudah berjalan.
+
+## Manual trigger untuk testing/debugging
+
+Script manual trigger tersedia di [`docs/tools/manual-trigger-daily-schedule-reminder.js`](../../tools/manual-trigger-daily-schedule-reminder.js).
+
+Karakteristik:
+
+- default **dry-run**,
+- membaca environment otomatis dari [`proyek-perangkat-lunak/.env`](../../../.env.example), [`proyek-perangkat-lunak/.env.local`](../../../.env.example), lalu [`proyek-perangkat-lunak/backend/.env`](../../../backend/.env.example),
+- memakai query boundary hari `Asia/Jakarta` yang sama,
+- memakai dedup key `daily-schedule:YYYY-MM-DD:userId`,
+- bisa kirim sungguhan dengan flag `--send`,
+- bisa menulis log sent ke tabel `Reminder` dengan flag `--mark-sent`.
+
+Contoh pakai:
+
+```bash
+node docs/tools/manual-trigger-daily-schedule-reminder.js
+node docs/tools/manual-trigger-daily-schedule-reminder.js --date=2026-06-21 --limit=3
+node docs/tools/manual-trigger-daily-schedule-reminder.js --user-id=<userId>
+node docs/tools/manual-trigger-daily-schedule-reminder.js --number=6281234567890
+node docs/tools/manual-trigger-daily-schedule-reminder.js --send --mark-sent --date=2026-06-21
+```
+
+Opsi utama:
+
+- `--send` → kirim ke gateway WhatsApp,
+- `--mark-sent` → upsert log sent ke tabel `Reminder`,
+- `--allow-sent` → abaikan dedup sent,
+- `--no-image` → kirim text-only,
+- `--image=public/harian-candidate-600.jpg` → override asset,
+- `--date=YYYY-MM-DD` → pakai tanggal Jakarta tertentu,
+- `--user-id=<id>` / `--number=<nomor>` → batasi target.

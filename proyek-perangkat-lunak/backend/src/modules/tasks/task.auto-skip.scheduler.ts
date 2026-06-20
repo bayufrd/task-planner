@@ -66,9 +66,27 @@ export class TaskAutoSkipScheduler {
   }
 
   private async buildBase64Attachment(relativePath: string): Promise<string> {
-    const absolutePath = path.resolve(process.cwd(), relativePath);
-    const fileBuffer = await readFile(absolutePath);
-    return fileBuffer.toString('base64');
+    const candidatePaths = [
+      path.resolve(process.cwd(), relativePath),
+      path.resolve(process.cwd(), '..', relativePath),
+      path.resolve(__dirname, '../../../../', relativePath),
+      path.resolve(__dirname, '../../../../../', relativePath),
+    ];
+
+    for (const absolutePath of candidatePaths) {
+      try {
+        const fileBuffer = await readFile(absolutePath);
+        return fileBuffer.toString('base64');
+      } catch (error: any) {
+        if (error?.code !== 'ENOENT') {
+          throw error;
+        }
+      }
+    }
+
+    throw new Error(
+      `Daily schedule attachment not found. Tried: ${candidatePaths.join(', ')}`,
+    );
   }
 
   private async sendWhatsappMessage(nomor: string, pesan: string): Promise<void> {
