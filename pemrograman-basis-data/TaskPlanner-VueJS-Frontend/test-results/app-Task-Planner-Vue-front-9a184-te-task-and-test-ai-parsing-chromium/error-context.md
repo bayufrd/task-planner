@@ -18,7 +18,7 @@ Test timeout of 30000ms exceeded.
 ```
 Error: locator.fill: Test timeout of 30000ms exceeded.
 Call log:
-  - waiting for getByLabel('Name')
+  - waiting for getByLabel('Full Name')
 
 ```
 
@@ -37,27 +37,43 @@ Call log:
     - generic [ref=e17]:
       - img "TaskPlanner Logo" [ref=e20]
       - generic [ref=e21]:
-        - heading "Join TaskPlanner" [level=1] [ref=e22]
-        - paragraph [ref=e23]: Create your account to start planning smarter
+        - heading "Create Account" [level=1] [ref=e22]
+        - paragraph [ref=e23]: Join TaskPlanner to start planning smarter
     - generic [ref=e24]:
-      - generic [ref=e25]:
+      - button "Sign In" [ref=e25] [cursor=pointer]
+      - button "Sign Up" [ref=e26] [cursor=pointer]
+    - generic [ref=e27]:
+      - generic [ref=e28]:
         - text: Full Name
-        - generic [ref=e26]:
-          - img [ref=e28]
-          - textbox "Enter your full name" [ref=e31]
-      - generic [ref=e32]:
+        - generic [ref=e29]:
+          - img [ref=e31]
+          - textbox "Enter your full name" [ref=e34]
+      - generic [ref=e35]:
         - text: Email Address
-        - generic [ref=e33]:
-          - img [ref=e35]
-          - textbox "you@example.com" [ref=e38]
-      - generic [ref=e39]:
+        - generic [ref=e36]:
+          - img [ref=e38]
+          - textbox "you@example.com" [ref=e41]
+      - generic [ref=e42]:
         - text: Password
-        - generic [ref=e40]:
-          - img [ref=e42]
-          - textbox "Minimum 6 characters" [ref=e45]
-      - button "Create Account" [ref=e46] [cursor=pointer]:
-        - text: Create Account
-        - img [ref=e47]
+        - generic [ref=e43]:
+          - img [ref=e45]
+          - textbox "Enter your password" [ref=e48]
+      - button "Create Account" [disabled] [ref=e49]:
+        - generic [ref=e50]: Create Account
+        - img [ref=e51]
+    - generic [ref=e57]: Or continue with
+    - button "Continue with Google" [ref=e58] [cursor=pointer]:
+      - img [ref=e59]
+      - generic [ref=e64]: Continue with Google
+    - generic [ref=e65]:
+      - heading "What You Get" [level=3] [ref=e66]
+      - list [ref=e67]:
+        - listitem [ref=e68]:
+          - generic [ref=e69]: ✓
+          - generic [ref=e70]: AI-powered task creation & prioritization
+        - listitem [ref=e71]:
+          - generic [ref=e72]: ✓
+          - generic [ref=e73]: Real-time sync with Google Calendar
 ```
 
 # Test source
@@ -96,13 +112,13 @@ Call log:
   31 |   test('loads landing page', async ({ page }) => {
   32 |     await page.goto('/')
   33 |     await expect(page.getByRole('heading', { name: /plan smarter/i })).toBeVisible()
-  34 |     await expect(page.getByRole('link', { name: /get started/i })).toBeVisible()
+  34 |     await expect(page.getByRole('link', { name: /get started free|mulai gratis/i })).toBeVisible()
   35 |   })
   36 | 
   37 |   test('can register, login, create task, and test ai parsing', async ({ page }) => {
   38 |     await page.goto('/register')
-> 39 |     await page.getByLabel('Name').fill(registerName)
-     |                                   ^ Error: locator.fill: Test timeout of 30000ms exceeded.
+> 39 |     await page.getByLabel('Full Name').fill(registerName)
+     |                                        ^ Error: locator.fill: Test timeout of 30000ms exceeded.
   40 |     await page.getByLabel('Email').fill(registerEmail)
   41 |     await page.getByLabel('Password').fill(basePassword)
   42 |     await page.getByRole('button', { name: /create account/i }).click()

@@ -114,18 +114,18 @@ const authApi = {
     return unwrap(result)
   },
   async refresh(refreshToken: string) {
-    const result = await request<ApiEnvelope<AuthResult>>('/auth/refresh', {
+    const result = await request<ApiEnvelope<AuthResult>>('/api/auth/refresh', {
       method: 'POST',
       body: JSON.stringify({ refreshToken }),
     }, false)
     return unwrap(result)
   },
   async me() {
-    const result = await request<ApiEnvelope<UserProfile>>('/auth/me')
+    const result = await request<ApiEnvelope<UserProfile>>('/api/auth/me')
     return unwrap(result)
   },
   async logout() {
-    const result = await request<ApiEnvelope<null>>('/auth/logout', { method: 'POST' })
+    const result = await request<ApiEnvelope<null>>('/api/auth/logout', { method: 'POST' })
     return unwrap(result)
   },
 }
@@ -136,11 +136,11 @@ export const taskApi = {
     Object.entries(params).forEach(([key, value]) => {
       if (value !== undefined && value !== '') query.set(key, String(value))
     })
-    const result = await request<ApiEnvelope<Task[]>>(`/tasks?${query.toString()}`)
+    const result = await request<ApiEnvelope<Task[]>>(`/api/tasks?${query.toString()}`)
     return { data: unwrap(result) }
   },
   async create(payload: Partial<Task>) {
-    const result = await request<ApiEnvelope<Task>>('/tasks', {
+    const result = await request<ApiEnvelope<Task>>('/api/tasks', {
       method: 'POST',
       body: JSON.stringify({
         title: payload.title,
@@ -154,77 +154,77 @@ export const taskApi = {
     return unwrap(result)
   },
   async update(id: string, payload: Partial<Task>) {
-    const result = await request<ApiEnvelope<Task>>(`/tasks/${id}`, {
+    const result = await request<ApiEnvelope<Task>>(`/api/tasks/${id}`, {
       method: 'PUT',
       body: JSON.stringify(payload),
     })
     return unwrap(result)
   },
   async updateStatus(id: string, status: TaskStatus) {
-    const result = await request<ApiEnvelope<Task>>(`/tasks/${id}/status`, {
+    const result = await request<ApiEnvelope<Task>>(`/api/tasks/${id}/status`, {
       method: 'PATCH',
       body: JSON.stringify({ status }),
     })
     return unwrap(result)
   },
   async complete(id: string) {
-    const result = await request<ApiEnvelope<Task>>(`/tasks/${id}/complete`, { method: 'POST' })
+    const result = await request<ApiEnvelope<Task>>(`/api/tasks/${id}/complete`, { method: 'POST' })
     return unwrap(result)
   },
   async skip(id: string) {
-    const result = await request<ApiEnvelope<Task>>(`/tasks/${id}/skip`, { method: 'POST' })
+    const result = await request<ApiEnvelope<Task>>(`/api/tasks/${id}/skip`, { method: 'POST' })
     return unwrap(result)
   },
   async remove(id: string) {
-    const result = await request<ApiEnvelope<null>>(`/tasks/${id}`, { method: 'DELETE' })
+    const result = await request<ApiEnvelope<null>>(`/api/tasks/${id}`, { method: 'DELETE' })
     return unwrap(result)
   },
   async stats() {
-    const result = await request<ApiEnvelope<TaskStats>>('/tasks/stats')
+    const result = await request<ApiEnvelope<TaskStats>>('/api/tasks/stats')
     return unwrap(result)
   },
   async dailyStats(days = 7) {
-    const result = await request<ApiEnvelope<DailyStatsItem[]>>(`/tasks/stats/daily?days=${days}`)
+    const result = await request<ApiEnvelope<DailyStatsItem[]>>(`/api/tasks/stats/daily?days=${days}`)
     return unwrap(result)
   },
   async weeklyStats(weeks = 4) {
-    const result = await request<ApiEnvelope<WeeklyStatsItem[]>>(`/tasks/stats/weekly?weeks=${weeks}`)
+    const result = await request<ApiEnvelope<WeeklyStatsItem[]>>(`/api/tasks/stats/weekly?weeks=${weeks}`)
     return unwrap(result)
   },
   async byPriority(level: TaskPriority) {
-    const result = await request<ApiEnvelope<Task[]>>(`/tasks/priority/${level}?page=1&limit=20`)
+    const result = await request<ApiEnvelope<Task[]>>(`/api/tasks/priority/${level}?page=1&limit=20`)
     return unwrap(result)
   },
 }
 
 export const plannerApi = {
   async today(limit = 5) {
-    const result = await request<ApiEnvelope<PlannerItem[]>>(`/planner/today?limit=${limit}`)
+    const result = await request<ApiEnvelope<PlannerItem[]>>(`/api/planner/today?limit=${limit}`)
     return unwrap(result)
   },
 }
 
 export const reminderApi = {
   async list() {
-    const result = await request<ApiEnvelope<Reminder[]>>('/reminders')
+    const result = await request<ApiEnvelope<Reminder[]>>('/api/reminders')
     return unwrap(result)
   },
   async create(payload: Partial<Reminder>) {
-    const result = await request<ApiEnvelope<Reminder>>('/reminders', {
+    const result = await request<ApiEnvelope<Reminder>>('/api/reminders', {
       method: 'POST',
       body: JSON.stringify(payload),
     })
     return unwrap(result)
   },
   async update(id: string, payload: Partial<Reminder>) {
-    const result = await request<ApiEnvelope<Reminder>>(`/reminders/${id}`, {
+    const result = await request<ApiEnvelope<Reminder>>(`/api/reminders/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(payload),
     })
     return unwrap(result)
   },
   async remove(id: string) {
-    const result = await request<ApiEnvelope<null>>(`/reminders/${id}`, { method: 'DELETE' })
+    const result = await request<ApiEnvelope<null>>(`/api/reminders/${id}`, { method: 'DELETE' })
     return unwrap(result)
   },
 }
@@ -233,14 +233,14 @@ export { authApi }
 
 export const aiApi = {
   async parseTask(text: string) {
-    const result = await request<ApiEnvelope<ParsedTaskDraft>>('/ai/parse-task', {
+    const result = await request<ApiEnvelope<ParsedTaskDraft>>('/api/ai/parse-task', {
       method: 'POST',
       body: JSON.stringify({ text }),
     })
     return unwrap(result)
   },
   async overviewAnalysis() {
-    const result = await request<ApiEnvelope<OverviewAnalysis>>('/ai/overview-analysis', {
+    const result = await request<ApiEnvelope<OverviewAnalysis>>('/api/ai/overview-analysis', {
       method: 'POST',
       body: JSON.stringify({}),
     })

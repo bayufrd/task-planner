@@ -37,6 +37,7 @@ export interface AuthResult {
 export interface LoginPayload {
   email: string
   password: string
+  captchaToken: string
 }
 
 export interface RegisterPayload extends LoginPayload {

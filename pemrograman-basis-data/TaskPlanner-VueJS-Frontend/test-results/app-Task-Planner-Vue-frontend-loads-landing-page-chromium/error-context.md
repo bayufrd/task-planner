@@ -14,14 +14,14 @@
 ```
 Error: expect(locator).toBeVisible() failed
 
-Locator: getByRole('link', { name: /get started/i })
+Locator: getByRole('link', { name: /get started free|mulai gratis/i })
 Expected: visible
 Timeout: 5000ms
 Error: element(s) not found
 
 Call log:
   - Expect "toBeVisible" with timeout 5000ms
-  - waiting for getByRole('link', { name: /get started/i })
+  - waiting for getByRole('link', { name: /get started free|mulai gratis/i })
 
 ```
 
@@ -121,13 +121,13 @@ Call log:
   31 |   test('loads landing page', async ({ page }) => {
   32 |     await page.goto('/')
   33 |     await expect(page.getByRole('heading', { name: /plan smarter/i })).toBeVisible()
-> 34 |     await expect(page.getByRole('link', { name: /get started/i })).toBeVisible()
-     |                                                                    ^ Error: expect(locator).toBeVisible() failed
+> 34 |     await expect(page.getByRole('link', { name: /get started free|mulai gratis/i })).toBeVisible()
+     |                                                                                      ^ Error: expect(locator).toBeVisible() failed
   35 |   })
   36 | 
   37 |   test('can register, login, create task, and test ai parsing', async ({ page }) => {
   38 |     await page.goto('/register')
-  39 |     await page.getByLabel('Name').fill(registerName)
+  39 |     await page.getByLabel('Full Name').fill(registerName)
   40 |     await page.getByLabel('Email').fill(registerEmail)
   41 |     await page.getByLabel('Password').fill(basePassword)
   42 |     await page.getByRole('button', { name: /create account/i }).click()

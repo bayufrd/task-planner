@@ -70,12 +70,12 @@ async function submit() {
   isLoading.value = true
   try {
     if (isSignUp.value) {
-      await authStore.register({ name: form.name, email: form.email, password: form.password })
+      await authStore.register({ name: form.name, email: form.email, password: form.password, captchaToken: captchaToken.value })
       // After successful registration, switch to sign in tab with registered query
       isSignUp.value = false
       router.replace({ path: routePaths.authSignin, query: { registered: 'true' } })
     } else {
-      await authStore.login({ email: form.email, password: form.password })
+      await authStore.login({ email: form.email, password: form.password, captchaToken: captchaToken.value })
       await router.push(callbackUrl.value)
     }
   } catch (err) {
