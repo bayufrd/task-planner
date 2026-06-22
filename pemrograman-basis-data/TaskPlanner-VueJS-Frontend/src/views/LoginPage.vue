@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed, reactive, ref, onMounted } from 'vue'
+import { computed, reactive, ref, onMounted, watch } from 'vue'
 import { useRoute, useRouter, RouterLink } from 'vue-router'
-import { ArrowRight, Mail, Lock, Sun, Moon } from '@lucide/vue'
+import { ArrowRight, Mail, Lock, User, Sun, Moon } from '@lucide/vue'
 import { authStore } from '../stores/auth'
 import { routePaths } from '../router/registry'
 import { uiStore } from '../stores/ui'
@@ -9,7 +9,18 @@ import { authService } from '../services/auth.service'
 
 const router = useRouter()
 const route = useRoute()
-const form = reactive({ email: '', password: '' })
+
+const isSignUp = ref(route.path.includes('signup') || route.path.includes('register'))
+
+watch(
+  () => route.path,
+  (newPath) => {
+    isSignUp.value = newPath.includes('signup') || newPath.includes('register')
+    errors.submit = ''
+  }
+)
+
+const form = reactive({ name: '', email: '', password: '' })
 const errors = reactive<Record<string, string>>({})
 const isLoading = ref(false)
 const isGoogleLoading = ref(false)
@@ -28,6 +39,10 @@ const registered = computed(() => route.query.registered === 'true')
 const validateForm = () => {
   Object.keys(errors).forEach(key => delete errors[key])
   
+  if (isSignUp.value && !form.name.trim()) {
+    errors.name = 'Nama lengkap wajib diisi'
+  }
+
   if (!form.email.trim()) {
     errors.email = 'Email wajib diisi'
   } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
@@ -36,6 +51,8 @@ const validateForm = () => {
 
   if (!form.password) {
     errors.password = 'Password wajib diisi'
+  } else if (isSignUp.value && form.password.length < 6) {
+    errors.password = 'Password minimal 6 karakter'
   }
 
   return Object.keys(errors).length === 0
@@ -52,10 +69,18 @@ async function submit() {
   errors.submit = ''
   isLoading.value = true
   try {
-    await authStore.login({ email: form.email, password: form.password })
-    await router.push(callbackUrl.value)
+    if (isSignUp.value) {
+      await authStore.register({ name: form.name, email: form.email, password: form.password })
+      // After successful registration, switch to sign in tab with registered query
+      isSignUp.value = false
+      router.replace({ path: routePaths.authSignin, query: { registered: 'true' } })
+    } else {
+      await authStore.login({ email: form.email, password: form.password })
+      await router.push(callbackUrl.value)
+    }
   } catch (err) {
-    errors.submit = err instanceof Error ? err.message : 'Login gagal'
+    errors.submit = err instanceof Error ? err.message : (isSignUp.value ? 'Registrasi gagal' : 'Login gagal')
+  } finally {
     isLoading.value = false
   }
 }
@@ -63,6 +88,17 @@ async function submit() {
 function handleGoogleLogin() {
   isGoogleLoading.value = true
   authService.initiateGoogleLogin()
+}
+
+function switchTab(signUp: boolean) {
+  isSignUp.value = signUp
+  errors.submit = ''
+  Object.keys(errors).forEach(key => delete errors[key])
+  if (signUp) {
+    router.replace({ path: routePaths.authSignup })
+  } else {
+    router.replace({ path: routePaths.authSignin })
+  }
 }
 
 // Turnstile integration
@@ -130,42 +166,98 @@ onMounted(() => {
       <div class="w-full max-w-md relative z-10">
         <!-- Card -->
         <div :class="[
-          'rounded-3xl shadow-xl shadow-black/10 dark:shadow-black/30 border transition-colors backdrop-blur-sm p-8 space-y-8',
+          'rounded-3xl shadow-xl shadow-black/10 dark:shadow-black/30 border transition-colors backdrop-blur-sm p-8 space-y-6',
           uiStore.state.theme === 'dark' ? 'bg-gray-800/80 border-gray-700/50' : 'bg-white/80 border-gray-200/50'
         ]">
           <!-- Logo & Header -->
-          <div class="space-y-5 text-center">
+          <div class="space-y-4 text-center">
             <div class="flex justify-center">
               <div class="rounded-xl p-1 shadow-md shadow-black/10 dark:shadow-black/30 bg-white/20 dark:bg-gray-800/20 backdrop-blur-sm">
-                <img src="/opt-logo/logo1.webp" alt="TaskPlanner Logo" class="w-28 h-auto sm:w-32 md:w-36 rounded-lg" />
+                <img src="/opt-logo/logo1.webp" alt="TaskPlanner Logo" class="w-28 h-auto rounded-lg" />
               </div>
             </div>
 
-            <div class="space-y-2">
-              <h1 :class="['text-3xl font-bold', uiStore.state.theme === 'dark' ? 'text-white' : 'text-gray-900']">
-                Welcome Back
+            <div class="space-y-1">
+              <h1 :class="['text-2xl font-bold', uiStore.state.theme === 'dark' ? 'text-white' : 'text-gray-900']">
+                {{ isSignUp ? 'Create Account' : 'Welcome Back' }}
               </h1>
-              <p :class="['text-sm', uiStore.state.theme === 'dark' ? 'text-gray-400' : 'text-gray-600']">
-                Sign in to continue managing your tasks
+              <p :class="['text-xs', uiStore.state.theme === 'dark' ? 'text-gray-400' : 'text-gray-600']">
+                {{ isSignUp ? 'Join TaskPlanner to start planning smarter' : 'Sign in to continue managing your tasks' }}
               </p>
             </div>
           </div>
 
+          <!-- Tab Switcher -->
+          <div :class="['flex p-1 rounded-xl border', uiStore.state.theme === 'dark' ? 'bg-gray-900/50 border-gray-700/50' : 'bg-gray-100/50 border-gray-200/50']">
+            <button
+              type="button"
+              @click="switchTab(false)"
+              :class="[
+                'flex-1 py-2 text-sm font-medium rounded-lg transition-all duration-200',
+                !isSignUp
+                  ? (uiStore.state.theme === 'dark' ? 'bg-gray-800 text-white shadow-sm' : 'bg-white text-gray-900 shadow-sm')
+                  : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+              ]"
+            >
+              Sign In
+            </button>
+            <button
+              type="button"
+              @click="switchTab(true)"
+              :class="[
+                'flex-1 py-2 text-sm font-medium rounded-lg transition-all duration-200',
+                isSignUp
+                  ? (uiStore.state.theme === 'dark' ? 'bg-gray-800 text-white shadow-sm' : 'bg-white text-gray-900 shadow-sm')
+                  : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+              ]"
+            >
+              Sign Up
+            </button>
+          </div>
+
           <!-- Success Message -->
-          <div v-if="registered" :class="['p-3 rounded-lg', uiStore.state.theme === 'dark' ? 'bg-green-900/20 border border-green-800/50 text-green-300' : 'bg-green-50 border border-green-200 text-green-700']">
-            <p class="text-sm">Account created successfully! Please sign in.</p>
+          <div v-if="registered && !isSignUp" :class="['p-3 rounded-lg', uiStore.state.theme === 'dark' ? 'bg-green-900/20 border border-green-800/50 text-green-300' : 'bg-green-50 border border-green-200 text-green-700']">
+            <p class="text-xs">Account created successfully! Please sign in.</p>
           </div>
 
           <!-- Error Message -->
-          <div v-if="errors.submit" :class="['p-3 rounded-lg', uiStore.state.theme === 'dark' ? 'bg-red-900/20 border border-red-800/50 text-red-300' : 'bg-red-50 border border-red-200 text-red-700']">
-            <p class="text-sm">{{ errors.submit }}</p>
+          <div v-if="errors.submit" :class="['p-3 rounded-lg border text-xs', uiStore.state.theme === 'dark' ? 'bg-red-900/20 border-red-800/50 text-red-300' : 'bg-red-50 border-red-200 text-red-700']">
+            <p>{{ errors.submit }}</p>
           </div>
 
-          <!-- Login Form -->
+          <!-- Form -->
           <form @submit.prevent="submit" class="space-y-4">
+            <!-- Name Field (Sign Up Only) -->
+            <div v-if="isSignUp" class="space-y-1.5">
+              <label :class="['text-xs font-medium', uiStore.state.theme === 'dark' ? 'text-gray-300' : 'text-gray-700']">
+                Full Name
+              </label>
+              <div :class="[
+                'relative rounded-lg border transition-colors',
+                errors.name ? 'border-red-500' : uiStore.state.theme === 'dark' ? 'border-gray-700' : 'border-gray-300'
+              ]">
+                <div class="absolute left-3 top-1/2 transform -translate-y-1/2">
+                  <User :class="['w-4 h-4', errors.name ? 'text-red-500' : uiStore.state.theme === 'dark' ? 'text-gray-500' : 'text-gray-400']" />
+                </div>
+                <input
+                  v-model="form.name"
+                  type="text"
+                  required
+                  :class="[
+                    'w-full pl-9 pr-4 py-2.5 bg-transparent rounded-lg text-sm focus:outline-none focus:ring-2',
+                    errors.name ? 'focus:ring-red-500' : 'focus:ring-blue-500',
+                    uiStore.state.theme === 'dark' ? 'text-white placeholder-gray-500' : 'text-gray-900 placeholder-gray-400'
+                  ]"
+                  placeholder="Enter your full name"
+                  :disabled="isLoading"
+                />
+              </div>
+              <p v-if="errors.name" class="text-xs text-red-500">{{ errors.name }}</p>
+            </div>
+
             <!-- Email Field -->
-            <div class="space-y-2">
-              <label :class="['text-sm font-medium', uiStore.state.theme === 'dark' ? 'text-gray-300' : 'text-gray-700']">
+            <div class="space-y-1.5">
+              <label :class="['text-xs font-medium', uiStore.state.theme === 'dark' ? 'text-gray-300' : 'text-gray-700']">
                 Email Address
               </label>
               <div :class="[
@@ -173,14 +265,14 @@ onMounted(() => {
                 errors.email ? 'border-red-500' : uiStore.state.theme === 'dark' ? 'border-gray-700' : 'border-gray-300'
               ]">
                 <div class="absolute left-3 top-1/2 transform -translate-y-1/2">
-                  <Mail :class="['w-5 h-5', errors.email ? 'text-red-500' : uiStore.state.theme === 'dark' ? 'text-gray-500' : 'text-gray-400']" />
+                  <Mail :class="['w-4 h-4', errors.email ? 'text-red-500' : uiStore.state.theme === 'dark' ? 'text-gray-500' : 'text-gray-400']" />
                 </div>
                 <input
                   v-model="form.email"
                   type="email"
                   required
                   :class="[
-                    'w-full pl-10 pr-4 py-3 bg-transparent rounded-lg focus:outline-none focus:ring-2',
+                    'w-full pl-9 pr-4 py-2.5 bg-transparent rounded-lg text-sm focus:outline-none focus:ring-2',
                     errors.email ? 'focus:ring-red-500' : 'focus:ring-blue-500',
                     uiStore.state.theme === 'dark' ? 'text-white placeholder-gray-500' : 'text-gray-900 placeholder-gray-400'
                   ]"
@@ -188,12 +280,12 @@ onMounted(() => {
                   :disabled="isLoading"
                 />
               </div>
-              <p v-if="errors.email" class="text-sm text-red-500">{{ errors.email }}</p>
+              <p v-if="errors.email" class="text-xs text-red-500">{{ errors.email }}</p>
             </div>
 
             <!-- Password Field -->
-            <div class="space-y-2">
-              <label :class="['text-sm font-medium', uiStore.state.theme === 'dark' ? 'text-gray-300' : 'text-gray-700']">
+            <div class="space-y-1.5">
+              <label :class="['text-xs font-medium', uiStore.state.theme === 'dark' ? 'text-gray-300' : 'text-gray-700']">
                 Password
               </label>
               <div :class="[
@@ -201,14 +293,14 @@ onMounted(() => {
                 errors.password ? 'border-red-500' : uiStore.state.theme === 'dark' ? 'border-gray-700' : 'border-gray-300'
               ]">
                 <div class="absolute left-3 top-1/2 transform -translate-y-1/2">
-                  <Lock :class="['w-5 h-5', errors.password ? 'text-red-500' : uiStore.state.theme === 'dark' ? 'text-gray-500' : 'text-gray-400']" />
+                  <Lock :class="['w-4 h-4', errors.password ? 'text-red-500' : uiStore.state.theme === 'dark' ? 'text-gray-500' : 'text-gray-400']" />
                 </div>
                 <input
                   v-model="form.password"
                   type="password"
                   required
                   :class="[
-                    'w-full pl-10 pr-4 py-3 bg-transparent rounded-lg focus:outline-none focus:ring-2',
+                    'w-full pl-9 pr-4 py-2.5 bg-transparent rounded-lg text-sm focus:outline-none focus:ring-2',
                     errors.password ? 'focus:ring-red-500' : 'focus:ring-blue-500',
                     uiStore.state.theme === 'dark' ? 'text-white placeholder-gray-500' : 'text-gray-900 placeholder-gray-400'
                   ]"
@@ -216,7 +308,7 @@ onMounted(() => {
                   :disabled="isLoading"
                 />
               </div>
-              <p v-if="errors.password" class="text-sm text-red-500">{{ errors.password }}</p>
+              <p v-if="errors.password" class="text-xs text-red-500">{{ errors.password }}</p>
             </div>
 
             <!-- CAPTCHA Widget -->
@@ -226,14 +318,14 @@ onMounted(() => {
             <button
               type="submit"
               :disabled="isLoading || (!!turnstileSiteKey && !captchaToken)"
-              class="w-full relative h-12 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:from-blue-500 disabled:to-indigo-500 disabled:cursor-not-allowed text-white font-semibold transition-all duration-200 flex items-center justify-center gap-3 shadow-lg shadow-blue-500/20 hover:shadow-lg hover:shadow-blue-500/30"
+              class="w-full relative h-11 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:from-blue-500 disabled:to-indigo-500 disabled:cursor-not-allowed text-white font-semibold transition-all duration-200 flex items-center justify-center gap-3 shadow-lg shadow-blue-500/20 hover:shadow-lg hover:shadow-blue-500/30 text-sm"
             >
               <template v-if="isLoading">
-                <div class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                <span>Signing in...</span>
+                <div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                <span>{{ isSignUp ? 'Creating account...' : 'Signing in...' }}</span>
               </template>
               <template v-else>
-                <span>Sign In</span>
+                <span>{{ isSignUp ? 'Create Account' : 'Sign In' }}</span>
                 <ArrowRight class="w-4 h-4 ml-1" :stroke-width="2" />
               </template>
             </button>
@@ -244,7 +336,7 @@ onMounted(() => {
             <div class="absolute inset-0 flex items-center">
               <div :class="['w-full border-t', uiStore.state.theme === 'dark' ? 'border-gray-700' : 'border-gray-200']"></div>
             </div>
-            <div class="relative flex justify-center text-sm">
+            <div class="relative flex justify-center text-xs">
               <span :class="['px-2', uiStore.state.theme === 'dark' ? 'bg-gray-800/80 text-gray-400' : 'bg-white/80 text-gray-600']">
                 Or continue with
               </span>
@@ -255,9 +347,9 @@ onMounted(() => {
           <button
             @click="handleGoogleLogin"
             :disabled="isLoading"
-            class="w-full relative h-12 rounded-lg border border-gray-300 dark:border-gray-700 hover:border-gray-400 dark:hover:border-gray-600 disabled:border-gray-300 dark:disabled:border-gray-700 disabled:cursor-not-allowed font-semibold transition-all duration-200 flex items-center justify-center gap-3 shadow-sm hover:shadow"
+            class="w-full relative h-11 rounded-lg border border-gray-300 dark:border-gray-700 hover:border-gray-400 dark:hover:border-gray-600 disabled:border-gray-300 dark:disabled:border-gray-700 disabled:cursor-not-allowed font-semibold transition-all duration-200 flex items-center justify-center gap-3 shadow-sm hover:shadow text-sm"
           >
-            <svg class="w-5 h-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
               <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
               <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
@@ -268,51 +360,23 @@ onMounted(() => {
             </span>
           </button>
 
-          <!-- Sign Up Link -->
-          <div class="text-center pt-4">
-            <p :class="['text-sm', uiStore.state.theme === 'dark' ? 'text-gray-400' : 'text-gray-600']">
-              Don't have an account?
-              <RouterLink
-                :to="routePaths.authSignup"
-                class="text-blue-600 dark:text-blue-400 hover:underline font-medium ml-1"
-              >
-                Sign up here
-              </RouterLink>
-            </p>
-          </div>
-
           <!-- Features Info -->
-          <div class="space-y-3 pt-6 border-t" :style="{
+          <div class="space-y-2 pt-4 border-t" :style="{
             borderColor: uiStore.state.theme === 'dark' ? 'rgba(55, 65, 81, 0.5)' : 'rgba(229, 231, 235, 0.5)'
           }">
-            <h3 :class="['text-xs font-semibold uppercase tracking-wider', uiStore.state.theme === 'dark' ? 'text-gray-400' : 'text-gray-700']">
+            <h3 :class="['text-[10px] font-semibold uppercase tracking-wider', uiStore.state.theme === 'dark' ? 'text-gray-400' : 'text-gray-700']">
               What You Get
             </h3>
-            <ul :class="['space-y-2 text-sm', uiStore.state.theme === 'dark' ? 'text-gray-400' : 'text-gray-600']">
-              <li class="flex items-start gap-3">
-                <span class="text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0">✓</span>
+            <ul :class="['space-y-1.5 text-xs', uiStore.state.theme === 'dark' ? 'text-gray-400' : 'text-gray-600']">
+              <li class="flex items-start gap-2">
+                <span class="text-blue-600 dark:text-blue-400 flex-shrink-0">✓</span>
                 <span>AI-powered task creation & prioritization</span>
               </li>
-              <li class="flex items-start gap-3">
-                <span class="text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0">✓</span>
+              <li class="flex items-start gap-2">
+                <span class="text-blue-600 dark:text-blue-400 flex-shrink-0">✓</span>
                 <span>Real-time sync with Google Calendar</span>
               </li>
-              <li class="flex items-start gap-3">
-                <span class="text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0">✓</span>
-                <span>Smart command palette (Ctrl+K)</span>
-              </li>
             </ul>
-          </div>
-
-          <!-- Footer Text -->
-          <div :class="['text-center text-xs space-y-2 pt-2', uiStore.state.theme === 'dark' ? 'text-gray-500' : 'text-gray-500']">
-            <p>
-              By signing in, you agree to our<br />
-              <span class="text-blue-600 dark:text-blue-400 hover:underline cursor-pointer">Terms of Service</span> and <span class="text-blue-600 dark:text-blue-400 hover:underline cursor-pointer">Privacy Policy</span>
-            </p>
-            <p :class="uiStore.state.theme === 'dark' ? 'text-gray-600' : 'text-gray-400'">
-              We never share your Google Calendar data with third parties
-            </p>
           </div>
         </div>
       </div>

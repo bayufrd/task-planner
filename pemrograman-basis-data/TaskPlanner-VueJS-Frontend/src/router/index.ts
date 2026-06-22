@@ -2,7 +2,6 @@ import { createRouter, createWebHistory } from 'vue-router'
 import DashboardPage from '../views/DashboardPage.vue'
 import LandingPage from '../views/LandingPage.vue'
 import LoginPage from '../views/LoginPage.vue'
-import RegisterPage from '../views/RegisterPage.vue'
 import RemindersPage from '../views/RemindersPage.vue'
 import AiAssistantPage from '../views/AiAssistantPage.vue'
 import OverviewPage from '../views/OverviewPage.vue'
@@ -17,7 +16,7 @@ const router = createRouter({
     { path: routePaths.landing, name: canonicalRouteNames.landing, component: LandingPage, meta: routeMeta.public },
     { path: routePaths.authSignin, name: canonicalRouteNames.authSignin, component: LoginPage, meta: routeMeta.auth },
     { path: routePaths.loginAlias, redirect: { name: canonicalRouteNames.authSignin } },
-    { path: routePaths.authSignup, name: canonicalRouteNames.authSignup, component: RegisterPage, meta: routeMeta.auth },
+    { path: routePaths.authSignup, name: canonicalRouteNames.authSignup, component: LoginPage, meta: routeMeta.auth },
     { path: routePaths.registerAlias, redirect: { name: canonicalRouteNames.authSignup } },
     {
       path: routePaths.authCallback,

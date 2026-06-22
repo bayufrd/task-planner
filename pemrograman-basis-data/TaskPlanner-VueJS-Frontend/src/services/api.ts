@@ -28,11 +28,16 @@ async function parseResponse<T>(response: Response): Promise<T> {
 }
 
 function getErrorMessage(payload: unknown, status: number) {
-  return typeof payload === 'string'
-    ? payload
-    : (payload as { message?: string; error?: string } | null)?.message
-      || (payload as { message?: string; error?: string } | null)?.error
-      || `HTTP ${status}`
+  if (typeof payload === 'string') return payload
+  if (payload && typeof payload === 'object') {
+    const obj = payload as Record<string, any>
+    if (obj.error && typeof obj.error === 'object') {
+      return obj.error.message || obj.error.code || `HTTP ${status}`
+    }
+    if (typeof obj.error === 'string') return obj.error
+    return obj.message || `HTTP ${status}`
+  }
+  return `HTTP ${status}`
 }
 
 async function refreshAccessToken() {

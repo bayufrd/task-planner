@@ -116,14 +116,14 @@
 
 - [x] Run build successfully in Vue target.
 - [x] Run existing Vue tests or e2e checks (fixed E2E test locators).
-- [ ] Add parity review checklist per page using screenshots.
-- [ ] Validate theme behavior across public/auth/protected pages.
-- [ ] Validate route guards and logout flow.
-- [ ] Validate task CRUD and overview refresh behavior.
-- [ ] Validate responsive behavior on desktop and mobile widths.
-- [ ] Validate no extra Vue-only UX remains in critical flows.
-- [ ] Validate all documented routes against implemented routes before sign-off.
-- [ ] Validate all end-to-end frontend flows against the migration plan before sign-off.
+- [x] Add parity review checklist per page using screenshots.
+- [x] Validate theme behavior across public/auth/protected pages.
+- [x] Validate route guards and logout flow.
+- [x] Validate task CRUD and overview refresh behavior.
+- [x] Validate responsive behavior on desktop and mobile widths.
+- [x] Validate no extra Vue-only UX remains in critical flows.
+- [x] Validate all documented routes against implemented routes before sign-off.
+- [x] Validate all end-to-end frontend flows against the migration plan before sign-off.
 
 ## Route Parity Checklist
 
