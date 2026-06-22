@@ -1,10 +1,11 @@
 import { authApi } from './api'
+import type { AuthResult } from '../types'
 
 export interface User {
   id: string
   email: string
   name: string
-  image?: string
+  image?: string | null
 }
 
 export interface AuthResponse {
@@ -36,25 +37,17 @@ class AuthService {
   /**
    * Register new user with email/password
    */
-  async register(data: RegisterRequest): Promise<AuthResponse> {
+  async register(data: RegisterRequest): Promise<AuthResult> {
     const response = await authApi.register(data)
-    if (response.data.success && response.data.data) {
-      this.setToken(response.data.data.token)
-      this.setUser(response.data.data.user)
-    }
-    return response.data
+    return response
   }
 
   /**
    * Login with email/password
    */
-  async login(data: LoginRequest): Promise<AuthResponse> {
+  async login(data: LoginRequest): Promise<AuthResult> {
     const response = await authApi.login(data)
-    if (response.data.success && response.data.data) {
-      this.setToken(response.data.data.token)
-      this.setUser(response.data.data.user)
-    }
-    return response.data
+    return response
   }
 
   /**
@@ -62,12 +55,8 @@ class AuthService {
    */
   async getCurrentUser(): Promise<User | null> {
     try {
-      const response = await authApi.getCurrentUser()
-      if (response.data.success && response.data.data) {
-        this.setUser(response.data.data.user)
-        return response.data.data.user
-      }
-      return null
+      const response = await authApi.me()
+      return response
     } catch (error) {
       console.error('[auth] Failed to get current user:', error)
       return null
@@ -135,13 +124,6 @@ class AuthService {
     } catch {
       return null
     }
-  }
-
-  /**
-   * Set user
-   */
-  private setUser(user: User): void {
-    localStorage.setItem(this.USER_KEY, JSON.stringify(user))
   }
 
   /**

@@ -6,11 +6,6 @@ type AppLanguage = 'en' | 'id'
 const THEME_KEY = 'taskplanner_theme'
 const LANGUAGE_KEY = 'taskplanner_language'
 
-function readTheme(): ThemeMode {
-  const stored = localStorage.getItem(THEME_KEY)
-  return stored === 'dark' ? 'dark' : 'light'
-}
-
 function readLanguage(): AppLanguage {
   const stored = localStorage.getItem(LANGUAGE_KEY)
   return stored === 'id' ? 'id' : 'en'

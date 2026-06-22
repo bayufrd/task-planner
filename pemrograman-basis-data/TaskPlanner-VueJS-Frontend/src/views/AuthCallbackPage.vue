@@ -15,7 +15,7 @@ onMounted(async () => {
     authService.handleGoogleCallback(token)
 
     // Fetch user info
-    await authStore.fetchUser()
+    await authStore.fetchMe()
 
     // Redirect to dashboard
     router.push('/dashboard')

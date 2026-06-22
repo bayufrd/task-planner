@@ -92,6 +92,10 @@ async function submit() {
               </div>
             </div>
 
+            <div v-if="error" :class="['p-3 rounded-lg text-sm', uiStore.state.theme === 'dark' ? 'bg-red-900/30 text-red-400 border border-red-800/50' : 'bg-red-50 text-red-600 border border-red-200']">
+              {{ error }}
+            </div>
+
             <button type="submit" :disabled="authStore.state.loading" class="w-full h-12 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold flex items-center justify-center gap-3 shadow-lg shadow-blue-500/20">
               {{ authStore.state.loading ? 'Creating account...' : 'Create Account' }}
               <ArrowRight v-if="!authStore.state.loading" class="w-4 h-4" />

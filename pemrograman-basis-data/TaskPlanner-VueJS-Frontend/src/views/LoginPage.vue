@@ -52,7 +52,7 @@ async function submit() {
   errors.submit = ''
   isLoading.value = true
   try {
-    await authStore.login({ ...form, captchaToken: captchaToken.value })
+    await authStore.login({ email: form.email, password: form.password })
     await router.push(callbackUrl.value)
   } catch (err) {
     errors.submit = err instanceof Error ? err.message : 'Login gagal'
@@ -273,7 +273,7 @@ onMounted(() => {
             <p :class="['text-sm', uiStore.state.theme === 'dark' ? 'text-gray-400' : 'text-gray-600']">
               Don't have an account?
               <RouterLink
-                :to="routePaths.register"
+                :to="routePaths.authSignup"
                 class="text-blue-600 dark:text-blue-400 hover:underline font-medium ml-1"
               >
                 Sign up here

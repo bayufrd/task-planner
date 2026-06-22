@@ -30,7 +30,7 @@
 - [x] Create shared public layout.
 - [x] Create shared auth layout.
 - [x] Create shared protected layout.
-- [ ] Move duplicated header logic out of individual pages.
+- [x] Move duplicated header logic out of individual pages.
 - [x] Introduce global UI state for theme.
 - [x] Introduce global UI state for language.
 - [x] Introduce global UI state for command palette.
@@ -47,7 +47,7 @@
 - [x] Normalize icon sizing and spacing.
 - [x] Port critical assets from Next.js public folder.
 - [x] Add light/dark theme support.
-- [ ] Validate mobile-safe footer/tab spacing.
+- [x] Validate mobile-safe footer/tab spacing.
 
 ### Phase 4 - Public and auth parity
 
@@ -67,9 +67,9 @@
 - [x] Rebuild desktop profile dropdown.
 - [x] Rebuild mobile bottom navigation.
 - [x] Add command palette mounting layer.
-- [ ] Add shell-level loading and redirect handling.
-- [ ] Align route availability with reference navigation.
-- [ ] Validate protected route redirects against canonical route matrix.
+- [x] Add shell-level loading and redirect handling.
+- [x] Align route availability with reference navigation.
+- [x] Validate protected route redirects against canonical route matrix.
 
 ### Phase 6 - Dashboard parity
 
@@ -86,36 +86,36 @@
 
 ### Phase 7 - Overview parity
 
-- [ ] Align overview header and refresh action.
-- [ ] Align stats card order and visuals.
-- [ ] Align AI loading and analysis states.
-- [ ] Align animal-level hero section.
-- [ ] Align AI productivity score presentation.
-- [ ] Align insight blocks and support imagery.
-- [ ] Align chart panel ordering and density.
-- [ ] Validate desktop/mobile readability against reference.
+- [x] Align overview header and refresh action.
+- [x] Align stats card order and visuals.
+- [x] Align AI loading and analysis states.
+- [x] Align animal-level hero section.
+- [x] Align AI productivity score presentation.
+- [x] Align insight blocks and support imagery.
+- [x] Align chart panel ordering and density.
+- [x] Validate desktop/mobile readability against reference.
 
 ### Phase 8 - Missing feature parity
 
 - [x] Implement `/connectwhatsapp` route in Vue.
 - [x] Port WhatsApp onboarding copy and surface design.
-- [ ] Decide whether reminders become hidden, redesigned, or integrated later.
-- [ ] Decide whether standalone AI helper remains temporary or is folded into parity flows.
-- [ ] Track Google OAuth parity as deferred or in-scope based on backend readiness.
+- [x] Decide whether reminders become hidden, redesigned, or integrated later. → **Deferred**: Reminders page kept as-is, marked as deferred in registry.
+- [x] Decide whether standalone AI helper remains temporary or is folded into parity flows. → **Deferred**: AI assistant page kept as-is, marked as deferred in registry.
+- [x] Track Google OAuth parity as deferred or in-scope based on backend readiness. → **Deferred**: Google OAuth marked as deferred based on backend readiness.
 
 ### Phase 9 - Cleanup and feature removal
 
-- [ ] Remove duplicated page-local headers after layout migration.
+- [x] Remove duplicated page-local headers after layout migration.
 - [x] Remove Vue-only route explanations and footnotes.
-- [ ] Remove UI paths that contradict reference navigation.
-- [ ] Remove or de-prioritize extra pages not justified by the reference product.
-- [ ] Remove dead CSS and orphaned assets.
-- [ ] Remove starter/demo components not part of the product experience.
+- [x] Remove UI paths that contradict reference navigation.
+- [x] Remove or de-prioritize extra pages not justified by the reference product.
+- [x] Remove dead CSS and orphaned assets.
+- [x] Remove starter/demo components not part of the product experience.
 
 ### Phase 10 - Validation and QA
 
-- [ ] Run build successfully in Vue target.
-- [ ] Run existing Vue tests or e2e checks.
+- [x] Run build successfully in Vue target.
+- [x] Run existing Vue tests or e2e checks (fixed E2E test locators).
 - [ ] Add parity review checklist per page using screenshots.
 - [ ] Validate theme behavior across public/auth/protected pages.
 - [ ] Validate route guards and logout flow.
@@ -129,7 +129,7 @@
 
 - [x] Canonical public route list documented.
 - [x] Canonical auth route list documented.
-- [ ] Canonical protected route list documented.
+- [x] Canonical protected route list documented.
 - [x] Deferred routes documented.
 - [x] Extra Vue routes documented with disposition.
 - [x] Alias routes documented.
@@ -138,10 +138,10 @@
 ## Flow Coverage Checklist
 
 - [x] Landing -> auth -> dashboard flow documented and verified.
-- [ ] Dashboard task CRUD flow documented and verified.
-- [ ] Overview analytics flow documented and verified.
-- [ ] WhatsApp onboarding flow documented and verified.
-- [ ] Transitional reminders / AI helper decisions documented and verified.
+- [x] Dashboard task CRUD flow documented and verified.
+- [x] Overview analytics flow documented and verified.
+- [x] WhatsApp onboarding flow documented and verified.
+- [x] Transitional reminders / AI helper decisions documented and verified.
 
 ## Definition Of Done By Area
 
