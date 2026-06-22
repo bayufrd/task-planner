@@ -21,8 +21,11 @@ const status = ref('')
 const priority = ref('')
 const error = ref('')
 
+const activeTasks = computed(() => appStore.tasks.filter(task => task.status !== 'DONE'))
+const hasActiveTasks = computed(() => activeTasks.value.length > 0)
+
 const filteredTasks = computed(() => {
-  let tasks = appStore.tasks.filter(task => task.status !== 'DONE') // Exclude completed tasks
+  let tasks = activeTasks.value
 
   const today = new Date()
   const weekFromNow = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000)
@@ -51,7 +54,7 @@ const filteredTasks = computed(() => {
 const isTaskModalOpen = computed(() => showTaskForm.value || !!editTarget.value)
 
 function getTasksForDay(day: Date) {
-  return filteredTasks.value.filter((task) => {
+  return appStore.tasks.filter((task) => {
     const taskDate = new Date(task.deadline)
     return (
       taskDate.getFullYear() === day.getFullYear() &&
@@ -167,25 +170,9 @@ onMounted(refresh)
       <section class="flex-shrink-0 sticky top-0 z-20 bg-white/80 backdrop-blur-sm px-4 sm:px-6 lg:px-8 py-4 border-b border-gray-200/50">
         <div class="max-w-6xl mx-auto flex flex-row items-center justify-between">
           <h1 class="text-2xl font-bold text-gray-900">Tasks</h1>
-          <!-- Add filter buttons here -->
-          <div class="flex items-center gap-2">
-            <button
-              v-for="f in ['today', 'upcoming', 'all']"
-              :key="f"
-              @click="filter = f"
-              :class="[
-                'px-3 py-1.5 rounded-lg font-medium text-sm transition-all duration-200',
-                filter === f
-                  ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/30 hover:scale-105'
-                  : 'bg-gray-100/80 text-gray-700 hover:bg-gray-200/80 border border-gray-200',
-              ]"
-            >
-              {{ f.charAt(0).toUpperCase() + f.slice(1) }}
-            </button>
-            <button class="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg font-medium text-sm transition-all duration-200 shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 hover:scale-105" @click="showTaskForm = true; editTarget = null">
-              <Plus :size="16" /> New Task
-            </button>
-          </div>
+          <button class="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg font-medium text-sm transition-all duration-200 shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 hover:scale-105" @click="showTaskForm = true; editTarget = null">
+            <Plus :size="16" /> New Task
+          </button>
         </div>
       </section>
 
@@ -331,7 +318,7 @@ onMounted(refresh)
       <!-- Tasks Display Section -->
       <section class="flex-1">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-28 lg:pb-8">
-          <section v-if="filteredTasks.length === 0" class="flex flex-col items-center justify-center min-h-[400px] text-center">
+          <section v-if="!hasActiveTasks" class="flex flex-col items-center justify-center min-h-[400px] text-center">
             <div class="mb-6">
               <div class="w-20 h-20 rounded-3xl bg-gradient-to-br from-blue-100 to-cyan-100 flex items-center justify-center mb-4 mx-auto">
                 <CheckSquare2 :size="40" class="text-blue-600" />
@@ -352,15 +339,15 @@ onMounted(refresh)
             <div class="grid grid-cols-3 gap-2 sm:gap-3">
               <div class="bg-gradient-to-br from-blue-50/50 to-cyan-50/50 border border-blue-100/50 rounded-2xl p-4">
                 <p class="text-xs font-semibold text-gray-600 uppercase tracking-wider mb-2">Total Tasks</p>
-                <p class="text-3xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">{{ filteredTasks.length }}</p>
+                <p class="text-3xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">{{ activeTasks.length }}</p>
               </div>
               <div class="bg-gradient-to-br from-orange-50/50 to-red-50/50 border border-orange-100/50 rounded-2xl p-4">
                 <p class="text-xs font-semibold text-gray-600 uppercase tracking-wider mb-2">High Priority</p>
-                <p class="text-3xl font-bold text-orange-600">{{ filteredTasks.filter(t => t.priority === 'HIGH').length }}</p>
+                <p class="text-3xl font-bold text-orange-600">{{ activeTasks.filter(t => t.priority === 'HIGH').length }}</p>
               </div>
               <div class="bg-gradient-to-br from-green-50/50 to-emerald-50/50 border border-green-100/50 rounded-2xl p-4">
                 <p class="text-xs font-semibold text-gray-600 uppercase tracking-wider mb-2">Medium</p>
-                <p class="text-3xl font-bold text-green-600">{{ filteredTasks.filter(t => t.priority === 'MEDIUM').length }}</p>
+                <p class="text-3xl font-bold text-green-600">{{ activeTasks.filter(t => t.priority === 'MEDIUM').length }}</p>
               </div>
             </div>
 
@@ -369,6 +356,8 @@ onMounted(refresh)
               <TaskTable
                 :tasks="filteredTasks"
                 :planner-items="appStore.planner"
+                :filter="filter"
+                @update:filter="filter = $event"
                 @edit="editTarget = $event; showTaskForm = true"
                 @complete="appStore.completeTask($event).then(refresh)"
                 @skip="appStore.skipTask($event).then(refresh)"

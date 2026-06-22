@@ -332,7 +332,7 @@ onMounted(() => {
           </form>
 
           <!-- Divider -->
-          <div class="relative">
+          <!-- <div class="relative">
             <div class="absolute inset-0 flex items-center">
               <div :class="['w-full border-t', uiStore.state.theme === 'dark' ? 'border-gray-700' : 'border-gray-200']"></div>
             </div>
@@ -341,10 +341,10 @@ onMounted(() => {
                 Or continue with
               </span>
             </div>
-          </div>
+          </div> -->
 
           <!-- Google Sign In Button -->
-          <button
+          <!-- <button
             @click="handleGoogleLogin"
             :disabled="isLoading"
             class="w-full relative h-11 rounded-lg border border-gray-300 dark:border-gray-700 hover:border-gray-400 dark:hover:border-gray-600 disabled:border-gray-300 dark:disabled:border-gray-700 disabled:cursor-not-allowed font-semibold transition-all duration-200 flex items-center justify-center gap-3 shadow-sm hover:shadow text-sm"
@@ -358,26 +358,7 @@ onMounted(() => {
             <span :class="uiStore.state.theme === 'dark' ? 'text-white' : 'text-gray-700'">
               Continue with Google
             </span>
-          </button>
-
-          <!-- Features Info -->
-          <div class="space-y-2 pt-4 border-t" :style="{
-            borderColor: uiStore.state.theme === 'dark' ? 'rgba(55, 65, 81, 0.5)' : 'rgba(229, 231, 235, 0.5)'
-          }">
-            <h3 :class="['text-[10px] font-semibold uppercase tracking-wider', uiStore.state.theme === 'dark' ? 'text-gray-400' : 'text-gray-700']">
-              What You Get
-            </h3>
-            <ul :class="['space-y-1.5 text-xs', uiStore.state.theme === 'dark' ? 'text-gray-400' : 'text-gray-600']">
-              <li class="flex items-start gap-2">
-                <span class="text-blue-600 dark:text-blue-400 flex-shrink-0">✓</span>
-                <span>AI-powered task creation & prioritization</span>
-              </li>
-              <li class="flex items-start gap-2">
-                <span class="text-blue-600 dark:text-blue-400 flex-shrink-0">✓</span>
-                <span>Real-time sync with Google Calendar</span>
-              </li>
-            </ul>
-          </div>
+          </button> -->
         </div>
       </div>
     </div>
