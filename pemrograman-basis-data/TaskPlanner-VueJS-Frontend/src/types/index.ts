@@ -58,6 +58,7 @@ export interface Task {
   createdAt?: string
   updatedAt?: string
   completedAt?: string | null
+  priorityScore?: number
 }
 
 export interface TaskStats {

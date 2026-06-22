@@ -5,7 +5,6 @@ import { ArrowRight, Mail, Lock, User, Sun, Moon } from '@lucide/vue'
 import { authStore } from '../stores/auth'
 import { routePaths } from '../router/registry'
 import { uiStore } from '../stores/ui'
-import { authService } from '../services/auth.service'
 
 const router = useRouter()
 const route = useRoute()
@@ -23,7 +22,6 @@ watch(
 const form = reactive({ name: '', email: '', password: '' })
 const errors = reactive<Record<string, string>>({})
 const isLoading = ref(false)
-const isGoogleLoading = ref(false)
 const captchaToken = ref('')
 
 // Turnstile configuration
@@ -83,11 +81,6 @@ async function submit() {
   } finally {
     isLoading.value = false
   }
-}
-
-function handleGoogleLogin() {
-  isGoogleLoading.value = true
-  authService.initiateGoogleLogin()
 }
 
 function switchTab(signUp: boolean) {
