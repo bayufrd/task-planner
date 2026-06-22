@@ -1,5 +1,5 @@
 import { authApi } from './api'
-import type { AuthResult } from '../types'
+import type { AuthResult, LoginPayload, RegisterPayload } from '../types'
 
 export interface User {
   id: string
@@ -19,17 +19,6 @@ export interface AuthResponse {
   }
 }
 
-export interface LoginRequest {
-  email: string
-  password: string
-}
-
-export interface RegisterRequest {
-  email: string
-  password: string
-  name: string
-}
-
 class AuthService {
   private readonly TOKEN_KEY = 'auth-token'
   private readonly USER_KEY = 'auth-user'
@@ -37,7 +26,7 @@ class AuthService {
   /**
    * Register new user with email/password
    */
-  async register(data: RegisterRequest): Promise<AuthResult> {
+  async register(data: RegisterPayload): Promise<AuthResult> {
     const response = await authApi.register(data)
     return response
   }
@@ -45,7 +34,7 @@ class AuthService {
   /**
    * Login with email/password
    */
-  async login(data: LoginRequest): Promise<AuthResult> {
+  async login(data: LoginPayload): Promise<AuthResult> {
     const response = await authApi.login(data)
     return response
   }

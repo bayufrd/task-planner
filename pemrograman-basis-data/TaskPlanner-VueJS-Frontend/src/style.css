@@ -1,3 +1,65 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Dark mode styles */
+.dark {
+  color-scheme: dark;
+}
+
+* {
+  @apply transition-colors duration-200;
+}
+
+body {
+  @apply bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-50;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  @apply w-2;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-gray-100 dark:bg-gray-800;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-400 dark:bg-gray-600 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-500 dark:bg-gray-500;
+}
+
+/* Animations */
+@keyframes slideUp {
+  from {
+    @apply opacity-0 translate-y-4;
+  }
+  to {
+    @apply opacity-100 translate-y-0;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    @apply opacity-0;
+  }
+  to {
+    @apply opacity-100;
+  }
+}
+
+.animate-slideUp {
+  @apply animate-[slideUp_0.3s_ease-out];
+}
+
+.animate-fadeIn {
+  @apply animate-[fadeIn_0.3s_ease-out];
+}
+
+/* Base styles from Next.js */
 :root {
   font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   color: #0f172a;
@@ -1756,7 +1818,7 @@ textarea { resize: vertical; }
 }
 .dashboard-stats-strip-card.pending { color: #2563eb; background: #eff6ff; border-color: #dbeafe; }
 .dashboard-stats-strip-card.done { color: #059669; background: #ecfdf5; border-color: #d1fae5; }
-.dashboard-stats-strip-card.skipped { color: #64748b; background: #f8fafc; }
+.dashboard-stats-strip-card.skipped { color: #64748b; background: #f8fafc; border-color: #e2e8f0; }
 .dashboard-hero-next {
   padding: 1rem;
   grid-template-columns: 1fr;
@@ -1780,19 +1842,26 @@ textarea { resize: vertical; }
   }
 }
 .dashboard-empty-state {
-  display: grid;
-  justify-items: center;
-  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   gap: 1rem;
-  padding: 3rem 1.5rem;
+  padding: 4rem 1.5rem;
+  text-align: center;
+  min-height: 400px;
+  background: white;
+  border-radius: 24px;
 }
 .dashboard-empty-icon {
-  width: 4.5rem;
-  height: 4.5rem;
-  border-radius: 1.5rem;
-  display: grid;
-  place-items: center;
+  width: 5rem;
+  height: 5rem;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: linear-gradient(135deg, #dbeafe, #cffafe);
+  border-radius: 1.5rem;
   color: #2563eb;
 }
 .dashboard-empty-state h2,
@@ -1800,9 +1869,15 @@ textarea { resize: vertical; }
 .overview-score-card h2,
 .overview-chart-card h2,
 .overview-summary-title h2 {
-  margin: 0;
+  margin: 0 0 0.5rem;
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 700;
+  background: linear-gradient(135deg, #2563eb, #06b6d4);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
-.dashboard-empty-state p { margin: 0; color: #64748b; }
+.dashboard-empty-state p { margin: 0 0 1rem; color: #64748b; max-width: 24rem; }
 .dashboard-empty-shortcut {
   display: inline-flex;
   align-items: center;

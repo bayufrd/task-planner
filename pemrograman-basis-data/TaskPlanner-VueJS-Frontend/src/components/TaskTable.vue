@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { PlannerItem, Task } from '../types'
 import { formatDateTime } from '../utils/format'
+import { Clock, CalendarDays, Timer } from '@lucide/vue' // Import Clock, CalendarDays, Timer
 
 const props = defineProps<{
   tasks: Task[]
@@ -14,6 +15,7 @@ const emit = defineEmits<{
 }>()
 
 function formatStatus(status: Task['status']) {
+  // Map to more descriptive statuses if needed, or keep as is
   return status === 'DONE' ? 'Done' : status === 'SKIPPED' ? 'Skipped' : 'Pending'
 }
 
@@ -32,32 +34,60 @@ function getPlannerItem(taskId: string) {
       </div>
     </div>
     <div class="task-list-stack">
-      <article v-for="task in tasks" :key="task.id" class="task-item-card task-item-card-next">
-        <div class="task-item-main task-item-main-next">
-          <div class="task-item-copy">
-            <div class="task-item-title-row">
-              <h3 class="table-title">{{ task.title }}</h3>
-              <span v-if="getPlannerItem(task.id)?.priorityScore !== undefined" class="task-score-pill">
-                Score {{ getPlannerItem(task.id)?.priorityScore }}
-              </span>
-            </div>
-            <p>{{ task.description || 'No description' }}</p>
-          </div>
-          <div class="task-item-meta">
-            <span class="badge">{{ formatStatus(task.status) }}</span>
-            <span :class="['badge', task.priority.toLowerCase()]">{{ task.priority }}</span>
-            <span class="task-item-time">{{ formatDateTime(task.deadline) }}</span>
-            <span class="task-item-time">{{ task.estimatedDuration || 0 }} min</span>
-            <span v-if="getPlannerItem(task.id)?.deadline" class="task-item-time">
-              Due {{ formatDateTime(getPlannerItem(task.id)!.deadline) }}
+      <article
+        v-for="task in tasks"
+        :key="task.id"
+        class="flex items-center gap-2 px-4 py-3 bg-blue-50 dark:bg-blue-950/30 rounded-xl border border-blue-100 dark:border-blue-900/50"
+      >
+        <div class="flex-1 flex flex-col gap-1">
+          <div class="flex justify-between items-center">
+            <h3 class="text-base font-semibold text-gray-900 dark:text-white truncate">
+              {{ task.title }}
+            </h3>
+            <span
+              v-if="getPlannerItem(task.id)?.priorityScore !== undefined"
+              class="text-xs font-bold text-blue-500 dark:text-blue-400/70 ml-2"
+            >
+              Score {{ getPlannerItem(task.id)?.priorityScore }}
             </span>
           </div>
+          <p class="text-xs text-gray-500 dark:text-gray-400 line-clamp-2">
+            {{ task.description || 'No description' }}
+          </p>
         </div>
-        <div class="action-row task-item-actions">
-          <button class="ghost-button" @click="emit('edit', task)">Edit</button>
-          <button v-if="task.status !== 'DONE'" class="ghost-button task-action-done" @click="emit('complete', task.id)">Done</button>
-          <button v-if="task.status !== 'SKIPPED' && task.status !== 'DONE'" class="ghost-button" @click="emit('skip', task.id)">Skip</button>
-          <button class="danger-button" @click="emit('remove', task.id)">Delete</button>
+        <div class="flex flex-col items-end gap-1">
+          <span class="badge-status badge-pending">{{ formatStatus(task.status) }}</span>
+          <span :class="['badge-priority', task.priority.toLowerCase()]">{{ task.priority }}</span>
+          <span class="text-xs text-gray-500 dark:text-gray-400/70 flex items-center gap-1">
+            <Clock class="w-3 h-3" /> {{ formatDateTime(task.deadline) }}
+          </span>
+          <span class="text-xs text-gray-500 dark:text-gray-400/70 flex items-center gap-1">
+            <Timer class="w-3 h-3" /> {{ task.estimatedDuration || 0 }} min
+          </span>
+          <span
+            v-if="getPlannerItem(task.id)?.deadline"
+            class="text-xs text-gray-500 dark:text-gray-400/70 flex items-center gap-1"
+          >
+            <CalendarDays class="w-3 h-3" /> {{ formatDateTime(getPlannerItem(task.id)!.deadline) }}
+          </span>
+        </div>
+        <div class="flex flex-col gap-1.5">
+          <button class="ghost-button-sm" @click="emit('edit', task)">Edit</button>
+          <button
+            v-if="task.status !== 'DONE'"
+            class="ghost-button-sm task-action-done"
+            @click="emit('complete', task.id)"
+          >
+            Done
+          </button>
+          <button
+            v-if="task.status !== 'SKIPPED' && task.status !== 'DONE'"
+            class="ghost-button-sm"
+            @click="emit('skip', task.id)"
+          >
+            Skip
+          </button>
+          <button class="danger-button-sm" @click="emit('remove', task.id)">Delete</button>
         </div>
       </article>
     </div>
