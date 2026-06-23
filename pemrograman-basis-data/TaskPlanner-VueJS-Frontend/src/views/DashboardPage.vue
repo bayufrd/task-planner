@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 import { CalendarDays, CheckCircle2, CheckSquare2, CircleDashed, Command, Plus, X, XCircle, ChevronLeft, ChevronRight } from '@lucide/vue'
 
 import TaskForm from '../components/TaskForm.vue'
+import EducationModal from '../components/EducationModal.vue'
 import TaskTable from '../components/TaskTable.vue'
 import { appStore } from '../stores/app'
 import type { Task } from '../types'
@@ -161,11 +162,19 @@ async function submitTask(payload: Partial<Task>) {
   }
 }
 
-onMounted(refresh)
+onMounted(() => {
+  refresh()
+  if (!localStorage.getItem('hide-education-modal')) {
+    showEducationModal.value = true
+  }
+})
+
+const showEducationModal = ref(false)
 </script>
 
 <template>
   <main class="flex flex-col min-h-screen bg-white">
+    <EducationModal :is-open="showEducationModal" @close="showEducationModal = false" />
       <!-- Header with Title and New Task Button -->
       <section class="flex-shrink-0 sticky top-0 z-20 bg-white/80 backdrop-blur-sm px-4 sm:px-6 lg:px-8 py-4 border-b border-gray-200/50">
         <div class="max-w-6xl mx-auto flex flex-row items-center justify-between">
