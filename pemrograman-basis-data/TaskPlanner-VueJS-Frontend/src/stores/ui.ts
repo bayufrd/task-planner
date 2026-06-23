@@ -15,7 +15,6 @@ const state = reactive({
   theme: 'light' as ThemeMode,
   language: readLanguage() as AppLanguage,
   isProfileMenuOpen: false,
-  isCommandPaletteOpen: false,
 })
 
 function applyTheme(theme: ThemeMode) {
@@ -61,15 +60,6 @@ export const uiStore = {
   },
   toggleProfileMenu() {
     state.isProfileMenuOpen = !state.isProfileMenuOpen
-  },
-  openCommandPalette() {
-    state.isCommandPaletteOpen = true
-  },
-  closeCommandPalette() {
-    state.isCommandPaletteOpen = false
-  },
-  toggleCommandPalette() {
-    state.isCommandPaletteOpen = !state.isCommandPaletteOpen
   },
 }
 

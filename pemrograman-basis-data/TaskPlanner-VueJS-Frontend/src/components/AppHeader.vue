@@ -13,7 +13,6 @@ const user = computed(() => authStore.state.user)
 async function handleLogout() {
   await authStore.logout()
   uiStore.closeProfileMenu()
-  uiStore.closeCommandPalette()
   await router.push(routePaths.authSignin)
 }
 

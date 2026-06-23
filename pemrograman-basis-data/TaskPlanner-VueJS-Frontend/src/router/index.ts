@@ -39,8 +39,8 @@ const router = createRouter({
       meta: routeMeta.deferred,
     },
     {
-      path: routePaths.aiAssistant,
-      name: deferredRouteNames.aiAssistant,
+      path: routePaths.assistant,
+      name: deferredRouteNames.assistant,
       component: AssistantPage,
       meta: routeMeta.deferred,
     },
@@ -51,6 +51,7 @@ const router = createRouter({
 })
 
 router.beforeEach(async (to) => {
+  // Restore user session if token exists but user not loaded
   if (authStore.state.token && !authStore.state.user) {
     try {
       await authStore.fetchMe()
@@ -59,17 +60,39 @@ router.beforeEach(async (to) => {
     }
   }
 
-  if (to.meta.requiresAuth && !authStore.isAuthenticated.value) {
+  const isAuthenticated = authStore.isAuthenticated.value
+
+  // Debug logging
+  console.log('[Router Guard]', {
+    to: to.name,
+    path: to.path,
+    isAuthenticated,
+    hasToken: Boolean(authStore.state.token),
+    meta: to.meta,
+  })
+
+  // Protect authenticated routes
+  if (to.meta.requiresAuth && !isAuthenticated) {
+    console.log('[Router Guard] Redirecting to signin (protected route)')
     return {
       name: canonicalRouteNames.authSignin,
       query: { callbackUrl: to.fullPath },
     }
   }
 
-  if (to.meta.guestOnly && authStore.isAuthenticated.value) {
+  // Redirect authenticated users from guest-only pages
+  if (to.meta.guestOnly && isAuthenticated) {
+    console.log('[Router Guard] Redirecting to dashboard (guest-only page)')
     return { name: canonicalRouteNames.dashboard }
   }
 
+  // Redirect authenticated users from landing page to dashboard
+  if (to.name === canonicalRouteNames.landing && isAuthenticated) {
+    console.log('[Router Guard] Redirecting authenticated user from landing to dashboard')
+    return { name: canonicalRouteNames.dashboard }
+  }
+
+  console.log('[Router Guard] Allowing navigation')
   return true
 })
 

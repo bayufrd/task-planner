@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { CalendarDays, CheckCircle2, CheckSquare2, CircleDashed, Command, Plus, XCircle, ChevronLeft, ChevronRight, Calendar, X, Clock } from '@lucide/vue'
+import { CalendarDays, CheckCircle2, CheckSquare2, CircleDashed, Plus, XCircle, ChevronLeft, ChevronRight, Calendar, X, Clock } from '@lucide/vue'
 
 import TaskModal from '../components/TaskModal.vue'
 import EducationModal from '../components/EducationModal.vue'
@@ -354,9 +354,6 @@ const showEducationModal = ref(false)
             <button class="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white rounded-xl font-semibold transition-all duration-200 shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 hover:scale-105" @click="showTaskForm = true; editTarget = null">
               <Plus :size="20" /> Add Task
             </button>
-            <p class="text-xs text-gray-500 mt-6">
-              <Command :size="14" class="inline mr-1" /> Or press Ctrl+K
-            </p>
           </section>
 
           <section v-else class="space-y-6">

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Debug Auth State</title>
+  <style>
+    body { font-family: monospace; padding: 20px; }
+    pre { background: #f4f4f4; padding: 10px; border-radius: 4px; }
+    .exists { color: green; }
+    .missing { color: red; }
+  </style>
+</head>
+<body>
+  <h1>Auth Debug State</h1>
+  <div id="output"></div>
+  
+  <script>
+    const token = localStorage.getItem('taskplanner_token');
+    const refreshToken = localStorage.getItem('taskplanner_refresh_token');
+    const user = localStorage.getItem('taskplanner_user');
+    
+    const output = document.getElementById('output');
+    
+    output.innerHTML = `
+      <h2>LocalStorage Contents:</h2>
+      <pre>
+Token: <span class="${token ? 'exists' : 'missing'}">${token ? 'EXISTS (' + token.substring(0, 20) + '...)' : 'MISSING'}</span>
+Refresh Token: <span class="${refreshToken ? 'exists' : 'missing'}">${refreshToken ? 'EXISTS (' + refreshToken.substring(0, 20) + '...)' : 'MISSING'}</span>
+User: <span class="${user ? 'exists' : 'missing'}">${user ? 'EXISTS' : 'MISSING'}</span>
+      </pre>
+      
+      <h2>User Data:</h2>
+      <pre>${user || 'No user data'}</pre>
+      
+      <h2>All localStorage keys:</h2>
+      <pre>${Object.keys(localStorage).join('\n')}</pre>
+      
+      <hr>
+      <button onclick="localStorage.clear(); location.reload()">Clear All & Reload</button>
+      <button onclick="location.href='http://localhost:5173'">Go to App</button>
+    `;
+  </script>
+</body>
+</html>
