@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { AlertCircle, Calendar, CheckCircle2, Info, Loader2, RefreshCw, Star, TrendingUp, Trophy, Zap } from '@lucide/vue'
+import { AlertCircle, Calendar, CheckCircle2, Info, RefreshCw, Star, TrendingUp, Trophy, Zap } from '@lucide/vue'
 import { appStore } from '../stores/app'
 
 const loading = ref(true)
-const aiLoading = ref(false)
 const error = ref('')
+
+// Adaptive behavior from backend API
+const adaptiveBehavior = computed(() => appStore.adaptiveBehavior)
 
 const total = computed(() => {
   const stats = appStore.stats
@@ -19,22 +21,45 @@ const skipped = computed(() => appStore.stats?.skipped ?? 0)
 const completionRate = computed(() => (total.value ? (done.value / total.value) * 100 : 0))
 const skipRate = computed(() => (total.value ? (skipped.value / total.value) * 100 : 0))
 
-function getAnimalLevel(score: number) {
-  if (score <= 10) return { name: 'Batu Rebahan', imagePath: '/leveling/1.webp', description: 'Hampir tidak bergerak, task cuma dilihat doang', color: 'from-gray-400 to-gray-600' }
-  if (score <= 20) return { name: 'Siput Loading', imagePath: '/leveling/2.webp', description: 'Ada niat, tapi progress lambat banget', color: 'from-amber-400 to-amber-600' }
-  if (score <= 30) return { name: 'Kucing Mager', imagePath: '/leveling/3.webp', description: 'Mau produktif, tapi kasur lebih kuat', color: 'from-orange-400 to-orange-600' }
-  if (score <= 40) return { name: 'Panda Santuy', imagePath: '/leveling/4.webp', description: 'Ada kerjaan selesai, tapi banyak jeda ngemil', color: 'from-gray-500 to-gray-700' }
-  if (score <= 50) return { name: 'Badak Si Pemalas', imagePath: '/leveling/5.webp', description: 'Kuat sebenarnya, tapi susah mulai', color: 'from-slate-500 to-slate-700' }
-  if (score <= 60) return { name: 'Bebek Mulai Jalan', imagePath: '/leveling/6.webp', description: 'Sudah mulai konsisten, walau masih goyang', color: 'from-yellow-400 to-yellow-600' }
-  if (score <= 70) return { name: 'Kelinci Si Rajin', imagePath: '/leveling/7.webp', description: 'Task mulai banyak selesai, ritme bagus', color: 'from-pink-400 to-pink-600' }
-  if (score <= 80) return { name: 'Semut Produktif', imagePath: '/leveling/8.webp', description: 'Rapi, konsisten, dan jarang skip', color: 'from-amber-600 to-amber-800' }
-  if (score <= 90) return { name: 'Elang Fokus', imagePath: '/leveling/9.webp', description: 'Fokus tinggi, prioritas jelas', color: 'from-purple-500 to-purple-700' }
-  return { name: 'Naga Deadline', imagePath: '/leveling/10.webp', description: 'Mode legenda, task tunduk semua', color: 'from-red-500 to-red-700' }
+// Level info map - frontend handles image/color based on level number
+const levelInfo: Record<number, { name: string; color: string; description: string }> = {
+  1: { name: 'Batu Rebahan', color: 'gray', description: 'Hampir tidak bergerak, task cuma dilihat doang' },
+  2: { name: 'Siput Loading', color: 'amber', description: 'Ada niat, tapi progress lambat banget' },
+  3: { name: 'Kucing Mager', color: 'orange', description: 'Mau produktif, tapi kasur lebih kuat' },
+  4: { name: 'Panda Santuy', color: 'gray', description: 'Ada kerjaan selesai, tapi banyak jeda ngemil' },
+  5: { name: 'Badak Si Pemalas', color: 'slate', description: 'Kuat sebenarnya, tapi susah mulai' },
+  6: { name: 'Bebek Mulai Jalan', color: 'yellow', description: 'Sudah mulai konsisten, walau masih goyang' },
+  7: { name: 'Kelinci Si Rajin', color: 'pink', description: 'Task mulai banyak selesai, ritme bagus' },
+  8: { name: 'Semut Produktif', color: 'amber', description: 'Rapi, konsisten, dan jarang skip' },
+  9: { name: 'Elang Fokus', color: 'purple', description: 'Fokus tinggi, prioritas jelas' },
+  10: { name: 'Naga Deadline', color: 'red', description: 'Mode legenda, task tunduk semua' },
 }
 
-const animal = computed(() => getAnimalLevel(appStore.analysis?.score ?? 0))
-const levelNumber = computed(() => Math.floor((appStore.analysis?.score ?? 0) / 10) + 1)
-const progressToNext = computed(() => (appStore.analysis?.score ?? 0) % 10)
+const colorMap: Record<string, string> = {
+  gray: 'from-gray-400 to-gray-600',
+  amber: 'from-amber-400 to-amber-600',
+  orange: 'from-orange-400 to-orange-600',
+  slate: 'from-slate-500 to-slate-700',
+  yellow: 'from-yellow-400 to-yellow-600',
+  pink: 'from-pink-400 to-pink-600',
+  purple: 'from-purple-500 to-purple-700',
+  red: 'from-red-500 to-red-700',
+}
+
+const animal = computed(() => {
+  const behavior = adaptiveBehavior.value
+  if (!behavior) return { name: 'Loading...', imagePath: '/leveling/1.webp', description: '', color: 'from-gray-400 to-gray-600' }
+  const info = levelInfo[behavior.level] || levelInfo[1]
+  return {
+    name: info.name,
+    imagePath: `/leveling/${behavior.level}.webp`,
+    description: info.description,
+    color: colorMap[info.color] || 'from-amber-400 to-amber-600',
+  }
+})
+
+const levelNumber = computed(() => adaptiveBehavior.value?.level ?? 1)
+const progressToNext = computed(() => adaptiveBehavior.value?.progressToNext ?? 0)
 
 function formatShortDate(value: string) {
   const date = new Date(value)
@@ -56,7 +81,8 @@ async function loadData() {
       appStore.loadDailyStats(30),
       appStore.loadWeeklyStats(12),
     ])
-    await refreshAi()
+    // Load adaptive behavior from backend API
+    await appStore.loadAdaptiveBehavior()
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Gagal memuat data overview'
   } finally {
@@ -64,17 +90,38 @@ async function loadData() {
   }
 }
 
-async function refreshAi() {
-  if (!appStore.stats || !appStore.dailyStats.length) return
-  aiLoading.value = true
-  try {
-    await appStore.generateAnalysis()
-  } finally {
-    aiLoading.value = false
-  }
-}
-
 onMounted(loadData)
+
+// Computed for weekly chart points (with safety for empty data)
+const weeklyChartPoints = computed(() => {
+  const stats = appStore.weeklyStats
+  if (!stats || stats.length === 0) return ''
+  
+  const max = Math.max(...stats.map(s => Number(s.completed) || 0), 1)
+  const len = stats.length
+  const divisor = len === 1 ? 1 : len - 1
+  
+  return stats.map((stat, idx) => {
+    const x = (idx / divisor) * 100
+    const y = 100 - ((Number(stat.completed) || 0) / max) * 100
+    return `${x.toFixed(2)},${y.toFixed(2)}`
+  }).join(' ')
+})
+
+const weeklyChartCircles = computed(() => {
+  const stats = appStore.weeklyStats
+  if (!stats || stats.length === 0) return []
+  
+  const max = Math.max(...stats.map(s => Number(s.completed) || 0), 1)
+  const len = stats.length
+  const divisor = len === 1 ? 1 : len - 1
+  
+  return stats.map((stat, idx) => ({
+    cx: (idx / divisor) * 100,
+    cy: 100 - ((Number(stat.completed) || 0) / max) * 100,
+    week: stat.week
+  }))
+})
 </script>
 
 <template>
@@ -83,11 +130,8 @@ onMounted(loadData)
     <section class="overview-header-next">
       <div>
         <h1>Ringkasan</h1>
-        <p>Insight produktivitas dan rekomendasi AI untuk Anda</p>
+        <p>Insight produktivitas dan rekomendasi behavior untuk Anda</p>
       </div>
-      <button class="overview-refresh-button" @click="loadData" title="Segarkan">
-        <RefreshCw :size="20" />
-      </button>
     </section>
 
     <!-- Error State -->
@@ -113,42 +157,8 @@ onMounted(loadData)
     <!-- Main Content -->
     <template v-else>
       <section class="overview-content-next">
-        <!-- Stats Cards -->
-        <div class="overview-stats-grid-next">
-          <article class="overview-stat-card-next">
-            <div class="stat-header">
-              <span>Total Tugas</span>
-              <Calendar :size="20" class="stat-icon blue" />
-            </div>
-            <p class="stat-value">{{ total }}</p>
-          </article>
-
-          <article class="overview-stat-card-next">
-            <div class="stat-header">
-              <span>Selesai</span>
-              <CheckCircle2 :size="20" class="stat-icon green" />
-            </div>
-            <p class="stat-value">{{ done }}</p>
-            <p class="stat-note">{{ completionRate.toFixed(1) }}% tingkat penyelesaian</p>
-          </article>
-
-          <article class="overview-stat-card-next">
-            <div class="stat-header">
-              <span>Tertunda</span>
-              <TrendingUp :size="20" class="stat-icon orange" />
-            </div>
-            <p class="stat-value">{{ pending }}</p>
-            <p class="stat-note">{{ skipped }} dilewati ({{ skipRate.toFixed(1) }}%)</p>
-          </article>
-        </div>
-
-        <!-- AI Loading or Analysis -->
-        <div v-if="aiLoading" class="overview-ai-loading-next">
-          <Loader2 :size="24" class="spinner" />
-          <span>Memuat analisis AI...</span>
-        </div>
-
-        <template v-else-if="appStore.analysis">
+        <!-- Behavior Analysis Section -->
+        <template v-if="adaptiveBehavior">
           <!-- Animal Hero Section -->
           <article :class="['overview-animal-hero-next', `gradient-${animal.color}`]">
             <div class="animal-image-container">
@@ -156,7 +166,7 @@ onMounted(loadData)
             </div>
             <div class="animal-badge">
               <Trophy :size="20" />
-              <span>Level Hari Ini</span>
+              <span>Level {{ levelNumber }}</span>
             </div>
             <h2 class="animal-name">{{ animal.name }}</h2>
             <p class="animal-description">{{ animal.description }}</p>
@@ -166,45 +176,41 @@ onMounted(loadData)
           <article class="panel overview-score-panel-next">
             <div class="score-header">
               <div>
-                <h3>Skor Produktivitas AI</h3>
-                <p>Berdasarkan aktivitas terbaru Anda</p>
-              </div>
-              <div class="score-ring-container">
-                <svg class="score-ring" viewBox="0 0 96 96">
-                  <circle cx="48" cy="48" r="40" class="ring-track" />
-                  <circle
-                    cx="48"
-                    cy="48"
-                    r="40"
-                    class="ring-progress"
-                    :stroke-dasharray="2 * Math.PI * 40"
-                    :stroke-dashoffset="2 * Math.PI * 40 * (1 - (appStore.analysis.score / 100))"
-                  />
-                </svg>
-                <span class="score-value">{{ appStore.analysis.score }}</span>
+                <h3>Skor Produktivitas</h3>
+                <p>{{ adaptiveBehavior.score }}/100</p>
               </div>
             </div>
-            <div v-if="appStore.analysis.insights.length" class="score-insights">
-              <div v-for="(insight, idx) in appStore.analysis.insights" :key="idx" class="insight-item">
+            <div v-if="adaptiveBehavior?.insights?.length" class="score-insights">
+              <div v-for="(insight, idx) in adaptiveBehavior.insights" :key="idx" class="insight-item">
                 <span class="insight-dot"></span>
                 <span>{{ insight }}</span>
               </div>
             </div>
           </article>
+
+          <!-- Hero Image - Below Skor Produktivitas -->
+          <article class="overview-hero-image-next">
+            <img src="/opt-hero/3.webp" alt="Overview hero" />
+          </article>
+
+          <!-- Stats Cards - Below Skor Produktivitas -->
+          <div class="overview-stats-compact">
+            <div class="stat-mini-card">
+              <span class="stat-mini-label">Total</span>
+              <span class="stat-mini-value">{{ total }}</span>
+            </div>
+            <div class="stat-mini-card">
+              <span class="stat-mini-label">Selesai</span>
+              <span class="stat-mini-value">{{ done }}</span>
+              <span class="stat-mini-sub">{{ completionRate.toFixed(0) }}%</span>
+            </div>
+            <div class="stat-mini-card">
+              <span class="stat-mini-label">Tertunda</span>
+              <span class="stat-mini-value">{{ pending }}</span>
+              <span class="stat-mini-sub">{{ skipped }} skip</span>
+            </div>
+          </div>
         </template>
-
-        <div v-else class="overview-ai-prompt">
-          <p>Klik untuk memuat analisis AI</p>
-          <button @click="refreshAi" class="load-ai-button">
-            <RefreshCw :size="16" />
-            Muat AI
-          </button>
-        </div>
-
-        <!-- Hero Image -->
-        <article class="overview-hero-image-next">
-          <img src="/opt-hero/3.webp" alt="Overview hero" />
-        </article>
 
         <!-- Daily Chart -->
         <article class="panel overview-chart-next">
@@ -231,47 +237,36 @@ onMounted(loadData)
 
         <!-- Weekly Chart -->
         <article class="panel overview-chart-next">
-          <h3 class="chart-title">Tren Penyelesaian Mingguan (12 Minggu Terakhir)</h3>
+          <h3 class="chart-title">Tren Mingguan</h3>
           <div class="chart-placeholder">
-            <div class="chart-line-grid">
+            <div class="chart-line-grid" v-if="weeklyChartPoints">
               <svg class="chart-line-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
                 <polyline
-                  :points="appStore.weeklyStats.map((stat, idx) => {
-                    const x = appStore.weeklyStats.length === 1 ? 50 : (idx / (appStore.weeklyStats.length - 1)) * 100
-                    const max = Math.max(...appStore.weeklyStats.map(s => Number(s.completed)), 1)
-                    const y = 100 - ((Number(stat.completed) / max) * 100)
-                    return `${x},${y}`
-                  }).join(' ')"
+                  :points="weeklyChartPoints"
                   class="chart-line purple"
                 />
                 <circle
-                  v-for="(stat, idx) in appStore.weeklyStats"
-                  :key="stat.week"
-                  :cx="appStore.weeklyStats.length === 1 ? 50 : (idx / (appStore.weeklyStats.length - 1)) * 100"
-                  :cy="100 - ((Number(stat.completed) / Math.max(...appStore.weeklyStats.map(s => Number(s.completed)), 1)) * 100)"
+                  v-for="(circle, idx) in weeklyChartCircles"
+                  :key="circle.week"
+                  :cx="circle.cx.toFixed(2)"
+                  :cy="circle.cy.toFixed(2)"
                   r="2"
                   class="chart-dot purple"
                 />
               </svg>
-              <div class="chart-labels">
-                <span
-                  v-for="(stat, idx) in appStore.weeklyStats"
-                  :key="`label-${stat.week}`"
-                  v-show="idx % 2 === 0 || idx === appStore.weeklyStats.length - 1"
-                >
-                  {{ formatWeekLabel(stat.week) }}
-                </span>
-              </div>
+            </div>
+            <div v-else class="chart-empty">
+              <p>Belum ada data mingguan</p>
             </div>
           </div>
         </article>
 
-        <!-- AI Advice Cards -->
-        <section v-if="appStore.analysis && appStore.analysis.advice.length" class="overview-advice-section-next">
-          <h3 class="section-title">Rekomendasi AI</h3>
+        <!-- Adaptive Behavior Advice Cards -->
+        <section v-if="adaptiveBehavior?.advice?.length" class="overview-advice-section-next">
+          <h3 class="section-title">Rekomendasi Behavior</h3>
           <div class="advice-grid">
             <article
-              v-for="(card, idx) in appStore.analysis.advice"
+              v-for="(card, idx) in adaptiveBehavior.advice"
               :key="idx"
               :class="['advice-card', card.type]"
             >
@@ -287,7 +282,7 @@ onMounted(loadData)
         </section>
 
         <!-- Summary Section -->
-        <article v-if="appStore.analysis" class="panel overview-summary-next">
+        <article v-if="adaptiveBehavior" class="panel overview-summary-next">
           <div class="summary-header">
             <Star :size="20" />
             <h3>Ringkasan Level Anda</h3>
@@ -297,11 +292,11 @@ onMounted(loadData)
             <div class="summary-info">
               <div class="summary-badges">
                 <span class="level-badge">Level {{ levelNumber }}</span>
-                <span class="score-text">Score: {{ appStore.analysis.score }}/100</span>
+                <span class="score-text">Score: {{ adaptiveBehavior.score }}/100</span>
               </div>
               <h4 class="summary-name">{{ animal.name }}</h4>
               <p class="summary-description">{{ animal.description }}</p>
-              <div v-if="appStore.analysis.score < 100" class="summary-progress">
+              <div v-if="adaptiveBehavior.score < 100" class="summary-progress">
                 <div class="progress-label">
                   <span>Progress ke level berikutnya</span>
                   <span>{{ progressToNext }}/10</span>
@@ -318,13 +313,11 @@ onMounted(loadData)
               </div>
               <p>
                 {{
-                  appStore.analysis.score <= 30
-                    ? 'Coba selesaikan 1 task kecil dulu setiap hari!'
-                    : appStore.analysis.score <= 60
-                      ? 'Tingkatkan konsistensi dengan menyelesaikan lebih banyak task.'
-                      : appStore.analysis.score <= 80
-                        ? 'Pertahankan ritme dan fokus pada task prioritas!'
-                        : 'Hampir sempurna! Jaga fokus dan hindari menunda.'
+                  adaptiveBehavior.archetype === 'snail'
+                    ? 'Coba mulai dengan 1-2 tugas kecil per hari untuk membangun kebiasaan!'
+                    : adaptiveBehavior.archetype === 'dragon'
+                      ? '模式 Legenda! Pertahankan momentum dan standar kualitas Anda.'
+                      : 'Tingkatkan konsistensi secara bertahap untuk naik level.'
                 }}
               </p>
             </div>

@@ -40,8 +40,8 @@ async function createFromParsed(payload: Partial<Task>) {
     <AppHeader />
     <main class="page-shell two-column">
       <section class="panel">
-        <h1>AI helper</h1>
-        <p>Uses the implemented parse-task endpoint from the Java backend.</p>
+        <h1>Task Assistant</h1>
+        <p>Uses the implemented parse-task endpoint from the backend.</p>
         <label>
           <span>Natural language input</span>
           <textarea v-model="parseInput" rows="5" placeholder="Describe a task in plain English"></textarea>

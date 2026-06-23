@@ -3,7 +3,7 @@ import DashboardPage from '../views/DashboardPage.vue'
 import LandingPage from '../views/LandingPage.vue'
 import LoginPage from '../views/LoginPage.vue'
 import RemindersPage from '../views/RemindersPage.vue'
-import AiAssistantPage from '../views/AiAssistantPage.vue'
+import AssistantPage from '../views/AssistantPage.vue'
 import OverviewPage from '../views/OverviewPage.vue'
 import ConnectWhatsappPage from '../views/ConnectWhatsappPage.vue'
 import AuthCallbackPage from '../views/AuthCallbackPage.vue'
@@ -41,7 +41,7 @@ const router = createRouter({
     {
       path: routePaths.aiAssistant,
       name: deferredRouteNames.aiAssistant,
-      component: AiAssistantPage,
+      component: AssistantPage,
       meta: routeMeta.deferred,
     },
   ],

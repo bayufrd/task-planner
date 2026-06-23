@@ -1,5 +1,6 @@
 import express, { Application } from 'express';
 import cors from 'cors';
+import path from 'path';
 import { corsOptions } from './config/cors';
 import { setupSwagger } from './config/swagger';
 import { errorHandler } from './middleware/error-handler';
@@ -19,6 +20,9 @@ export const createApp = (): Application => {
   app.use(cors(corsOptions));
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
+
+  // Serve static files for leveling images
+  app.use('/leveling', express.static(path.join(__dirname, '../public/leveling')));
 
   // Health check
   app.get('/api/health', (_req, res) => {

@@ -9,7 +9,7 @@ export const routePaths = {
   loginAlias: '/login',
   registerAlias: '/register',
   reminders: '/reminders',
-  aiAssistant: '/ai-assistant',
+  assistant: '/assistant',
 } as const
 
 export const canonicalRouteNames = {
@@ -24,7 +24,7 @@ export const canonicalRouteNames = {
 
 export const deferredRouteNames = {
   reminders: 'reminders',
-  aiAssistant: 'ai-assistant',
+  assistant: 'assistant',
 } as const
 
 export const routeMeta = {

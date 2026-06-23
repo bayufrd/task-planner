@@ -234,7 +234,7 @@ export const reminderApi = {
 
 export { authApi }
 
-export const aiApi = {
+export const assistantApi = {
   async parseTask(text: string) {
     const result = await request<ApiEnvelope<ParsedTaskDraft>>('/api/ai/parse-task', {
       method: 'POST',
@@ -242,10 +242,41 @@ export const aiApi = {
     })
     return unwrap(result)
   },
-  async overviewAnalysis() {
-    const result = await request<ApiEnvelope<OverviewAnalysis>>('/api/ai/overview-analysis', {
-      method: 'POST',
-      body: JSON.stringify({}),
+}
+
+// Keep aiApi as alias for backward compatibility
+export const aiApi = assistantApi
+
+// Adaptive Behavior API
+export interface AdaptiveBehaviorStats {
+  todo?: number
+  pending?: number
+  inProgress?: number
+  done: number
+  skipped: number
+}
+
+export interface AdaptiveBehaviorDataResponse {
+  score: number
+  level: number
+  stats: {
+    completionRate: number
+    skipRate: number
+    consistencyScore: number
+    avgDailyCompletion: number
+    totalTasks: number
+    completedTasks: number
+    pendingTasks: number
+    skippedTasks: number
+  }
+  insights: string[]
+  advice: Array<{ title: string; description: string; type: 'success' | 'warning' | 'info' }>
+}
+
+export const behaviorApi = {
+  async getAdaptiveBehavior() {
+    const result = await request<ApiEnvelope<AdaptiveBehaviorDataResponse>>('/api/ai/adaptive-behavior-vuejs', {
+      method: 'GET',
     })
     return unwrap(result)
   },

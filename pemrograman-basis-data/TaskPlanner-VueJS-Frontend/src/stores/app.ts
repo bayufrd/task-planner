@@ -1,8 +1,7 @@
 import { reactive } from 'vue'
-import { aiApi, reminderApi, taskApi } from '../services/api'
+import { behaviorApi, reminderApi, taskApi } from '../services/api'
 import type {
   DailyStatsItem,
-  OverviewAnalysis,
   PlannerItem,
   Reminder,
   Task,
@@ -12,6 +11,10 @@ import type {
   WeeklyStatsItem,
 } from '../types'
 
+// ============================================
+// Store
+// ============================================
+
 export const appStore = reactive({
   tasks: [] as Task[],
   reminders: [] as Reminder[],
@@ -19,7 +22,7 @@ export const appStore = reactive({
   stats: null as TaskStats | null,
   dailyStats: [] as DailyStatsItem[],
   weeklyStats: [] as WeeklyStatsItem[],
-  analysis: null as OverviewAnalysis | null,
+  adaptiveBehavior: null as any,
   loading: false,
   async bootstrap() {
     this.loading = true
@@ -115,8 +118,13 @@ export const appStore = reactive({
     await reminderApi.remove(id)
     await this.loadReminders()
   },
-  async generateAnalysis() {
-    this.analysis = await aiApi.overviewAnalysis()
-    return this.analysis
+  /**
+   * Load adaptive behavior from backend API
+   */
+  async loadAdaptiveBehavior() {
+    if (!this.stats || !this.dailyStats.length) return null
+    
+    this.adaptiveBehavior = await behaviorApi.getAdaptiveBehavior()
+    return this.adaptiveBehavior
   },
 })
