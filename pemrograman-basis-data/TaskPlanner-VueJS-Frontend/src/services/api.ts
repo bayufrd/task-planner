@@ -168,7 +168,10 @@ export const taskApi = {
     return unwrap(result)
   },
   async complete(id: string) {
-    const result = await request<ApiEnvelope<Task>>(`/api/tasks/${id}/complete`, { method: 'POST' })
+    const result = await request<ApiEnvelope<Task>>(`/api/tasks/${id}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status: 'DONE' }),
+    })
     return unwrap(result)
   },
   async skip(id: string) {

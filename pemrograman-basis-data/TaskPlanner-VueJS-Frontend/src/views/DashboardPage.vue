@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { CalendarDays, CheckCircle2, CheckSquare2, CircleDashed, Command, Plus, X, XCircle, ChevronLeft, ChevronRight } from '@lucide/vue'
+import { CalendarDays, CheckCircle2, CheckSquare2, CircleDashed, Command, Plus, XCircle, ChevronLeft, ChevronRight, Calendar, X, Clock } from '@lucide/vue'
 
-import TaskForm from '../components/TaskForm.vue'
+import TaskModal from '../components/TaskModal.vue'
 import EducationModal from '../components/EducationModal.vue'
 import TaskTable from '../components/TaskTable.vue'
 import { appStore } from '../stores/app'
@@ -14,13 +14,15 @@ const filter = ref<'today' | 'upcoming' | 'all'>('today')
 const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
 const editTarget = ref<Task | null>(null)
-const busy = ref(false)
 const showTaskForm = ref(false)
 const currentMonth = ref(new Date())
 const search = ref('')
 const status = ref('')
 const priority = ref('')
 const error = ref('')
+
+const selectedDate = ref(new Date())
+const isDateModalOpen = ref(false)
 
 const activeTasks = computed(() => appStore.tasks.filter(task => task.status !== 'DONE'))
 const hasActiveTasks = computed(() => activeTasks.value.length > 0)
@@ -109,6 +111,22 @@ const monthEnd = computed(() => endOfMonth(currentMonth.value))
 const daysInMonth = computed(() => eachDayOfInterval(monthStart.value, monthEnd.value))
 
 const todayTaskCount = computed(() => getTasksForDay(new Date()).length)
+const selectedDateTasks = computed(() => {
+  return appStore.tasks.filter((task) => {
+    const taskDate = new Date(task.deadline)
+    return (
+      taskDate.getFullYear() === selectedDate.value.getFullYear() &&
+      taskDate.getMonth() === selectedDate.value.getMonth() &&
+      taskDate.getDate() === selectedDate.value.getDate() &&
+      task.status !== 'DONE'
+    )
+  }).sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime())
+})
+
+function handleDateClick(day: Date) {
+  selectedDate.value = day
+  isDateModalOpen.value = true
+}
 
 function closeTaskModal() {
   showTaskForm.value = false
@@ -147,19 +165,12 @@ async function refresh() {
   }
 }
 
-async function submitTask(payload: Partial<Task>) {
-  busy.value = true
-  try {
-    if (editTarget.value) {
-      await appStore.updateTask(editTarget.value.id, payload)
-    } else {
-      await appStore.createTask(payload)
-    }
-    closeTaskModal()
-    await refresh()
-  } finally {
-    busy.value = false
-  }
+async function handleTaskSaved() {
+  await refresh()
+}
+
+async function handleTaskCreated() {
+  await refresh()
 }
 
 onMounted(() => {
@@ -189,7 +200,11 @@ const showEducationModal = ref(false)
       <section class="flex-shrink-0 border-b border-gray-200/50 bg-gradient-to-b from-white/80 to-gray-50/80 px-4 sm:px-6 lg:px-8 py-6">
         <div class="max-w-6xl mx-auto space-y-6">
           <!-- Today Quick View -->
-          <div class="bg-gradient-to-br from-blue-50/50 to-cyan-50/50 border border-blue-100/50 rounded-2xl p-5">
+          <button
+            type="button"
+            @click="handleDateClick(new Date())"
+            class="w-full text-left bg-gradient-to-br from-blue-50/50 to-cyan-50/50 border border-blue-100/50 rounded-2xl p-5 hover:shadow-lg transition-all duration-300"
+          >
             <div class="flex items-center justify-between gap-4">
               <div class="flex-1">
                 <p class="text-xs font-semibold text-gray-600 uppercase tracking-widest mb-1">
@@ -208,7 +223,7 @@ const showEducationModal = ref(false)
                 <p class="text-xs text-gray-600 font-medium mt-1">{{ todayTaskCount === 1 ? 'task' : 'tasks' }}</p>
               </div>
             </div>
-          </div>
+          </button>
 
           <!-- Month Selector & Calendar -->
           <div>
@@ -260,6 +275,7 @@ const showEducationModal = ref(false)
                     v-for="day in daysInMonth"
                     :key="day.toISOString()"
                     :disabled="!isSameMonth(day, currentMonth)"
+                    @click="handleDateClick(day)"
                     :class="[
                       'relative p-2.5 rounded-xl text-center text-sm font-semibold transition-all duration-200',
                       !isSameMonth(day, currentMonth)
@@ -379,26 +395,80 @@ const showEducationModal = ref(false)
 
     <p v-if="error" class="text-red-600 font-semibold px-4 sm:px-6 lg:px-8">{{ error }}</p>
 
-    <div v-if="isTaskModalOpen" class="dashboard-modal-backdrop" @click.self="closeTaskModal">
-      <section class="panel dashboard-task-modal">
-        <div class="section-header dashboard-task-form-head dashboard-task-form-head-next">
-          <div>
-            <span class="chart-kicker">Step 1 of 1</span>
-            <h2>{{ editTarget ? 'Edit Task' : 'Create Task' }}</h2>
-            <p>{{ editTarget ? 'Review the current task details, update the fields, then save changes.' : 'Fill in the task details, review the summary, then create the task.' }}</p>
+    <TaskModal
+      :is-open="isTaskModalOpen"
+      :mode="editTarget ? 'edit' : 'create'"
+      :task="editTarget"
+      @close="closeTaskModal"
+      @saved="handleTaskSaved"
+      @created="handleTaskCreated"
+    />
+
+    <!-- Date Tasks Modal -->
+    <Teleport to="body">
+      <div
+        v-if="isDateModalOpen"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
+        @click.self="isDateModalOpen = false"
+      >
+        <div class="w-full max-w-lg rounded-2xl border border-gray-200 bg-white shadow-2xl">
+          <div class="flex items-start justify-between gap-4 border-b border-gray-200 p-5">
+            <div>
+              <p class="text-xs font-semibold uppercase tracking-widest text-blue-600">Tasks by date</p>
+              <h3 class="text-xl font-bold text-gray-900">
+                {{ selectedDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }) }}
+              </h3>
+              <p class="mt-1 text-sm text-gray-500">
+                {{ selectedDateTasks.length }} active task{{ selectedDateTasks.length === 1 ? '' : 's' }}
+              </p>
+            </div>
+            <button
+              @click="isDateModalOpen = false"
+              class="rounded-lg p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+            >
+              <X class="h-5 w-5" />
+            </button>
           </div>
-          <button class="dashboard-modal-close-button" aria-label="Close task modal" @click="closeTaskModal">
-            <X :size="18" />
-          </button>
+
+          <div class="max-h-[60vh] overflow-y-auto p-5">
+            <div v-if="selectedDateTasks.length === 0" class="rounded-xl border border-dashed border-gray-300 p-8 text-center">
+              <Calendar class="mx-auto h-10 w-10 text-gray-400" />
+              <p class="mt-3 font-semibold text-gray-800">No active tasks on this date</p>
+              <p class="mt-1 text-sm text-gray-500">Pick another date or create a new task for this day.</p>
+            </div>
+            <div v-else class="space-y-3">
+              <div
+                v-for="task in selectedDateTasks"
+                :key="task.id"
+                class="rounded-xl border border-gray-200 bg-gray-50/80 p-4"
+              >
+                <div class="flex items-start justify-between gap-3">
+                  <div class="min-w-0 flex-1">
+                    <h4 class="font-semibold text-gray-900">{{ task.title }}</h4>
+                    <p v-if="task.description" class="mt-1 line-clamp-2 text-sm text-gray-600">{{ task.description }}</p>
+                  </div>
+                  <span :class="[
+                    'shrink-0 rounded-full px-2.5 py-1 text-xs font-bold',
+                    task.priority === 'HIGH' ? 'bg-red-100 text-red-700' :
+                    task.priority === 'MEDIUM' ? 'bg-orange-100 text-orange-700' :
+                    'bg-green-100 text-green-700'
+                  ]">
+                    {{ task.priority }}
+                  </span>
+                </div>
+                <div class="mt-3 flex flex-wrap items-center gap-2 text-xs text-gray-600">
+                  <span class="inline-flex items-center gap-1 rounded-lg bg-white px-2 py-1">
+                    <Clock class="h-3.5 w-3.5" />
+                    {{ new Date(task.deadline).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) }}
+                  </span>
+                  <span class="rounded-lg bg-white px-2 py-1">{{ task.status }}</span>
+                  <span v-if="task.estimatedDuration" class="rounded-lg bg-white px-2 py-1">{{ task.estimatedDuration }} min</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-        <TaskForm
-          :busy="busy"
-          :mode="editTarget ? 'edit' : 'create'"
-          :model-value="editTarget || undefined"
-          :submit-label="editTarget ? 'Save Changes' : 'Create Task'"
-          @submit="submitTask"
-        />
-      </section>
-    </div>
+      </div>
+    </Teleport>
   </main>
 </template>

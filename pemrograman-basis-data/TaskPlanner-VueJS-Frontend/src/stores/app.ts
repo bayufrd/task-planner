@@ -1,5 +1,5 @@
 import { reactive } from 'vue'
-import { aiApi, plannerApi, reminderApi, taskApi } from '../services/api'
+import { aiApi, reminderApi, taskApi } from '../services/api'
 import type {
   DailyStatsItem,
   OverviewAnalysis,
@@ -29,7 +29,7 @@ export const appStore = reactive({
         this.loadStats(),
         this.loadDailyStats(),
         this.loadWeeklyStats(),
-        this.loadPlanner(),
+        // this.loadPlanner(),
         this.loadReminders(),
       ])
     } finally {
@@ -45,42 +45,42 @@ export const appStore = reactive({
     const created = await taskApi.create(payload)
     await this.loadTasks()
     await this.loadStats()
-    await this.loadPlanner()
+    // await this.loadPlanner()
     return created
   },
   async updateTask(id: string, payload: Partial<Task>) {
     const updated = await taskApi.update(id, payload)
     await this.loadTasks()
     await this.loadStats()
-    await this.loadPlanner()
+    // await this.loadPlanner()
     return updated
   },
   async updateTaskStatus(id: string, status: TaskStatus) {
     const updated = await taskApi.updateStatus(id, status)
     await this.loadTasks()
     await this.loadStats()
-    await this.loadPlanner()
+    // await this.loadPlanner()
     return updated
   },
   async completeTask(id: string) {
     const updated = await taskApi.complete(id)
     await this.loadTasks()
     await this.loadStats()
-    await this.loadPlanner()
+    // await this.loadPlanner()
     return updated
   },
   async skipTask(id: string) {
     const updated = await taskApi.skip(id)
     await this.loadTasks()
     await this.loadStats()
-    await this.loadPlanner()
+    // await this.loadPlanner()
     return updated
   },
   async deleteTask(id: string) {
     await taskApi.remove(id)
     await this.loadTasks()
     await this.loadStats()
-    await this.loadPlanner()
+    // await this.loadPlanner()
   },
   async loadStats() {
     this.stats = await taskApi.stats()
@@ -94,9 +94,8 @@ export const appStore = reactive({
     this.weeklyStats = await taskApi.weeklyStats(weeks)
     return this.weeklyStats
   },
-  async loadPlanner(limit = 5) {
-    this.planner = await plannerApi.today(limit)
-    return this.planner
+  async loadPlanner() {
+    return []
   },
   async loadReminders() {
     this.reminders = await reminderApi.list()
