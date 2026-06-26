@@ -118,8 +118,8 @@ function detectArchetype(
  * Generate insights based on behavior patterns
  */
 function generateInsights(
-  stats: TaskStats,
-  dailyStats: DailyStatsItem[],
+  _stats: TaskStats,
+  _dailyStats: DailyStatsItem[],
   completionRate: number,
   skipRate: number,
   consistencyScore: number,
@@ -230,7 +230,7 @@ function generateAdvice(
 export function calculateAdaptiveBehavior(
   stats: TaskStats,
   dailyStats: DailyStatsItem[],
-  weeklyStats: WeeklyStatsItem[],
+  _weeklyStats: WeeklyStatsItem[],
   baseUrl: string = ''
 ): AdaptiveBehaviorResponse {
   // Map incoming stats to expected format
