@@ -545,6 +545,11 @@ export class TaskService {
       type: '24h' | '1h' | 'deadline';
       nomor: string;
       pesan: string;
+      footer?: string;
+      buttons?: Array<{
+        id: string;
+        text: string;
+      }>;
     }> = [];
 
     for (const task of candidates) {
@@ -587,8 +592,17 @@ export class TaskService {
             `Deadline: ${deadlineLabel} WIB`,
             `Sisa waktu: sekitar 1 jam lagi.`,
             `Prioritas: ${task.priority}`,
-            'Harap segera diselesaikan atau dijadwalkan ulang jika perlu.',
+            '',
+            'Jika sudah selesai, tekan tombol di bawah atau balas:',
+            `task selesai ${task.title}`,
           ].join('\n'),
+          footer: 'Smart Task Planner by Dastrevas',
+          buttons: [
+            {
+              id: `task selesai ${task.title}`,
+              text: '✅ Tandai Selesai',
+            },
+          ],
         });
       }
 
@@ -602,9 +616,22 @@ export class TaskService {
             `⏳ Deadline task sudah tiba${userName}`,
             `Task: ${task.title}`,
             `Deadline: ${deadlineLabel} WIB`,
-            `Jika belum selesai, balas dengan format seperti: selesai ${task.title}`,
+            '',
+            'Jika task sudah selesai, tekan tombol di bawah atau balas:',
+            `task done ${task.title}`,
             `Jika tidak diubah menjadi DONE dalam ${toleranceMinutes} menit lagi, task ini akan otomatis menjadi SKIPPED.`,
           ].join('\n'),
+          footer: 'Smart Task Planner by Dastrevas',
+          buttons: [
+            {
+              id: `task done ${task.title}`,
+              text: '✅ Done',
+            },
+            {
+              id: 'task lihat jadwal hari ini',
+              text: '📋 Lihat Jadwal',
+            },
+          ],
         });
       }
     }

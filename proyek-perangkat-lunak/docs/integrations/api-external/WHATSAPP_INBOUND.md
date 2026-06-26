@@ -981,6 +981,215 @@ Dedup reminder disimpan pada field schema task di [`schema.prisma`](../../backen
 - `reminderDeadlineSent`
 - `skippedNotificationSent`
 
+### Rancangan implementasi reminder H-1 jam dan tepat deadline dengan tombol WhatsApp
+
+Target flow ini menambah **shortcut aksi** pada reminder H-1 jam dan reminder tepat deadline, tanpa menghapus dukungan command text manual seperti `task selesai ...`, `task done ...`, `task snooze ...`, atau variasi natural lain yang tetap diproses oleh inbound AI.
+
+#### Tujuan implementasi
+
+- reminder **H-1 jam** memberi notifikasi bahwa deadline sudah dekat,
+- reminder **tepat deadline** memberi notifikasi bahwa task sudah jatuh tempo,
+- kedua reminder dapat menyertakan tombol WhatsApp native untuk aksi cepat,
+- user tetap boleh membalas manual dengan text command biasa,
+- backend tetap memakai **source of truth** task internal, bukan state tombol di gateway.
+
+#### Prinsip utama
+
+1. **Text command tetap canonical**
+   - Tombol WhatsApp hanya menghasilkan text command terstruktur.
+   - Flow akhir tetap masuk ke [`POST /internal/wa/inbound`](../../backend/src/modules/whatsappInbound/whatsapp-inbound.routes.ts:1186) sebagai command biasa.
+   - Dengan pola ini, parser command `task selesai ...` dan `task done ...` tetap menjadi jalur utama yang konsisten.
+
+2. **Tombol tidak menggantikan command manual**
+   - Jika tombol gagal tampil atau provider tidak mendukung interactive button pada kondisi tertentu, user masih bisa membalas manual.
+   - Contoh fallback yang harus selalu ditulis di pesan:
+     - `Balas: task selesai <judul task>`
+     - `Balas: task done <judul task>`
+
+3. **Reminder scheduler tetap pemicu utama**
+   - Reminder H-1 jam dan tepat deadline tetap dipicu oleh [`TaskAutoSkipScheduler.run()`](../../backend/src/modules/tasks/task.auto-skip.scheduler.ts:46).
+   - Scheduler hanya menyiapkan payload outbound yang lebih kaya, bukan memindahkan logic completion ke gateway.
+
+#### Trigger reminder yang disarankan
+
+Untuk task `PENDING` yang punya `whatsappNumber`:
+
+- saat `deadline - 1 jam` → kirim reminder **warning**,
+- saat `deadline` → kirim reminder **due now**,
+- setelah lewat tolerance auto-skip → tetap ikuti flow auto-`SKIPPED` yang sudah ada.
+
+Dedup tetap memakai field berikut:
+
+- `reminder1hSent` untuk reminder H-1 jam,
+- `reminderDeadlineSent` untuk reminder tepat deadline.
+
+Tidak perlu field dedup baru hanya untuk tombol, karena tombol adalah **format pesan**, bukan event reminder baru.
+
+#### Payload outbound ke WhatsApp Gateway
+
+Scheduler backend dapat tetap memakai sender outbound personal, tetapi body request ke endpoint [`POST /api/whatsapp/send-personal`](../../../../whatsapp-bot/documents/infrastructure/API_CHAT_EXTERNAL_DAN_WHATSAPP_GATEWAY.md) perlu mengirim field `buttons` dan opsional `footer`.
+
+Contoh payload reminder H-1 jam:
+
+```json
+{
+  "number": "6281234567890",
+  "message": "⏰ Reminder H-1 deadline\n\nTask: Bayar listrik\nDeadline: 26 Jun 2026, 20.00 WIB\nPrioritas: HIGH\n\nJika sudah selesai, tekan tombol di bawah atau balas: task selesai bayar listrik",
+  "footer": "Smart Task Planner by Dastrevas",
+  "buttons": [
+    {
+      "id": "task selesai bayar listrik",
+      "text": "✅ Tandai Selesai"
+    }
+  ]
+}
+```
+
+Contoh payload reminder tepat deadline:
+
+```json
+{
+  "number": "6281234567890",
+  "message": "🚨 Deadline sudah tiba\n\nTask: Bayar listrik\nDeadline: 26 Jun 2026, 20.00 WIB\n\nTask akan tetap `PENDING` sampai Anda menandainya selesai. Jika dibiarkan melewati tolerance, task dapat berubah otomatis menjadi `SKIPPED`.\n\nTekan tombol di bawah atau balas: task done bayar listrik",
+  "footer": "Smart Task Planner by Dastrevas",
+  "buttons": [
+    {
+      "id": "task done bayar listrik",
+      "text": "✅ Done"
+    },
+    {
+      "id": "task lihat jadwal hari ini",
+      "text": "📋 Lihat Jadwal"
+    }
+  ]
+}
+```
+
+#### Mapping tombol ke command inbound
+
+Implementasi gateway yang sudah didokumentasikan mendukung mapping klik tombol ke text command melalui [`messages.upsert`](../../../../whatsapp-bot/api/bot.js:638). Karena itu, rekomendasi safest path:
+
+- `buttons[].id` diisi langsung dengan command text final,
+- gateway meneruskan `id` tombol sebagai `command` ke backend inbound,
+- backend tidak perlu membedakan apakah command berasal dari ketikan manual atau klik tombol.
+
+Contoh mapping:
+
+| Tombol | `buttons[].id` | Efek akhir |
+|---|---|---|
+| Tandai selesai | `task selesai bayar listrik` | masuk ke resolver `COMPLETE_TASK` |
+| Done | `task done bayar listrik` | alias ke flow `COMPLETE_TASK` |
+| Lihat jadwal | `task lihat jadwal hari ini` | masuk ke flow list |
+
+#### Dukungan alias command manual tetap wajib
+
+Agar UX fleksibel, inbound parser sebaiknya tetap menerima beberapa pola yang ekuivalen, misalnya:
+
+- `task selesai bayar listrik`
+- `task done bayar listrik`
+- `task mark done bayar listrik`
+- `selesai bayar listrik`
+
+Minimal requirement implementasi:
+
+- klik tombol `✅ Tandai Selesai` harus berakhir ke intent `COMPLETE_TASK`,
+- user yang mengetik manual `task done bayar listrik` juga harus berakhir ke intent `COMPLETE_TASK`,
+- hasil completion dari tombol dan manual harus memakai formatter reply yang sama.
+
+#### Saran format isi pesan
+
+Untuk reminder H-1 jam, isi pesan sebaiknya fokus pada urgensi ringan:
+
+```text
+⏰ Reminder H-1 deadline
+
+Task: Bayar listrik
+Deadline: 26 Jun 2026, 20.00 WIB
+Prioritas: HIGH
+
+Jika sudah selesai, tekan tombol ✅ Tandai Selesai
+atau balas: task selesai bayar listrik
+```
+
+Untuk reminder tepat deadline, isi pesan sebaiknya fokus pada due state + konsekuensi auto-skip:
+
+```text
+🚨 Deadline sudah tiba
+
+Task: Bayar listrik
+Deadline: 26 Jun 2026, 20.00 WIB
+
+Jika task ini sudah selesai, tekan tombol ✅ Done
+atau balas: task done bayar listrik
+
+Jika belum selesai sampai melewati tolerance,
+task dapat berubah otomatis menjadi SKIPPED.
+```
+
+#### Perilaku backend yang disarankan saat tombol ditekan
+
+1. Gateway menerima klik tombol.
+2. Gateway mengubah klik itu menjadi text command dari `buttons[].id`.
+3. Gateway memanggil [`POST /internal/wa/inbound`](../../backend/src/modules/whatsappInbound/whatsapp-inbound.routes.ts:1186).
+4. Backend mencari task aktif milik nomor WA terkait.
+5. Backend menyelesaikan task dengan rule matching yang sama seperti command manual.
+6. Backend mengembalikan response sinkron dengan `message` final.
+7. Gateway membalas user dengan response itu.
+
+Contoh reply sukses:
+
+```text
+✅ Task selesai:
+📝 Bayar listrik
+🕒 26 Jun 2026, 20.00 WIB
+📌 DONE
+```
+
+#### Rule penting untuk hindari ambiguity
+
+Karena tombol membawa text command, ambiguity tetap mungkin terjadi jika judul task mirip. Karena itu:
+
+- jika ada 1 task target yang jelas → selesaikan langsung,
+- jika ada banyak task mirip → jangan asal pilih; balas klarifikasi,
+- jika task sudah `DONE` atau `SKIPPED` → balas status terakhir,
+- jika task tidak ditemukan → sarankan `task lihat jadwal`.
+
+Contoh klarifikasi:
+
+```text
+Saya menemukan 2 task yang mirip:
+1. Bayar listrik rumah
+2. Bayar listrik kantor
+
+Balas dengan command yang lebih spesifik, misalnya:
+task selesai bayar listrik rumah
+```
+
+#### Dampak ke testing
+
+Tambahan checklist QA untuk flow ini:
+
+- [ ] reminder H-1 jam mengirim payload dengan `buttons`
+- [ ] reminder tepat deadline mengirim payload dengan `buttons`
+- [ ] klik tombol `✅ Tandai Selesai` masuk ke inbound sebagai command text
+- [ ] command manual `task selesai ...` tetap berhasil walau tanpa tombol
+- [ ] command manual `task done ...` tetap berhasil walau tanpa tombol
+- [ ] task ambigu dari tombol menghasilkan klarifikasi, bukan salah update
+- [ ] task yang sudah `DONE` tidak diproses ulang sebagai completion baru
+- [ ] fallback text pada isi reminder tetap cukup jelas jika tombol gagal tampil
+
+#### Rekomendasi implementasi ringkas
+
+Urutan kerja paling aman:
+
+1. pastikan parser inbound menerima alias `selesai` dan `done` untuk intent `COMPLETE_TASK`,
+2. update sender reminder scheduler agar dapat mengirim `footer` + `buttons`,
+3. aktifkan payload tombol hanya untuk reminder H-1 jam dan tepat deadline,
+4. pertahankan fallback text command di body pesan,
+5. uji klik tombol dan ketik manual dengan reply formatter yang sama.
+
+Dengan pola ini, reminder deadline menjadi lebih cepat ditindak melalui tombol WhatsApp, tetapi arsitektur tetap sederhana karena semua aksi selesai tetap melewati command text yang sama.
+
 ## Non-Registration Command Saat Ini
 
 Jika command **bukan** format `user_id daftar`, maka endpoint saat ini akan:

@@ -3,10 +3,17 @@ import path from 'node:path';
 import { env } from '../../config/env';
 import { TaskService, DailyScheduleReminder } from './task.service';
 
+interface WhatsappButtonPayload {
+  id: string;
+  text: string;
+}
+
 interface WhatsappPersonalPayload {
   nomor: string;
   pesan: string;
   lampiran?: string;
+  footer?: string;
+  buttons?: WhatsappButtonPayload[];
 }
 
 const AUTO_SKIP_INTERVAL_MS = 60 * 1000;
@@ -90,8 +97,20 @@ export class TaskAutoSkipScheduler {
     );
   }
 
-  private async sendWhatsappMessage(nomor: string, pesan: string): Promise<void> {
-    await this.postWhatsappPayload({ nomor, pesan }, 'Failed to send WhatsApp reminder');
+  private async sendWhatsappMessage(
+    nomor: string,
+    pesan: string,
+    options?: { footer?: string; buttons?: WhatsappButtonPayload[] },
+  ): Promise<void> {
+    await this.postWhatsappPayload(
+      {
+        nomor,
+        pesan,
+        footer: options?.footer,
+        buttons: options?.buttons,
+      },
+      'Failed to send WhatsApp reminder',
+    );
   }
 
   private async sendWhatsappMediaMessage(nomor: string, pesan: string, lampiranPath: string): Promise<void> {
@@ -188,18 +207,23 @@ export class TaskAutoSkipScheduler {
 
       for (const reminder of reminders) {
         try {
-          await this.sendWhatsappMessage(reminder.nomor, reminder.pesan);
+          await this.sendWhatsappMessage(reminder.nomor, reminder.pesan, {
+            footer: reminder.footer,
+            buttons: reminder.buttons,
+          });
           await this.taskService.markWhatsappReminderSent(reminder.taskId, reminder.type);
           console.log('[Task Reminder] WhatsApp reminder sent', {
             taskId: reminder.taskId,
             type: reminder.type,
             nomor: reminder.nomor,
+            hasButtons: Array.isArray(reminder.buttons) && reminder.buttons.length > 0,
           });
         } catch (error) {
           console.error('[Task Reminder] Failed to send WhatsApp reminder', {
             taskId: reminder.taskId,
             type: reminder.type,
             nomor: reminder.nomor,
+            hasButtons: Array.isArray(reminder.buttons) && reminder.buttons.length > 0,
             error,
           });
         }
