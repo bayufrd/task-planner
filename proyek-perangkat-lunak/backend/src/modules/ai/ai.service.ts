@@ -92,6 +92,46 @@ const normalizeReminderTime = (reminderTime: unknown): number => {
 
 const INDONESIA_TIME_ZONE = 'Asia/Jakarta';
 const INDONESIA_UTC_OFFSET_HOURS = 7;
+const INDONESIAN_MONTHS: Record<string, number> = {
+  januari: 1,
+  jan: 1,
+  februari: 2,
+  feb: 2,
+  maret: 3,
+  mar: 3,
+  april: 4,
+  apr: 4,
+  mei: 5,
+  juni: 6,
+  jun: 6,
+  juli: 7,
+  jul: 7,
+  agustus: 8,
+  agu: 8,
+  ags: 8,
+  september: 9,
+  sep: 9,
+  oktober: 10,
+  okt: 10,
+  november: 11,
+  nov: 11,
+  desember: 12,
+  des: 12,
+};
+const INDONESIAN_WEEKDAYS: Record<string, number> = {
+  minggu: 0,
+  senin: 1,
+  selasa: 2,
+  rabu: 3,
+  kamis: 4,
+  jumat: 5,
+  jumatnya: 5,
+  jumatan: 5,
+  jum\'at: 5,
+  jumat\': 5,
+  friday: 5,
+  sabtu: 6,
+};
 
 const getJakartaDateParts = (date: Date) => {
   const formatter = new Intl.DateTimeFormat('en-CA', {
@@ -127,6 +167,103 @@ const createJakartaDate = (
   second: number = 0
 ) => new Date(Date.UTC(year, month - 1, day, hour - INDONESIA_UTC_OFFSET_HOURS, minute, second, 0));
 
+const clampToValidMonthDay = (year: number, month: number, day: number) => {
+  const candidate = createJakartaDate(year, month, day, 0, 0, 0);
+  return getJakartaDateParts(candidate).day === day ? candidate : null;
+};
+
+const findFutureWeekdayDate = (base: Date, weekday: number) => {
+  const baseParts = getJakartaDateParts(base);
+  const baseDate = createJakartaDate(baseParts.year, baseParts.month, baseParts.day, 0, 0, 0);
+  const currentWeekday = baseDate.getUTCDay();
+  let diff = (weekday - currentWeekday + 7) % 7;
+  if (diff === 0) diff = 7;
+
+  const candidate = new Date(baseDate);
+  candidate.setUTCDate(candidate.getUTCDate() + diff);
+  return candidate;
+};
+
+const extractPreferredSchedulePhrase = (input: string): string => {
+  const normalized = input.trim();
+  if (!normalized) return normalized;
+
+  const connectors = [
+    /\b(?:diundur|undur|reschedule|jadwal(?:nya)?\s+diundur)\s+ke\b/gi,
+    /\b(?:diganti|ganti|ubah|update|edit)\s+(?:ke\s+)?(?:hari|tanggal|jam|pukul)?/gi,
+    /\b(?:jadi|menjadi)\b/gi,
+    /\byaitu\b/gi,
+  ];
+
+  let bestIndex = -1;
+
+  for (const regex of connectors) {
+    for (const match of normalized.matchAll(regex)) {
+      if (typeof match.index !== 'number') continue;
+      const candidateIndex = match.index + match[0].length;
+      if (candidateIndex >= bestIndex) {
+        bestIndex = candidateIndex;
+      }
+    }
+  }
+
+  if (bestIndex < 0) return normalized;
+
+  const preferred = normalized.slice(bestIndex).trim();
+  return preferred || normalized;
+};
+
+const resolveExplicitDateHint = (input: string, deadline: Date, now: Date): Date | null => {
+  const lower = input.toLowerCase();
+  const preferred = extractPreferredSchedulePhrase(lower);
+  const source = preferred || lower;
+  const nowJakarta = getJakartaDateParts(now);
+  const deadlineJakarta = getJakartaDateParts(deadline);
+  const baseDate = createJakartaDate(deadlineJakarta.year, deadlineJakarta.month, deadlineJakarta.day, 0, 0, 0);
+
+  const fullDateMatch = source.match(/\b(?:tanggal\s+)?(\d{1,2})\s+(januari|februari|maret|april|mei|juni|juli|agustus|september|oktober|november|desember|jan|feb|mar|apr|mei|jun|jul|agu|ags|sep|okt|nov|des)(?:\s+(\d{4}))?\b/i);
+  if (fullDateMatch) {
+    const day = Number(fullDateMatch[1]);
+    const month = INDONESIAN_MONTHS[fullDateMatch[2].toLowerCase()];
+    const year = fullDateMatch[3] ? Number(fullDateMatch[3]) : nowJakarta.year;
+    const candidate = clampToValidMonthDay(year, month, day);
+
+    if (candidate) {
+      if (!fullDateMatch[3] && candidate < baseDate) {
+        return clampToValidMonthDay(year + 1, month, day);
+      }
+
+      return candidate;
+    }
+  }
+
+  const tanggalMatch = source.match(/\btanggal\s+(\d{1,2})\b/i);
+  if (tanggalMatch) {
+    const day = Number(tanggalMatch[1]);
+    const month = nowJakarta.month;
+    let year = nowJakarta.year;
+    let candidate = clampToValidMonthDay(year, month, day);
+
+    if (candidate && candidate < baseDate) {
+      const nextMonth = month === 12 ? 1 : month + 1;
+      year = month === 12 ? year + 1 : year;
+      candidate = clampToValidMonthDay(year, nextMonth, day);
+    }
+
+    return candidate;
+  }
+
+  const weekdayMatch = source.match(/\b(minggu|senin|selasa|rabu|kamis|jumat|jum'at|friday|sabtu)\b/i);
+  if (weekdayMatch) {
+    const weekday = INDONESIAN_WEEKDAYS[weekdayMatch[1].toLowerCase()];
+    if (typeof weekday === 'number') {
+      return findFutureWeekdayDate(baseDate, weekday);
+    }
+  }
+
+  return null;
+};
+
 /**
  * Deterministic post-processing for common Indonesian date/time phrases.
  * This fixes LLM timezone/day ambiguity in Asia/Jakarta:
@@ -138,24 +275,37 @@ const createJakartaDate = (
  */
 const applyIndonesianTimeHints = (input: string, deadline: Date, now: Date): Date => {
   const lower = input.toLowerCase();
+  const preferredSchedulePhrase = extractPreferredSchedulePhrase(lower);
   const nowJakarta = getJakartaDateParts(now);
   const deadlineJakarta = getJakartaDateParts(deadline);
+  const explicitDate = resolveExplicitDateHint(preferredSchedulePhrase, deadline, now);
 
-  let base = createJakartaDate(
-    deadlineJakarta.year,
-    deadlineJakarta.month,
-    deadlineJakarta.day,
-    deadlineJakarta.hour,
-    deadlineJakarta.minute,
-    deadlineJakarta.second
-  );
+  let base = explicitDate
+    ? createJakartaDate(
+        getJakartaDateParts(explicitDate).year,
+        getJakartaDateParts(explicitDate).month,
+        getJakartaDateParts(explicitDate).day,
+        deadlineJakarta.hour,
+        deadlineJakarta.minute,
+        deadlineJakarta.second
+      )
+    : createJakartaDate(
+        deadlineJakarta.year,
+        deadlineJakarta.month,
+        deadlineJakarta.day,
+        deadlineJakarta.hour,
+        deadlineJakarta.minute,
+        deadlineJakarta.second
+      );
 
-  if (/\bbesok\b/.test(lower)) {
-    base = createJakartaDate(nowJakarta.year, nowJakarta.month, nowJakarta.day + 1, deadlineJakarta.hour, deadlineJakarta.minute, 0);
-  } else if (/\blusa\b/.test(lower)) {
-    base = createJakartaDate(nowJakarta.year, nowJakarta.month, nowJakarta.day + 2, deadlineJakarta.hour, deadlineJakarta.minute, 0);
-  } else if (/\b(hari ini|today)\b/.test(lower)) {
-    base = createJakartaDate(nowJakarta.year, nowJakarta.month, nowJakarta.day, deadlineJakarta.hour, deadlineJakarta.minute, 0);
+  if (!explicitDate) {
+    if (/\bbesok\b/.test(preferredSchedulePhrase)) {
+      base = createJakartaDate(nowJakarta.year, nowJakarta.month, nowJakarta.day + 1, deadlineJakarta.hour, deadlineJakarta.minute, 0);
+    } else if (/\blusa\b/.test(preferredSchedulePhrase)) {
+      base = createJakartaDate(nowJakarta.year, nowJakarta.month, nowJakarta.day + 2, deadlineJakarta.hour, deadlineJakarta.minute, 0);
+    } else if (/\b(hari ini|today)\b/.test(preferredSchedulePhrase)) {
+      base = createJakartaDate(nowJakarta.year, nowJakarta.month, nowJakarta.day, deadlineJakarta.hour, deadlineJakarta.minute, 0);
+    }
   }
 
   const detectPeriodContext = (start: number, end: number): 'pagi' | 'siang' | 'sore' | 'malam' | undefined => {
