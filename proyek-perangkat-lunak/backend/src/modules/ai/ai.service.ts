@@ -127,8 +127,7 @@ const INDONESIAN_WEEKDAYS: Record<string, number> = {
   jumat: 5,
   jumatnya: 5,
   jumatan: 5,
-  jum\'at: 5,
-  jumat\': 5,
+  "jum'at": 5,
   friday: 5,
   sabtu: 6,
 };
