@@ -244,37 +244,71 @@ const buildWhatsappRegistrationSuccessMessage = (name: string): string => {
   ].join('\n');
 };
 
+const extractTaskTagNames = (tags?: Array<{ tagName?: string | null } | string>) =>
+  Array.isArray(tags)
+    ? tags
+        .map((tag) => {
+          if (typeof tag === 'string') return tag.trim();
+          return typeof tag?.tagName === 'string' ? tag.tagName.trim() : '';
+        })
+        .filter(Boolean)
+    : [];
+
+const formatTaskHashtagLine = (tags?: Array<{ tagName?: string | null } | string>) => {
+  const normalizedTags = extractTaskTagNames(tags);
+  return normalizedTags.length > 0
+    ? `🏷️ ${normalizedTags.map((tag) => (tag.startsWith('#') ? tag : `#${tag}`)).join(' ')}`
+    : null;
+};
+
 const formatTaskLine = (task: {
   title: string;
+  description?: string | null;
   deadline: Date;
   priority: string;
   status: string;
+  tags?: Array<{ tagName?: string | null } | string>;
 }) => {
   const formattedDate = task.deadline.toLocaleString('id-ID', {
     dateStyle: 'medium',
     timeStyle: 'short',
   });
+  const description = typeof task.description === 'string' ? task.description.trim() : '';
+  const hashtagLine = formatTaskHashtagLine(task.tags);
 
-  return `• ${task.title} | ${formattedDate} | ${task.priority} | ${task.status}`;
+  return [
+    `• ${task.title}`,
+    description ? `  📄 ${description}` : null,
+    hashtagLine ? `  ${hashtagLine}` : null,
+    `  🕒 ${formattedDate}`,
+    `  ⚡ ${task.priority}`,
+    `  📌 ${task.status}`,
+  ].filter(Boolean).join('\n');
 };
 
 const formatTaskSuccessLine = (task: {
   title: string;
+  description?: string | null;
   deadline: Date;
   priority: string;
   status: string;
+  tags?: Array<{ tagName?: string | null } | string>;
 }) => {
   const formattedDate = task.deadline.toLocaleString('id-ID', {
     dateStyle: 'medium',
     timeStyle: 'short',
   });
+  const description = typeof task.description === 'string' ? task.description.trim() : '';
+  const hashtagLine = formatTaskHashtagLine(task.tags);
 
   return [
     `📝 ${task.title}`,
+    description ? `📄 ${description}` : null,
+    hashtagLine,
     `🕒 ${formattedDate}`,
     `⚡ ${task.priority}`,
     `📌 ${task.status}`,
-  ].join('\n');
+  ].filter(Boolean).join('\n');
 };
 
 const normalizeCommandText = (command: string) =>

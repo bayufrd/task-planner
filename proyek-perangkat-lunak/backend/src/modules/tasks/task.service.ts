@@ -29,6 +29,63 @@ export interface DailyScheduleReminder {
   batches: DailyScheduleReminderBatch[];
 }
 
+const extractTaskTagNames = (tags?: Array<{ tagName?: string | null }>) =>
+  Array.isArray(tags)
+    ? tags
+        .map((tag) => (typeof tag?.tagName === 'string' ? tag.tagName.trim() : ''))
+        .filter(Boolean)
+    : [];
+
+const formatTaskHashtagLine = (tags?: Array<{ tagName?: string | null }>) => {
+  const normalizedTags = extractTaskTagNames(tags);
+  return normalizedTags.length > 0
+    ? `🏷️ ${normalizedTags.map((tag) => (tag.startsWith('#') ? tag : `#${tag}`)).join(' ')}`
+    : null;
+};
+
+const formatWhatsappTaskDetails = (task: {
+  title: string;
+  description?: string | null;
+  deadline?: Date;
+  priority?: string | null;
+  status?: string | null;
+  tags?: Array<{ tagName?: string | null }>;
+}, options?: {
+  titlePrefix?: string;
+  deadlinePrefix?: string;
+  includePriority?: boolean;
+  includeStatus?: boolean;
+  includeDescription?: boolean;
+  includeTags?: boolean;
+  deadlineDateStyle?: 'full' | 'long' | 'medium' | 'short';
+  deadlineTimeStyle?: 'full' | 'long' | 'medium' | 'short';
+}) => {
+  const titlePrefix = options?.titlePrefix ?? 'Task';
+  const deadlinePrefix = options?.deadlinePrefix ?? 'Deadline';
+  const includePriority = options?.includePriority ?? true;
+  const includeStatus = options?.includeStatus ?? true;
+  const includeDescription = options?.includeDescription ?? true;
+  const includeTags = options?.includeTags ?? true;
+  const description = typeof task.description === 'string' ? task.description.trim() : '';
+  const hashtagLine = includeTags ? formatTaskHashtagLine(task.tags) : null;
+  const deadlineLine = task.deadline
+    ? `${deadlinePrefix}: ${new Date(task.deadline).toLocaleString('id-ID', {
+        dateStyle: options?.deadlineDateStyle ?? 'full',
+        timeStyle: options?.deadlineTimeStyle ?? 'short',
+        timeZone: 'Asia/Jakarta',
+      })} WIB`
+    : null;
+
+  return [
+    `${titlePrefix}: ${task.title}`,
+    includeDescription && description ? `Deskripsi: ${description}` : null,
+    includeTags && hashtagLine ? hashtagLine : null,
+    deadlineLine,
+    includePriority && task.priority ? `Prioritas: ${task.priority}` : null,
+    includeStatus && task.status ? `Status: ${task.status}` : null,
+  ].filter(Boolean);
+};
+
 const splitLongText = (text: string, maxLength: number): string[] => {
   const normalized = text.trim();
   if (!normalized) return [];
@@ -431,9 +488,15 @@ export class TaskService {
       select: {
         id: true,
         title: true,
+        description: true,
         deadline: true,
         estimatedDuration: true,
         priority: true,
+        tags: {
+          select: {
+            tagName: true,
+          },
+        },
         user: {
           select: {
             name: true,
@@ -484,8 +547,9 @@ export class TaskService {
           nomor: String(task.whatsappNumber).trim(),
           pesan: [
             `⛔ Task otomatis menjadi SKIPPED${task.userName ? `, ${task.userName}` : ''}`,
-            `Task: ${task.title}`,
-            `Deadline: ${new Date(task.deadline).toLocaleString('id-ID', { dateStyle: 'full', timeStyle: 'short', timeZone: 'Asia/Jakarta' })} WIB`,
+            ...formatWhatsappTaskDetails(task, {
+              includeStatus: false,
+            }),
             `Batas toleransi selesai: ${toleranceMinutes} menit setelah deadline.`,
             'Task ini sudah melewati batas toleransi dan statusnya diubah menjadi SKIPPED.',
           ].join('\n'),
@@ -521,6 +585,7 @@ export class TaskService {
       select: {
         id: true,
         title: true,
+        description: true,
         deadline: true,
         priority: true,
         estimatedDuration: true,
@@ -528,6 +593,11 @@ export class TaskService {
         reminder24hSent: true,
         reminder1hSent: true,
         reminderDeadlineSent: true,
+        tags: {
+          select: {
+            tagName: true,
+          },
+        },
         user: {
           select: {
             name: true,
@@ -559,11 +629,6 @@ export class TaskService {
       const deadline = new Date(task.deadline);
       const remainingMs = deadline.getTime() - now.getTime();
       const userName = task.user.name ? `, ${task.user.name}` : '';
-      const deadlineLabel = deadline.toLocaleString('id-ID', {
-        dateStyle: 'full',
-        timeStyle: 'short',
-        timeZone: 'Asia/Jakarta',
-      });
 
       if (!task.reminder24hSent && remainingMs <= twentyFourHoursMs && remainingMs >= twentyFourHoursMs - windowMs) {
         reminders.push({
@@ -572,10 +637,12 @@ export class TaskService {
           nomor: whatsappNumber,
           pesan: [
             `⏰ Pengingat Task 24 Jam${userName}`,
-            `Task: ${task.title}`,
-            `Deadline: ${deadlineLabel} WIB`,
-            `Sisa waktu: sekitar 24 jam lagi.`,
-            `Prioritas: ${task.priority}`,
+            ...formatWhatsappTaskDetails(task, {
+              includeStatus: false,
+              deadlineDateStyle: 'full',
+              deadlineTimeStyle: 'short',
+            }),
+            'Sisa waktu: sekitar 24 jam lagi.',
             'Segera siapkan task ini agar tidak terlewat.',
           ].join('\n'),
         });
@@ -588,10 +655,12 @@ export class TaskService {
           nomor: whatsappNumber,
           pesan: [
             `🚨 Pengingat Task 1 Jam${userName}`,
-            `Task: ${task.title}`,
-            `Deadline: ${deadlineLabel} WIB`,
-            `Sisa waktu: sekitar 1 jam lagi.`,
-            `Prioritas: ${task.priority}`,
+            ...formatWhatsappTaskDetails(task, {
+              includeStatus: false,
+              deadlineDateStyle: 'full',
+              deadlineTimeStyle: 'short',
+            }),
+            'Sisa waktu: sekitar 1 jam lagi.',
             '',
             'Jika sudah selesai, tekan tombol di bawah atau balas:',
             `task selesai ${task.title}`,
@@ -614,8 +683,11 @@ export class TaskService {
           nomor: whatsappNumber,
           pesan: [
             `⏳ Deadline task sudah tiba${userName}`,
-            `Task: ${task.title}`,
-            `Deadline: ${deadlineLabel} WIB`,
+            ...formatWhatsappTaskDetails(task, {
+              includeStatus: false,
+              deadlineDateStyle: 'full',
+              deadlineTimeStyle: 'short',
+            }),
             '',
             'Jika task sudah selesai, tekan tombol di bawah atau balas:',
             `task done ${task.title}`,
@@ -691,8 +763,15 @@ export class TaskService {
           },
           select: {
             title: true,
+            description: true,
             deadline: true,
             status: true,
+            priority: true,
+            tags: {
+              select: {
+                tagName: true,
+              },
+            },
           },
           orderBy: {
             deadline: 'asc',
@@ -736,12 +815,17 @@ export class TaskService {
           hour12: false,
           timeZone: 'Asia/Jakarta',
         });
+        const description = typeof task.description === 'string' ? task.description.trim() : '';
+        const hashtagLine = formatTaskHashtagLine(task.tags);
 
         return [
           `${index + 1}. ${task.title}`,
+          description ? `   - Deskripsi: ${description}` : null,
+          hashtagLine ? `   - ${hashtagLine}` : null,
           `   - Jam: ${timeLabel} WIB`,
+          `   - Prioritas: ${task.priority}`,
           `   - Status: ${task.status}`,
-        ].join('\n');
+        ].filter(Boolean).join('\n');
       });
 
       const caption = user.tasks.length > 0
